@@ -94,7 +94,7 @@ loop:
 
 		// the server tracks active connections
 		go func() {
-			_, done := Start(ctx, s.CreateReceiver(ctx, conn))
+			_, done := Start(ctx, s.CreateReceiver(conn))
 			if err := <-done; err != nil {
 				log.Print(err)
 			}
@@ -102,7 +102,7 @@ loop:
 	}
 }
 
-func (s *Server) CreateReceiver(ctx Context, conn io.ReadWriter) *Receiver {
+func (s *Server) CreateReceiver(conn io.ReadWriter) *Receiver {
 	logger := NewLogger(LevelInfo)
 	pool := NewIDPool(s.PoolSize)
 	out := pool.Out(logger.Out(Send(conn)))
