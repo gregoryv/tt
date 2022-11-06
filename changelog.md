@@ -7,6 +7,9 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Add type Handler
+- Rename InFlow and OutFlow to Inner and Outer
+- Add type Middleware
 - Move type Server to root
 - Remove funcs NewInQueue and NewOutQueue
 - Fix imports of mq/tt

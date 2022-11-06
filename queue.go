@@ -9,13 +9,24 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-type InFlow interface {
-	In(next mq.Handler) mq.Handler
+// Middleware control packet flow in both directions
+type Middleware interface {
+	Inner
+	Outer
 }
 
-type OutFlow interface {
-	Out(next mq.Handler) mq.Handler
+// Inner handles incoming packets
+type Inner interface {
+	In(next Handler) Handler
 }
+
+// Outer handles outgoing packets
+type Outer interface {
+	Out(next Handler) Handler
+}
+
+// Handler handles a mqtt control packet
+type Handler func(context.Context, mq.Packet) error
 
 func NoopHandler(_ context.Context, _ mq.Packet) error { return nil }
 func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }
