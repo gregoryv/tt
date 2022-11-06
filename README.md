@@ -4,6 +4,7 @@ tt - package provides components for writing [mqtt-v5.0](https://docs.oasis-open
 
 ## Quick start
 
-    $ go get github.com/gregoryv/tt
+    $ go install github.com/gregoryv/tt/cmd/tt@latest
+    $ tt -h
 
 
