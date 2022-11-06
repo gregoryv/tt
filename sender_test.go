@@ -9,11 +9,9 @@ import (
 )
 
 func TestSender(t *testing.T) {
-	s := NewSender(&ClosedConn{})
-
 	ctx := context.Background()
 	p := mq.NewConnect()
-	if err := s.Out(ctx, p); err == nil {
+	if err := Send(&ClosedConn{})(ctx, p); err == nil {
 		t.Fatal("expect error")
 	}
 }

@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Remove type Sender
 - Remove type SubWait
 - Add type Handler
 - Rename InFlow and OutFlow to Inner and Outer

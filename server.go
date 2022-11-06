@@ -78,9 +78,8 @@ loop:
 }
 
 func (s *Server) CreateReceiver(ctx Context, conn io.ReadWriter) *Receiver {
-	sender := NewSender(conn)
 	logger := NewLogger(LevelInfo)
-	out := s.pool.Out(logger.Out(sender.Out))
+	out := s.pool.Out(logger.Out(Send(conn)))
 
 	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {

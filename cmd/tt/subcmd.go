@@ -30,11 +30,10 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	// use middlewares and build your in/out queues with desired
 	// features
 	var (
-		sender = tt.NewSender(conn)
 		pool   = tt.NewIDPool(100)
 		logger = tt.NewLogger(tt.LevelInfo)
 
-		out     = pool.Out(logger.Out(sender.Out))
+		out     = pool.Out(logger.Out(tt.Send(conn)))
 		handler tt.Handler
 	)
 
