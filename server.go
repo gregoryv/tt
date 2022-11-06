@@ -118,9 +118,8 @@ func (s *Server) handleNewConnection(ctx Context, conn io.ReadWriter) {
 		in = logger.In(s.pool.In(handler))
 	)
 
-	err := <-Start(ctx, NewReceiver(in, conn))
-	if err != nil {
+	running := Start(ctx, NewReceiver(in, conn))
+	if err := <-running; err != nil {
 		log.Print(err)
 	}
-
 }
