@@ -24,7 +24,7 @@ func TestStart(t *testing.T) {
 
 func TestReceiver(t *testing.T) {
 	{ // handler is called on packet from server
-		conn, client := Dial()
+		conn := Dial()
 		called := NewCalled()
 		receiver := NewReceiver(called.Handler, conn)
 
@@ -32,7 +32,7 @@ func TestReceiver(t *testing.T) {
 		p := mq.NewPublish()
 		p.SetTopicName("a/b")
 		p.SetPayload([]byte("gopher"))
-		p.WriteTo(client)
+		conn.Responds(p)
 		<-called.Done()
 	}
 

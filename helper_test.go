@@ -3,21 +3,31 @@ package tt
 import (
 	"io"
 	"io/ioutil"
+
+	"github.com/gregoryv/mq"
 )
 
-// Dial returns a test connection to a server used to send responses
-// with.
-func Dial() (*TestConn, io.Writer) {
+// Dial returns a test connection where writes are discarded. The
+// returned writer is used to inject responses from the connected
+// destiantion.
+func Dial() *TestConn {
 	fromServer, toClient := io.Pipe()
 	toServer := ioutil.Discard
 	c := &TestConn{
 		Reader: fromServer,
 		Writer: toServer,
+		client: toClient,
 	}
-	return c, toClient
+	return c
 }
 
 type TestConn struct {
 	io.Reader // incoming from server
 	io.Writer // outgoing to server
+
+	client io.Writer
+}
+
+func (t *TestConn) Responds(p mq.Packet) {
+	p.WriteTo(t.client)
 }
