@@ -18,7 +18,9 @@ import (
 // NewServer returns a server that binds to a random port.
 func NewServer() *Server {
 	return &Server{
-		Bind:           ":", // random
+		TCP: &TCP{
+			Bind: ":", // random
+		},
 		AcceptTimeout:  time.Millisecond,
 		ConnectTimeout: 20 * time.Millisecond,
 		PoolSize:       100,
@@ -27,9 +29,7 @@ func NewServer() *Server {
 }
 
 type Server struct {
-	// [hostname]:[port] where server listens for connections, use ':'
-	// for random port.
-	Bind string
+	*TCP
 
 	// AcceptTimeout is used as deadline for new connections before
 	// checking if context has been cancelled.
@@ -40,10 +40,16 @@ type Server struct {
 
 	PoolSize uint16
 
-	Listener
-
 	// Up is closed when all listeners are running
 	Up chan struct{}
+}
+
+type TCP struct {
+	// [hostname]:[port] where server listens for connections, use ':'
+	// for random port.
+	Bind string
+
+	Listener
 }
 
 type Listener interface {
@@ -54,7 +60,7 @@ type Listener interface {
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(ctx Context) error {
-	l := s.Listener
+	l := s.TCP.Listener
 	if l == nil {
 		var err error
 		l, err = net.Listen("tcp", s.Bind)

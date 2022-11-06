@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Add type TCP
 - Remove type Sender
 - Remove type SubWait
 - Add type Handler

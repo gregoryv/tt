@@ -9,7 +9,7 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	{ // Accepts connections
+	{ // accepts connections
 		ctx, cancel := WithCancel(Background())
 		defer cancel()
 		s, _ := Start(ctx, NewServer())
@@ -21,7 +21,7 @@ func TestServer(t *testing.T) {
 		}
 		conn.Close()
 	}
-	{ // Accept respects deadline
+	{ // accept respects deadline
 		ctx, cancel := WithCancel(Background())
 		s := NewServer()
 		time.AfterFunc(2*s.AcceptTimeout, cancel)
@@ -29,7 +29,7 @@ func TestServer(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	{ // Ends on listener close
+	{ // ends on listener close
 		s := NewServer()
 		time.AfterFunc(time.Millisecond, func() { s.Close() })
 		if err := s.Run(Background()); !errors.Is(err, net.ErrClosed) {
