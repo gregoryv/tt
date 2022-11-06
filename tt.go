@@ -5,6 +5,7 @@ package tt
 
 import (
 	"context"
+	"io"
 
 	"github.com/gregoryv/mq"
 )
@@ -30,3 +31,8 @@ type Handler func(context.Context, mq.Packet) error
 
 func NoopHandler(_ context.Context, _ mq.Packet) error { return nil }
 func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }
+
+// Conn represents a connection
+type Conn interface {
+	io.ReadWriter
+}

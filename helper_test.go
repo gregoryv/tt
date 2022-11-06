@@ -7,17 +7,17 @@ import (
 
 // Dial returns a test connection to a server used to send responses
 // with.
-func Dial() (*Conn, io.Writer) {
+func Dial() (*TestConn, io.Writer) {
 	fromServer, toClient := io.Pipe()
 	toServer := ioutil.Discard
-	c := &Conn{
+	c := &TestConn{
 		Reader: fromServer,
 		Writer: toServer,
 	}
 	return c, toClient
 }
 
-type Conn struct {
+type TestConn struct {
 	io.Reader // incoming from server
 	io.Writer // outgoing to server
 }
