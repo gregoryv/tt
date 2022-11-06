@@ -35,7 +35,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		logger = tt.NewLogger(tt.LevelInfo)
 
 		out     = pool.Out(logger.Out(sender.Out))
-		handler mq.Handler
+		handler tt.Handler
 	)
 
 	handler = func(ctx context.Context, p mq.Packet) error {

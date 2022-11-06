@@ -56,7 +56,7 @@ func (l *Logger) SetOutput(w io.Writer) {
 
 // In logs incoming packets. Log prefix is based on
 // mq.ConnAck.AssignedClientID.
-func (f *Logger) In(next mq.Handler) mq.Handler {
+func (f *Logger) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if p, ok := p.(*mq.ConnAck); ok {
 			if v := p.AssignedClientID(); v != "" {
@@ -81,7 +81,7 @@ func (f *Logger) In(next mq.Handler) mq.Handler {
 
 // Out logs outgoing packets. Log prefix is based on
 // mq.Connect.ClientID.
-func (f *Logger) Out(next mq.Handler) mq.Handler {
+func (f *Logger) Out(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if p, ok := p.(*mq.Connect); ok {
 			f.SetLogPrefix(p.ClientID())

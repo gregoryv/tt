@@ -25,7 +25,7 @@ type IDPool struct {
 
 // In checks if incoming packet has a packet ID, if so it's
 // returned to the pool before next handler is called.
-func (o *IDPool) In(next mq.Handler) mq.Handler {
+func (o *IDPool) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.PubAck:
@@ -36,7 +36,7 @@ func (o *IDPool) In(next mq.Handler) mq.Handler {
 				o.reuse(p.PacketID())
 			case mq.PUBCOMP:
 				o.reuse(p.PacketID())
-			}			
+			}
 		}
 		return next(ctx, p)
 	}
@@ -51,7 +51,7 @@ func (o *IDPool) reuse(v uint16) {
 }
 
 // Out on outgoing packets, refs MQTT-2.2.1-3
-func (o *IDPool) Out(next mq.Handler) mq.Handler {
+func (o *IDPool) Out(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.Publish:

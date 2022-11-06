@@ -13,7 +13,7 @@ import (
 
 // NewReceiver returns a receiver that reads packets from the reader
 // and calls the handler.
-func NewReceiver(h mq.Handler, r io.Reader) *Receiver {
+func NewReceiver(h Handler, r io.Reader) *Receiver {
 	return &Receiver{
 		wire:        r,
 		handle:      h,
@@ -23,7 +23,7 @@ func NewReceiver(h mq.Handler, r io.Reader) *Receiver {
 
 type Receiver struct {
 	wire        io.Reader
-	handle      mq.Handler
+	handle      Handler
 	readTimeout time.Duration
 }
 

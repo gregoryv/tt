@@ -48,7 +48,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 
 		out     = pool.Out(logger.Out(sender.Out))
 		done    = make(chan struct{}, 0) // closed by handler on success
-		handler mq.Handler
+		handler tt.Handler
 		msg     = mq.Pub(c.qos, c.topic, c.payload)
 	)
 	logger.SetLogPrefix(c.clientID)
