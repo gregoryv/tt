@@ -14,9 +14,7 @@ type ServeCmd struct {
 
 func (c *ServeCmd) ExtraOptions(cli *cmdline.Parser) {
 	s := tt.NewServer()
-	s.TCP = &tt.TCP{
-		Bind: cli.Option("-b, --bind-tcp, $TT_BIND_TCP").String("localhost:1883"),
-	}
+	s.Bind = cli.Option("-b, --bind-tcp, $TT_BIND_TCP").String("tcp://localhost:1883")
 	s.AcceptTimeout = cli.Option("-a, --accept-timeout").Duration("1ms")
 	s.ConnectTimeout = cli.Option("-c, --connect-timeout").Duration("20ms")
 	s.PoolSize = cli.Option("-p, --pool-size").Uint16(200)

@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"time"
 
@@ -18,9 +19,7 @@ import (
 // NewServer returns a server that binds to a random port.
 func NewServer() *Server {
 	return &Server{
-		TCP: &TCP{
-			Bind: ":", // random
-		},
+		Bind:           "tcp://:", // random
 		AcceptTimeout:  time.Millisecond,
 		ConnectTimeout: 20 * time.Millisecond,
 		PoolSize:       100,
@@ -29,7 +28,8 @@ func NewServer() *Server {
 }
 
 type Server struct {
-	*TCP
+	Bind string // todo support multiple binds, ie. tcp://:1883,ws://:8080
+	net.Listener
 
 	// AcceptTimeout is used as deadline for new connections before
 	// checking if context has been cancelled.
@@ -44,30 +44,23 @@ type Server struct {
 	Up chan struct{}
 }
 
-type TCP struct {
-	// [hostname]:[port] where server listens for connections, use ':'
-	// for random port.
-	Bind string
-
-	Listener
-}
-
-type Listener interface {
-	net.Listener
-}
-
 // Run listens for tcp connections. Blocks until context is cancelled
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(ctx Context) error {
-	l := s.TCP.Listener
-	if l == nil {
-		var err error
-		l, err = net.Listen("tcp", s.Bind)
+	l := s.Listener
+	if s.Listener == nil {
+		u, err := url.Parse(s.Bind)
 		if err != nil {
 			return err
 		}
-		s.Listener = l
+
+		ln, err := net.Listen(u.Scheme, u.Host)
+		if err != nil {
+			return err
+		}
+		s.Listener = ln
+		l = ln
 	}
 	close(s.Up)
 	return s.run(ctx, l)

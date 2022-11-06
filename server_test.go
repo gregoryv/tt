@@ -14,9 +14,15 @@ import (
 func TestServer(t *testing.T) {
 	{ // fails to run on bad bind
 		s := NewServer()
-		s.Bind = "jibberish"
-		if err := s.Run(context.Background()); err == nil {
-			t.Fail()
+		binds := []string{
+			"tcp://:-1883",
+			"jibberish",
+		}
+		for _, b := range binds {
+			s.Bind = b
+			if err := s.Run(context.Background()); err == nil {
+				t.Errorf("Bind %s should fail", b)
+			}
 		}
 	}
 	{ // accepts connections
