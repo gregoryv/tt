@@ -23,7 +23,7 @@ services:
         container_name: ttserve
         ports:
           - 1882:1882
-        command: /tt serve -b :1882
+        command: /tt serve -b "tcp://:1882"
 
     ttsubserv:
         image: tt:latest

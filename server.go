@@ -54,7 +54,6 @@ func (s *Server) Run(ctx Context) error {
 		if err != nil {
 			return err
 		}
-
 		ln, err := net.Listen(u.Scheme, u.Host)
 		if err != nil {
 			return err
@@ -62,6 +61,7 @@ func (s *Server) Run(ctx Context) error {
 		s.Listener = ln
 		l = ln
 	}
+
 	close(s.Up)
 	return s.run(ctx, l)
 }

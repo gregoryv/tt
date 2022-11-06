@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"net"
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/tt"
@@ -26,10 +25,5 @@ func (c *ServeCmd) ExtraOptions(cli *cmdline.Parser) {
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
 func (c *ServeCmd) Run(ctx context.Context) error {
-	ln, err := net.Listen("tcp", c.Bind)
-	if err != nil {
-		return err
-	}
-	c.Server.Listener = ln
 	return c.Server.Run(ctx)
 }
