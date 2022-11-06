@@ -78,7 +78,7 @@ func (s *Server) handleNewConnection(ctx Context, conn io.ReadWriter) {
 		sender = tt.NewSender(conn)
 		logger = NewLogger(tt.LevelInfo)
 
-		out     = tt.NewOutQueue(sender.Out, logger, s.pool)
+		out     = s.pool.Out(logger.Out(sender.Out))
 		handler = func(ctx context.Context, p mq.Packet) error {
 			switch p := p.(type) {
 			case *mq.Connect:

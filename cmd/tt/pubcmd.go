@@ -46,7 +46,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		pool   = tt.NewIDPool(100)
 		logger = tt.NewLogger(tt.LevelInfo)
 
-		out     = tt.NewOutQueue(sender.Out, logger, pool)
+		out     = pool.Out(logger.Out(sender.Out))
 		done    = make(chan struct{}, 0) // closed by handler on success
 		handler mq.Handler
 		msg     = mq.Pub(c.qos, c.topic, c.payload)

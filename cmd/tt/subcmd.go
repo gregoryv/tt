@@ -34,7 +34,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		pool   = tt.NewIDPool(100)
 		logger = tt.NewLogger(tt.LevelInfo)
 
-		out     = tt.NewOutQueue(sender.Out, logger, pool)
+		out     = pool.Out(logger.Out(sender.Out))
 		handler mq.Handler
 	)
 

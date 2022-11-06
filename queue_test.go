@@ -12,7 +12,7 @@ import (
 func TestQueues(t *testing.T) {
 	mid := &NoopFlow{}
 
-	out := NewOutQueue(NoopHandler, mid)
+	out := mid.Out(NoopHandler)
 	in := mid.In(mid.In(NoopHandler))
 
 	ctx := context.Background()
