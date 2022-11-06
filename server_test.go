@@ -1,6 +1,7 @@
 package tt
 
 import (
+	"context"
 	. "context"
 	"errors"
 	"net"
@@ -9,6 +10,13 @@ import (
 )
 
 func TestServer(t *testing.T) {
+	{ // fails to run on bad bind
+		s := NewServer()
+		s.Bind = "jibberish"
+		if err := s.Run(context.Background()); err == nil {
+			t.Fail()
+		}
+	}
 	{ // accepts connections
 		ctx, cancel := WithCancel(Background())
 		defer cancel()
