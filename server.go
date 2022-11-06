@@ -70,6 +70,10 @@ func (s *Server) Run(ctx Context) error {
 		s.Listener = l
 	}
 	close(s.Up)
+	return s.run(ctx, l)
+}
+
+func (s *Server) run(ctx Context, l net.Listener) error {
 loop:
 	for {
 		if err := ctx.Err(); err != nil {

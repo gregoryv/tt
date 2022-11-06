@@ -48,7 +48,7 @@ func TestServer(t *testing.T) {
 	}
 }
 
-func TestServer_CreateReceiver(t *testing.T) {
+func TestServer_CreateHandlers(t *testing.T) {
 	conn := Dial()
 	in, _ := NewServer().CreateHandlers(conn)
 	{ // accepted packets
