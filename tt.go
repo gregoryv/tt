@@ -5,6 +5,7 @@ package tt
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gregoryv/mq"
 )
@@ -30,3 +31,17 @@ type Handler func(context.Context, mq.Packet) error
 
 func NoopHandler(_ context.Context, _ mq.Packet) error { return nil }
 func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }
+
+var (
+	// Client.IO is closed
+	ErrNoConnection = fmt.Errorf("no connection")
+
+	// Client has no receiver configured
+	ErrUnsetReceiver = fmt.Errorf("unset receiver")
+
+	// Client is not fully operational, ie. hasn't been started
+	ErrNotRunning = fmt.Errorf("not running")
+
+	// Settings cannot be changed
+	ErrReadOnly = fmt.Errorf("read only")
+)
