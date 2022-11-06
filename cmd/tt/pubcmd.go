@@ -106,7 +106,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	}
 
 	var (
-		in       = tt.NewInQueue(handler, pool, logger)
+		in       = logger.In(pool.In(handler))
 		receiver = tt.NewReceiver(in, conn)
 	)
 	// start handling packet flow
