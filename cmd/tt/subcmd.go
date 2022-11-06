@@ -57,19 +57,17 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		return nil
 	}
 
-	var (
-		in       = logger.In(pool.In(handler))
-		receiver = tt.NewReceiver(in, conn)
-	)
 	// start handling packet flow
-	running := tt.Start(context.Background(), receiver)
+	in := logger.In(pool.In(handler))
+	r := tt.NewReceiver(in, conn)
+	_, done := tt.Start(context.Background(), r)
 
 	// kick off with a connect
 	p := mq.NewConnect()
 	p.SetClientID("ttsub")
 	_ = out(ctx, p)
 
-	<-running
+	<-done
 
 	// todo handle ctrl+c with gracefule disconnect
 	return nil

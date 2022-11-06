@@ -9,34 +9,31 @@ import (
 )
 
 func TestServer(t *testing.T) {
-	s := NewServer()
-	// run in background
-	l, err := net.Listen("tcp", ":")
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx, cancel := WithCancel(Background())
-	go func() {
-		err = s.Run(l, ctx)
-	}()
+	{ // Accepts connections
+		ctx, cancel := WithCancel(Background())
+		defer cancel()
+		s, _ := Start(ctx, NewServer())
+		<-s.Up
 
-	// Accept connection
-	conn, err := net.Dial("tcp", l.Addr().String())
-	if err != nil {
-		t.Fatal(err)
+		conn, err := net.Dial("tcp", s.Addr().String())
+		if err != nil {
+			t.Fatal(err)
+		}
+		conn.Close()
 	}
-	conn.Close()
-
-	// Accept respects deadline
-	cancel()
-	<-time.After(2 * s.AcceptTimeout)
-	if !errors.Is(err, Canceled) {
-		t.Error(err)
+	{ // Accept respects deadline
+		ctx, cancel := WithCancel(Background())
+		s := NewServer()
+		time.AfterFunc(2*s.AcceptTimeout, cancel)
+		if err := s.Run(ctx); !errors.Is(err, Canceled) {
+			t.Error(err)
+		}
 	}
-
-	// Ends on listener close
-	time.AfterFunc(time.Millisecond, func() { l.Close() })
-	if err := s.Run(l, Background()); !errors.Is(err, net.ErrClosed) {
-		t.Error(err)
+	{ // Ends on listener close
+		s := NewServer()
+		time.AfterFunc(time.Millisecond, func() { s.Close() })
+		if err := s.Run(Background()); !errors.Is(err, net.ErrClosed) {
+			t.Error(err)
+		}
 	}
 }

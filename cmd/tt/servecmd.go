@@ -30,5 +30,6 @@ func (c *ServeCmd) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return c.Server.Run(ln, ctx)
+	c.Server.Listener = ln
+	return c.Server.Run(ctx)
 }

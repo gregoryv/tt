@@ -104,14 +104,11 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		return fmt.Errorf("cannot handle QoS %v", c.qos)
 	}
 
-	var (
-		in       = logger.In(pool.In(handler))
-		receiver = tt.NewReceiver(in, conn)
-	)
 	// start handling packet flow
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
-	running := tt.Start(ctx, receiver)
+	in := logger.In(pool.In(handler))
+	_, running := tt.Start(ctx, tt.NewReceiver(in, conn))
 
 	// kick off with a connect
 

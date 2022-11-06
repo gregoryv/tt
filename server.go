@@ -22,6 +22,7 @@ func NewServer() *Server {
 		AcceptTimeout:  time.Millisecond,
 		ConnectTimeout: 20 * time.Millisecond,
 		PoolSize:       100,
+		Up:             make(chan struct{}, 0),
 	}
 }
 
@@ -38,13 +39,31 @@ type Server struct {
 	ConnectTimeout time.Duration
 
 	PoolSize uint16
+
+	Listener
+
+	// Up is closed when all listeners are running
+	Up chan struct{}
+}
+
+type Listener interface {
+	net.Listener
 }
 
 // Run listens for tcp connections. Blocks until context is cancelled
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
-func (s *Server) Run(l net.Listener, ctx Context) error {
-
+func (s *Server) Run(ctx Context) error {
+	l := s.Listener
+	if l == nil {
+		var err error
+		l, err = net.Listen("tcp", s.Bind)
+		if err != nil {
+			return err
+		}
+		s.Listener = l
+	}
+	close(s.Up)
 loop:
 	for {
 		if err := ctx.Err(); err != nil {
@@ -69,8 +88,8 @@ loop:
 
 		// the server tracks active connections
 		go func() {
-			running := Start(ctx, s.CreateReceiver(ctx, conn))
-			if err := <-running; err != nil {
+			_, done := Start(ctx, s.CreateReceiver(ctx, conn))
+			if err := <-done; err != nil {
 				log.Print(err)
 			}
 		}()

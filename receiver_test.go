@@ -12,10 +12,10 @@ import (
 )
 
 func TestStart(t *testing.T) {
-	receiver := NewReceiver(NoopHandler, &ClosedConn{})
-	running := Start(context.Background(), receiver)
+	r := NewReceiver(NoopHandler, &ClosedConn{})
+	_, done := Start(context.Background(), r)
 	select {
-	case err := <-running:
+	case err := <-done:
 		if err == nil {
 			t.Fail()
 		}
