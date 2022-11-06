@@ -1,7 +1,8 @@
 version: "3.5"
 services:
-    broker: 
+    mosquitto:
         image: eclipse-mosquitto:1.6
+        container_name: mosquitto
         ports:
           - 1883:1883
         volumes:
@@ -10,6 +11,13 @@ services:
           target: /mosquitto/config/mosquitto.conf
           read_only: true
 
+    ttsub:
+        image: tt:latest
+        container_name: test-mosquitto
+        command: /tt sub -s broker:1883
+        depends_on:
+          - mosquitto
+
     ttserve:
         image: tt:latest
         container_name: ttserve
@@ -17,16 +25,9 @@ services:
           - 1882:1882
         command: /tt serve -b :1882
 
-    ttsub:
-        image: tt:latest
-        container_name: ttsub-broker
-        command: /tt sub -s broker:1883
-        depends_on:
-          - broker
-
     ttsubserv:
         image: tt:latest
-        container_name: ttsub-serve
+        container_name: test-ttserve
         command: /tt sub -s ttserve:1882
         depends_on:
           - ttserve
