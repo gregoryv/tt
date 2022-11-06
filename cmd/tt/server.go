@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/mq/tt"
+	"github.com/gregoryv/tt"
 )
 
 func NewServer() *Server {

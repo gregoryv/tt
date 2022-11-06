@@ -3,7 +3,7 @@ package main
 import (
 	"io"
 
-	"github.com/gregoryv/mq/tt"
+	"github.com/gregoryv/tt"
 )
 
 // NextLogWriter if set is use in next call to NewLogger.

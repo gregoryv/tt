@@ -8,7 +8,7 @@ import (
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/mq/tt"
+	"github.com/gregoryv/tt"
 )
 
 type SubCmd struct {
