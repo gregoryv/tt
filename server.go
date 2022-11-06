@@ -1,4 +1,4 @@
-package main
+package tt
 
 import (
 	"context"
@@ -13,39 +13,38 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/tt"
 )
 
 func NewServer() *Server {
 	return &Server{
-		bind:           ":", // random
-		acceptTimeout:  time.Millisecond,
-		connectTimeout: 20 * time.Millisecond,
+		Bind:           ":", // random
+		AcceptTimeout:  time.Millisecond,
+		ConnectTimeout: 20 * time.Millisecond,
+		PoolSize:       100,
 		clients:        make(map[string]io.ReadWriter),
-		poolSize:       100,
 	}
 }
 
 type Server struct {
-	bind string
+	Bind string
 
-	acceptTimeout time.Duration
+	AcceptTimeout time.Duration
 
 	// client has to send the initial connect packet
-	connectTimeout time.Duration
+	ConnectTimeout time.Duration
 
 	// todo place this in a connections store
 	clients map[string]io.ReadWriter
 
-	poolSize uint16
-	pool     *tt.IDPool // todo one / connection
+	PoolSize uint16
+	pool     *IDPool // todo one / connection
 }
 
 // Run listens for tcp connections. Blocks until context is cancelled
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(l net.Listener, ctx Context) error {
-	s.pool = tt.NewIDPool(s.poolSize)
+	s.pool = NewIDPool(s.PoolSize)
 loop:
 	for {
 		if err := ctx.Err(); err != nil {
@@ -54,7 +53,7 @@ loop:
 
 		// timeout Accept call so we don't block the loop
 		if l, ok := l.(interface{ SetDeadline(time.Time) error }); ok {
-			l.SetDeadline(time.Now().Add(s.acceptTimeout))
+			l.SetDeadline(time.Now().Add(s.AcceptTimeout))
 		}
 		conn, err := l.Accept()
 		if errors.Is(err, os.ErrDeadlineExceeded) {
@@ -75,8 +74,8 @@ loop:
 
 func (s *Server) handleNewConnection(ctx Context, conn io.ReadWriter) {
 	var (
-		sender = tt.NewSender(conn)
-		logger = NewLogger(tt.LevelInfo)
+		sender = NewSender(conn)
+		logger = NewLogger(LevelInfo)
 
 		out     = s.pool.Out(logger.Out(sender.Out))
 		handler = func(ctx context.Context, p mq.Packet) error {
@@ -119,7 +118,7 @@ func (s *Server) handleNewConnection(ctx Context, conn io.ReadWriter) {
 		in = logger.In(s.pool.In(handler))
 	)
 
-	err := <-tt.Start(ctx, tt.NewReceiver(in, conn))
+	err := <-Start(ctx, NewReceiver(in, conn))
 	if err != nil {
 		log.Print(err)
 	}

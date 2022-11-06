@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Move type Server to root
 - Remove funcs NewInQueue and NewOutQueue
 - Fix imports of mq/tt
 - Use gregoryv/mq@v0.22.0

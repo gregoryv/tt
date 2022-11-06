@@ -1,4 +1,4 @@
-package main
+package tt
 
 import (
 	. "context"
@@ -29,7 +29,7 @@ func TestServer(t *testing.T) {
 
 	// Accept respects deadline
 	cancel()
-	<-time.After(2 * s.acceptTimeout)
+	<-time.After(2 * s.AcceptTimeout)
 	if !errors.Is(err, Canceled) {
 		t.Error(err)
 	}
