@@ -7,6 +7,8 @@ import (
 	"net"
 	"testing"
 	"time"
+
+	"github.com/gregoryv/mq"
 )
 
 func TestServer(t *testing.T) {
@@ -42,6 +44,52 @@ func TestServer(t *testing.T) {
 		time.AfterFunc(time.Millisecond, func() { s.Close() })
 		if err := s.Run(Background()); !errors.Is(err, net.ErrClosed) {
 			t.Error(err)
+		}
+	}
+}
+
+func TestServer_CreateReceiver(t *testing.T) {
+	conn := Dial()
+	in, _ := NewServer().CreateHandlers(conn)
+	{ // accepted packets
+		packets := []mq.Packet{
+			mq.NewConnect(),
+			mq.Pub(0, "a/b", ""),
+			func() mq.Packet {
+				p := mq.Pub(1, "a/b", "")
+				p.SetPacketID(1)
+				return p
+			}(),
+			func() mq.Packet {
+				p := mq.Pub(2, "a/b", "")
+				p.SetPacketID(11)
+				return p
+			}(),
+			func() mq.Packet {
+				p := mq.NewPubRel()
+				p.SetPacketID(12)
+				return p
+			}(),
+		}
+		ctx := context.Background()
+		for _, p := range packets {
+			if err := in(ctx, p); err != nil {
+				t.Fatal(p, err)
+			}
+		}
+	}
+	{ // denied packets
+		packets := []mq.Packet{
+			mq.Pub(0, "", ""), // malformed, missing topic
+			mq.NewPubComp(),
+			mq.NewPingReq(),
+			mq.NewSubscribe(),
+		}
+		ctx := context.Background()
+		for _, p := range packets {
+			if err := in(ctx, p); err == nil {
+				t.Errorf("expect incoming handler to fail on %p", p)
+			}
 		}
 	}
 }

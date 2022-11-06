@@ -94,7 +94,8 @@ loop:
 
 		// the server tracks active connections
 		go func() {
-			_, done := Start(ctx, s.CreateReceiver(conn))
+			in, _ := s.CreateHandlers(conn)
+			_, done := Start(ctx, NewReceiver(in, conn))
 			if err := <-done; err != nil {
 				log.Print(err)
 			}
@@ -102,10 +103,10 @@ loop:
 	}
 }
 
-func (s *Server) CreateReceiver(conn io.ReadWriter) *Receiver {
+func (s *Server) CreateHandlers(conn io.ReadWriter) (in, out Handler) {
 	logger := NewLogger(LevelInfo)
 	pool := NewIDPool(s.PoolSize)
-	out := pool.Out(logger.Out(Send(conn)))
+	out = pool.Out(logger.Out(Send(conn)))
 
 	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
@@ -140,11 +141,10 @@ func (s *Server) CreateReceiver(conn io.ReadWriter) *Receiver {
 			return out(ctx, comp)
 
 		default:
-			fmt.Println("unhandled", p)
+			return fmt.Errorf("unhandled %v", p)
 		}
-		return nil
 	}
 
-	in := logger.In(pool.In(handler))
-	return NewReceiver(in, conn)
+	in = logger.In(CheckForm(pool.In(handler)))
+	return
 }
