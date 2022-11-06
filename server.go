@@ -37,14 +37,13 @@ type Server struct {
 	clients map[string]io.ReadWriter
 
 	PoolSize uint16
-	pool     *IDPool // todo one / connection
 }
 
 // Run listens for tcp connections. Blocks until context is cancelled
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(l net.Listener, ctx Context) error {
-	s.pool = NewIDPool(s.PoolSize)
+
 loop:
 	for {
 		if err := ctx.Err(); err != nil {
@@ -79,7 +78,8 @@ loop:
 
 func (s *Server) CreateReceiver(ctx Context, conn io.ReadWriter) *Receiver {
 	logger := NewLogger(LevelInfo)
-	out := s.pool.Out(logger.Out(Send(conn)))
+	pool := NewIDPool(s.PoolSize)
+	out := pool.Out(logger.Out(Send(conn)))
 
 	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
@@ -119,6 +119,6 @@ func (s *Server) CreateReceiver(ctx Context, conn io.ReadWriter) *Receiver {
 		return nil
 	}
 
-	in := logger.In(s.pool.In(handler))
+	in := logger.In(pool.In(handler))
 	return NewReceiver(in, conn)
 }
