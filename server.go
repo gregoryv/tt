@@ -68,58 +68,58 @@ loop:
 		}
 
 		// the server tracks active connections
-		go s.handleNewConnection(ctx, conn)
+		go func() {
+			running := Start(ctx, s.CreateReceiver(ctx, conn))
+			if err := <-running; err != nil {
+				log.Print(err)
+			}
+		}()
 	}
 }
 
-func (s *Server) handleNewConnection(ctx Context, conn io.ReadWriter) {
-	var (
-		sender = NewSender(conn)
-		logger = NewLogger(LevelInfo)
+func (s *Server) CreateReceiver(ctx Context, conn io.ReadWriter) *Receiver {
+	sender := NewSender(conn)
+	logger := NewLogger(LevelInfo)
+	out := s.pool.Out(logger.Out(sender.Out))
 
-		out     = s.pool.Out(logger.Out(sender.Out))
-		handler = func(ctx context.Context, p mq.Packet) error {
-			switch p := p.(type) {
-			case *mq.Connect:
-				// connect came in...
-				a := mq.NewConnAck()
-				id := p.ClientID()
-				if id == "" {
-					id = uuid.NewString()
-				}
-				// todo make sure it's uniq
-				a.SetAssignedClientID(id)
-				return out(ctx, a)
-
-			case *mq.Publish:
-				switch p.QoS() {
-				case 1:
-					a := mq.NewPubAck()
-					a.SetPacketID(p.PacketID())
-					return out(ctx, a)
-				case 2:
-					a := mq.NewPubRec()
-					a.SetPacketID(p.PacketID())
-					return out(ctx, a)
-				}
-				// todo route it
-				return nil
-
-			case *mq.PubRel:
-				comp := mq.NewPubComp()
-				comp.SetPacketID(p.PacketID())
-				return out(ctx, comp)
-
-			default:
-				fmt.Println("unhandled", p)
+	handler := func(ctx context.Context, p mq.Packet) error {
+		switch p := p.(type) {
+		case *mq.Connect:
+			// connect came in...
+			a := mq.NewConnAck()
+			id := p.ClientID()
+			if id == "" {
+				id = uuid.NewString()
 			}
-			return nil
-		}
-		in = logger.In(s.pool.In(handler))
-	)
+			// todo make sure it's uniq
+			a.SetAssignedClientID(id)
+			return out(ctx, a)
 
-	running := Start(ctx, NewReceiver(in, conn))
-	if err := <-running; err != nil {
-		log.Print(err)
+		case *mq.Publish:
+			switch p.QoS() {
+			case 1:
+				a := mq.NewPubAck()
+				a.SetPacketID(p.PacketID())
+				return out(ctx, a)
+			case 2:
+				a := mq.NewPubRec()
+				a.SetPacketID(p.PacketID())
+				return out(ctx, a)
+			}
+			// todo route it
+			return nil
+
+		case *mq.PubRel:
+			comp := mq.NewPubComp()
+			comp.SetPacketID(p.PacketID())
+			return out(ctx, comp)
+
+		default:
+			fmt.Println("unhandled", p)
+		}
+		return nil
 	}
+
+	in := logger.In(s.pool.In(handler))
+	return NewReceiver(in, conn)
 }
