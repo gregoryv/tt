@@ -15,26 +15,27 @@ import (
 	"github.com/gregoryv/mq"
 )
 
+// NewServer returns a server that binds to a random port.
 func NewServer() *Server {
 	return &Server{
 		Bind:           ":", // random
 		AcceptTimeout:  time.Millisecond,
 		ConnectTimeout: 20 * time.Millisecond,
 		PoolSize:       100,
-		clients:        make(map[string]io.ReadWriter),
 	}
 }
 
 type Server struct {
+	// [hostname]:[port] where server listens for connections, use ':'
+	// for random port.
 	Bind string
 
+	// AcceptTimeout is used as deadline for new connections before
+	// checking if context has been cancelled.
 	AcceptTimeout time.Duration
 
 	// client has to send the initial connect packet
 	ConnectTimeout time.Duration
-
-	// todo place this in a connections store
-	clients map[string]io.ReadWriter
 
 	PoolSize uint16
 }
