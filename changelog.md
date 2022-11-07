@@ -7,16 +7,14 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
-- Add type Client
+- Add types Client, PubHandler
 
 ## [0.2.0] 2022-11-06
 
 - Add type TCP
-- Remove type Sender
-- Remove type SubWait
-- Add type Handler
+- Remove types Sender and SubWait
+- Add types Handler and Middleware
 - Rename InFlow and OutFlow to Inner and Outer
-- Add type Middleware
 - Move type Server to root
 - Remove funcs NewInQueue and NewOutQueue
 - Fix imports of mq/tt

@@ -2,11 +2,9 @@ package tt
 
 import (
 	"strings"
-
-	"github.com/gregoryv/mq"
 )
 
-func NewRoute(filter string, handlers ...mq.PubHandler) *Route {
+func NewRoute(filter string, handlers ...PubHandler) *Route {
 	r := &Route{
 		filter:   filter,
 		filters:  strings.Split(filter, "/"),
@@ -27,7 +25,7 @@ type Route struct {
 	hasMulti  bool
 	hasSingle bool
 
-	handlers []mq.PubHandler
+	handlers []PubHandler
 }
 
 func (r *Route) String() string {

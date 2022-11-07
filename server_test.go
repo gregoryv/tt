@@ -94,7 +94,8 @@ func TestServer_CreateHandlers(t *testing.T) {
 		ctx := context.Background()
 		for _, p := range packets {
 			if err := in(ctx, p); err == nil {
-				t.Errorf("expect incoming handler to fail on %p", p)
+				t.Logf("on %v", p)
+				t.Errorf("expect incoming handler to fail")
 			}
 		}
 	}

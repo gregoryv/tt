@@ -29,6 +29,8 @@ type Outer interface {
 // Handler handles a mqtt control packet
 type Handler func(context.Context, mq.Packet) error
 
+type PubHandler func(context.Context, *mq.Publish) error
+
 func NoopHandler(_ context.Context, _ mq.Packet) error { return nil }
 func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }
 
@@ -43,8 +45,7 @@ type Conn interface {
 // formed. The handler returns error if not without calling next.
 func CheckForm(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
-		if p, ok := p.(interface{ WellFormed() error }); ok {
-			// todo mq.WellFormed must return a specific error
+		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 			if err := p.WellFormed(); err != nil {
 				return err
 			}
