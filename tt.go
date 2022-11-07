@@ -42,7 +42,8 @@ type Conn interface {
 // ----------------------------------------
 
 // CheckForm returns a handler that checks if a packet is well
-// formed. The handler returns error if not without calling next.
+// formed. The handler returns *mq.Malformed error without calling
+// next if malformed.
 func CheckForm(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
