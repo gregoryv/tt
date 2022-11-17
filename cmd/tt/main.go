@@ -17,7 +17,7 @@ func main() {
 
 		_ = commands.New("pub", &PubCmd{})
 		_ = commands.New("sub", &SubCmd{})
-		_ = commands.New("serve", &ServeCmd{})
+		_ = commands.New("srv", &SrvCmd{})
 
 		cmd = commands.Selected()
 	)

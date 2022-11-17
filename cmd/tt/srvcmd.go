@@ -7,11 +7,11 @@ import (
 	"github.com/gregoryv/tt"
 )
 
-type ServeCmd struct {
+type SrvCmd struct {
 	*tt.Server
 }
 
-func (c *ServeCmd) ExtraOptions(cli *cmdline.Parser) {
+func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 	s := tt.NewServer()
 	s.Bind = cli.Option("-b, --bind-tcp, $TT_BIND_TCP").String("tcp://localhost:1883")
 	s.AcceptTimeout = cli.Option("-a, --accept-timeout").Duration("1ms")
@@ -24,6 +24,6 @@ func (c *ServeCmd) ExtraOptions(cli *cmdline.Parser) {
 // Run listens for tcp connections. Blocks until context is cancelled
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
-func (c *ServeCmd) Run(ctx context.Context) error {
+func (c *SrvCmd) Run(ctx context.Context) error {
 	return c.Server.Run(ctx)
 }
