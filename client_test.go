@@ -9,7 +9,14 @@ import (
 
 func TestClient(t *testing.T) {
 	c := NewClient()
-	c.Conn = Dial()
+
+	// Configure client features
+	c.Dialer = func(_ context.Context) error {
+		c.SetNetworkIO(Dial())
+		return nil
+	}
+
+	c.Run(context.Background())
 
 	{ // can publish
 		p := mq.NewPublish()
@@ -17,5 +24,4 @@ func TestClient(t *testing.T) {
 		p.SetPayload([]byte("yes"))
 		c.Send(context.Background(), p)
 	}
-
 }
