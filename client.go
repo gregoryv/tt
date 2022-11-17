@@ -2,6 +2,7 @@ package tt
 
 import (
 	"context"
+	"io"
 
 	"github.com/gregoryv/mq"
 )
@@ -11,7 +12,11 @@ func NewClient() *Client {
 }
 
 type Client struct {
-	Conn
+	Conn io.ReadWriter // connection
+}
+
+func (c *Client) Connect(ctx context.Context) error {
+	return nil
 }
 
 func (c *Client) Send(ctx context.Context, p mq.Packet) error {
