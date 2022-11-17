@@ -2,6 +2,8 @@ package tt
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 
 	"github.com/gregoryv/mq"
@@ -9,14 +11,20 @@ import (
 )
 
 func NewClient() *Client {
-	return &Client{}
+	return &Client{
+		Handler: NoopHandler,
+	}
 }
 
 type Client struct {
 	// Dialer opens a network connection to some server
 	Dialer
+	Handler
 
-	netio io.ReadWriter // connection
+	out Handler // set by Run
+
+	netio   io.ReadWriter // connection
+	stopped chan struct{}
 }
 
 func (c *Client) SetNetworkIO(v io.ReadWriter) { c.netio = v }
@@ -30,12 +38,28 @@ func (c *Client) Run(ctx context.Context) error {
 		err = c.Dialer(ctx)
 	})
 
+	// create receiver
+	var (
+		pool   = NewIDPool(100)
+		logger = NewLogger(LevelInfo)
+	)
+	c.out = pool.Out(logger.Out(Send(c.netio)))
+	in := logger.In(pool.In(c.Handler))
+
+	_, running := Start(ctx, NewReceiver(in, c.netio))
+
+	select {
+	case <-ctx.Done():
+	case err := <-running:
+		if errors.Is(err, io.EOF) {
+			return fmt.Errorf("FAIL")
+		}
+	}
 	return err
 }
 
 // Send control packet to the server. In most cases this would be a
 // *mq.Publish packet.
 func (c *Client) Send(ctx context.Context, p mq.Packet) error {
-	_, err := p.WriteTo(c.netio)
-	return err
+	return c.out(ctx, p)
 }
