@@ -54,3 +54,8 @@ func CheckForm(next Handler) Handler {
 		return next(ctx, p)
 	}
 }
+
+// ----------------------------------------
+
+// Dialer is responsible for opening a newtwork connection
+type Dialer func(context.Context) error
