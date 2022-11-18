@@ -4,12 +4,28 @@ import (
 	"context"
 	. "context"
 	"errors"
+	"log"
 	"net"
 	"testing"
 	"time"
 
 	"github.com/gregoryv/mq"
 )
+
+func ExampleServer_forTesting() {
+	ctx, cancel := WithCancel(context.Background())
+	defer cancel()
+	server, running := Start(ctx, NewServer())
+	<-server.Up
+
+	select {
+	case <-ctx.Done():
+		return
+	case err := <-running:
+		// handle other errors
+		log.Print(err)
+	}
+}
 
 func TestServer(t *testing.T) {
 	{ // fails to run on bad bind
