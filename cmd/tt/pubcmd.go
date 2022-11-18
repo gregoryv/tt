@@ -71,16 +71,14 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		}
 		return nil
 	}
+	receive := tt.NewReceiver(conn, logger, pool, handler)
 
 	// start handling packet flow
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
-	in := logger.In(pool.In(handler))
-	receive := tt.NewReceiver(conn, in)
 	_, running := tt.Start(ctx, receive)
 
 	// kick off with a connect
-
 	p := mq.NewConnect()
 	p.SetClientID(c.clientID)
 	_ = transmit(ctx, p)
