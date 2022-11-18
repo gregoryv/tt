@@ -13,7 +13,7 @@ import (
 )
 
 // NewReceiver returns a receiver that reads packets from the reader
-// and calls the handler.
+// and calls the handler made of number of middlewares and a final handler.
 func NewReceiver(r io.Reader, v ...any) *Receiver {
 	return &Receiver{
 		wire:        r,

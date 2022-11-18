@@ -5,11 +5,21 @@ import (
 	"errors"
 	"io"
 	"net"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/gregoryv/mq"
 )
+
+func ExampleNewReceiver() {
+	var (
+		pool   = NewIDPool(10)
+		logger = NewLogger(LevelInfo)
+	)
+	_ = NewReceiver(os.Stdin, logger, pool, NoopHandler)
+	// output:
+}
 
 func TestStart(t *testing.T) {
 	r := NewReceiver(&ClosedConn{}, NoopHandler)
