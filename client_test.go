@@ -17,6 +17,7 @@ func TestClient(t *testing.T) {
 	<-server.Up
 
 	c := NewClient()
+	c.SetClientID("testclient")
 
 	// Configure client features
 	c.Dialer = func(_ context.Context) error {

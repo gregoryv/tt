@@ -23,10 +23,12 @@ type Client struct {
 	Handler
 	*Logger
 
-	out   Handler       // set by Run
-	netio io.ReadWriter // connection
+	out      Handler       // set by Run
+	netio    io.ReadWriter // connection
+	clientID string
 }
 
+func (c *Client) SetClientID(v string)         { c.clientID = v }
 func (c *Client) SetNetworkIO(v io.ReadWriter) { c.netio = v }
 
 // Run activates this client. Should only be called once.
@@ -49,7 +51,11 @@ func (c *Client) Run(ctx context.Context) error {
 
 	_, running := Start(ctx, NewReceiver(in, c.netio))
 
-	// todo do the initial connect
+	next.Stepf("connect: %w", func() {
+		p := mq.NewConnect()
+		p.SetClientID(c.clientID)
+		err = out(ctx, p)
+	})
 
 	select {
 	case <-ctx.Done():
