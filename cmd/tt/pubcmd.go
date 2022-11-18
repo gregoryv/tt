@@ -45,61 +45,31 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		pool     = tt.NewIDPool(100)
 		logger   = tt.NewLogger(tt.LevelInfo)
 		transmit = tt.NewTransmitter(pool, logger, conn)
-
-		done    = make(chan struct{}, 0) // closed by handler on success
-		handler tt.Handler
-		msg     = mq.Pub(c.qos, c.topic, c.payload)
 	)
 	logger.SetLogPrefix(c.clientID)
 
-	// QoS dictates the logic of packet flows
-	switch c.qos {
-	case 0:
-		handler = func(ctx context.Context, p mq.Packet) error {
-			switch p.(type) {
-			case *mq.ConnAck:
-				if err := transmit(ctx, msg); err != nil {
-					return err
-				}
-				close(done)
-			default:
-				fmt.Println("unexpected:", p)
-			}
-			return nil
-		}
-	case 1:
-		handler = func(ctx context.Context, p mq.Packet) error {
-			switch p.(type) {
-			case *mq.ConnAck:
-				return transmit(ctx, msg)
-			case *mq.PubAck:
-				close(done)
-			default:
-				fmt.Println("unexpected:", p)
-			}
-			return nil
-		}
+	done := make(chan struct{}, 0)
+	msg := mq.Pub(c.qos, c.topic, c.payload)
+	handler := func(ctx context.Context, p mq.Packet) error {
+		switch p := p.(type) {
+		case *mq.ConnAck:
+			return transmit(ctx, msg)
 
-	case 2:
-		handler = func(ctx context.Context, p mq.Packet) error {
-			switch p := p.(type) {
-			case *mq.ConnAck:
-				return transmit(ctx, msg)
-			case *mq.PubRec:
-				rel := mq.NewPubRel()
-				rel.SetPacketID(msg.PacketID())
-				return transmit(ctx, rel)
-			case *mq.PubComp:
-				close(done)
+		case *mq.PubRec:
+			rel := mq.NewPubRel()
+			rel.SetPacketID(msg.PacketID())
+			return transmit(ctx, rel)
 
-			default:
-				fmt.Println("unexpected:", p)
-			}
-			return nil
+		case *mq.PubAck:
+			close(done)
+
+		case *mq.PubComp:
+			close(done)
+
+		default:
+			fmt.Println("unexpected:", p)
 		}
-
-	default:
-		return fmt.Errorf("cannot handle QoS %v", c.qos)
+		return nil
 	}
 
 	// start handling packet flow
