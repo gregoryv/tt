@@ -11,7 +11,6 @@ import (
 func Test_IDPool(t *testing.T) {
 	max := uint16(5)
 	pool := NewIDPool(max) // 1 .. 5
-	var _ Middleware = pool
 
 	// check that ids are reusable
 	used := make(chan uint16, max)

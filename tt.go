@@ -10,12 +10,6 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-// Middleware control packet flow in both directions
-type Middleware interface {
-	Inner
-	Outer
-}
-
 // Inner handles incoming packets
 type Inner interface {
 	In(next Handler) Handler
