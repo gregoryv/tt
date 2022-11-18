@@ -59,7 +59,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 
 	// start handling packet flow
 	in := logger.In(pool.In(handler))
-	r := tt.NewReceiver(in, conn)
+	r := tt.NewReceiver(conn, in)
 	_, done := tt.Start(context.Background(), r)
 
 	// kick off with a connect

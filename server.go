@@ -92,7 +92,7 @@ loop:
 		// the server tracks active connections
 		go func() {
 			in, _ := s.CreateHandlers(conn)
-			_, done := Start(ctx, NewReceiver(in, conn))
+			_, done := Start(ctx, NewReceiver(conn, in))
 			if err := <-done; err != nil {
 				log.Print(err)
 			}

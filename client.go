@@ -48,11 +48,10 @@ func (c *Client) Run(ctx context.Context) error {
 	var (
 		pool = NewIDPool(100)
 		out  = pool.Out(c.Logger.Out(Send(c.netio)))
-		in   = c.Logger.In(pool.In(c.Handler))
 	)
 	c.out = out // to allow Client.Send
 
-	_, running := Start(ctx, NewReceiver(in, c.netio))
+	_, running := Start(ctx, NewReceiver(c.netio, c.Logger, pool, c.Handler))
 
 	next.Stepf("connect: %w", func() {
 		p := mq.NewConnect()

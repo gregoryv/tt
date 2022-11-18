@@ -3,6 +3,7 @@ package tt
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -13,11 +14,24 @@ import (
 
 // NewReceiver returns a receiver that reads packets from the reader
 // and calls the handler.
-func NewReceiver(h Handler, r io.Reader) *Receiver {
+func NewReceiver(r io.Reader, v ...any) *Receiver {
 	return &Receiver{
 		wire:        r,
-		handle:      h,
+		handle:      newReceiver(v...),
 		readTimeout: 100 * time.Millisecond,
+	}
+}
+
+func newReceiver(v ...any) Handler {
+	switch m := v[0].(type) {
+	case Inner:
+		return m.In(newReceiver(v[1:]...))
+	case Handler:
+		return m
+	case func(context.Context, mq.Packet) error:
+		return m
+	default:
+		panic(fmt.Sprintf("NewReceiver accepts tt.Inner | tt.Handler: %T", m))
 	}
 }
 

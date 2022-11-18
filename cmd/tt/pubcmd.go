@@ -76,7 +76,8 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 	in := logger.In(pool.In(handler))
-	_, running := tt.Start(ctx, tt.NewReceiver(in, conn))
+	receive := tt.NewReceiver(conn, in)
+	_, running := tt.Start(ctx, receive)
 
 	// kick off with a connect
 

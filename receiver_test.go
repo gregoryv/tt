@@ -12,7 +12,7 @@ import (
 )
 
 func TestStart(t *testing.T) {
-	r := NewReceiver(NoopHandler, &ClosedConn{})
+	r := NewReceiver(&ClosedConn{}, NoopHandler)
 	_, done := Start(context.Background(), r)
 	select {
 	case err := <-done:
@@ -26,7 +26,7 @@ func TestReceiver(t *testing.T) {
 	{ // handler is called on packet from server
 		conn := Dial()
 		called := NewCalled()
-		receiver := NewReceiver(called.Handler, conn)
+		receiver := NewReceiver(conn, called.Handler)
 
 		go receiver.Run(context.Background())
 		p := mq.NewPublish()
@@ -50,7 +50,7 @@ func TestReceiver(t *testing.T) {
 		}
 		defer conn.Close()
 
-		receiver := NewReceiver(NoopHandler, conn)
+		receiver := NewReceiver(conn, NoopHandler)
 		receiver.readTimeout = time.Microsecond // speedup
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -61,7 +61,7 @@ func TestReceiver(t *testing.T) {
 	}
 
 	{ // Run is stopped on closed connection
-		receiver := NewReceiver(NoopHandler, &ClosedConn{})
+		receiver := NewReceiver(&ClosedConn{}, NoopHandler)
 		err := receiver.Run(context.Background())
 		if !errors.Is(err, io.EOF) {
 			t.Errorf("unexpected error: %T", err)
@@ -81,7 +81,7 @@ type Called struct {
 	c chan struct{}
 }
 
-func (c *Called) Handler(_ context.Context, _ mq.Packet) error {
+func (c *Called) Handler(_ context.Context, _ mq.ControlPacket) error {
 	close(c.c)
 	return nil
 }
