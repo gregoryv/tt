@@ -13,6 +13,7 @@ import (
 func NewClient() *Client {
 	return &Client{
 		Handler: NoopHandler,
+		Logger:  NewLogger(LevelInfo),
 	}
 }
 
@@ -20,11 +21,10 @@ type Client struct {
 	// Dialer opens a network connection to some server
 	Dialer
 	Handler
+	*Logger
 
-	out Handler // set by Run
-
-	netio   io.ReadWriter // connection
-	stopped chan struct{}
+	out   Handler       // set by Run
+	netio io.ReadWriter // connection
 }
 
 func (c *Client) SetNetworkIO(v io.ReadWriter) { c.netio = v }
@@ -41,14 +41,16 @@ func (c *Client) Run(ctx context.Context) error {
 	// create receiver
 	// todo these should be features
 	var (
-		pool   = NewIDPool(100)
-		logger = NewLogger(LevelInfo)
-		out    = pool.Out(logger.Out(Send(c.netio)))
-		in     = logger.In(pool.In(c.Handler))
+		pool = NewIDPool(100)
+		out  = pool.Out(c.Logger.Out(Send(c.netio)))
+		in   = c.Logger.In(pool.In(c.Handler))
 	)
 	c.out = out // to allow Client.Send
 
 	_, running := Start(ctx, NewReceiver(in, c.netio))
+
+	// todo do the initial connect
+
 	select {
 	case <-ctx.Done():
 		return nil
