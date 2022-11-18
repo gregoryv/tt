@@ -33,5 +33,7 @@ func TestClient(t *testing.T) {
 
 	dur := 10 * time.Millisecond
 	ctx, _ := context.WithTimeout(context.Background(), dur)
-	_ = c.Run(ctx)
+	if err := c.Run(ctx); err != nil {
+		t.Fatal(err)
+	}
 }

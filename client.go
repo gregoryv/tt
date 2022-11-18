@@ -39,20 +39,24 @@ func (c *Client) Run(ctx context.Context) error {
 	})
 
 	// create receiver
+	// todo these should be features
 	var (
 		pool   = NewIDPool(100)
 		logger = NewLogger(LevelInfo)
+		out    = pool.Out(logger.Out(Send(c.netio)))
+		in     = logger.In(pool.In(c.Handler))
 	)
-	c.out = pool.Out(logger.Out(Send(c.netio)))
-	in := logger.In(pool.In(c.Handler))
+	c.out = out // to allow Client.Send
 
 	_, running := Start(ctx, NewReceiver(in, c.netio))
-
 	select {
 	case <-ctx.Done():
+		return nil
 	case err := <-running:
 		if errors.Is(err, io.EOF) {
-			return fmt.Errorf("FAIL")
+			// todo if we want a reconnect feature, this needs to be
+			// handled
+			return fmt.Errorf("remote disconnect")
 		}
 	}
 	return err
