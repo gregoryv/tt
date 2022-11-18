@@ -3,6 +3,7 @@ package tt
 import (
 	"io"
 	"io/ioutil"
+	"testing"
 
 	"github.com/gregoryv/mq"
 )
@@ -30,4 +31,11 @@ type TestConn struct {
 
 func (t *TestConn) Responds(p mq.Packet) {
 	p.WriteTo(t.client)
+}
+
+func expPanic(t *testing.T) {
+	t.Helper()
+	if e := recover(); e == nil {
+		t.Fatal("expect panic")
+	}
 }

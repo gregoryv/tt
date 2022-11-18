@@ -57,7 +57,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 
 		case *mq.PubRec:
 			rel := mq.NewPubRel()
-			rel.SetPacketID(msg.PacketID())
+			rel.SetPacketID(p.PacketID())
 			return transmit(ctx, rel)
 
 		case *mq.PubAck:

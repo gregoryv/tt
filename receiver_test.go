@@ -79,6 +79,11 @@ func TestReceiver(t *testing.T) {
 	}
 }
 
+func TestNewReceiver_panics(t *testing.T) {
+	defer expPanic(t)
+	NewReceiver(os.Stdin, 1)
+}
+
 // ----------------------------------------
 
 func NewCalled() *Called {
