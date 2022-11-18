@@ -44,7 +44,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	var (
 		pool     = tt.NewIDPool(100)
 		logger   = tt.NewLogger(tt.LevelInfo)
-		transmit = tt.NewTransmitter(pool, logger, conn)
+		transmit = tt.NewTransmitter(pool, logger, tt.Send(conn))
 	)
 	logger.SetLogPrefix(c.clientID)
 

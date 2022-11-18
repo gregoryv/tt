@@ -1,7 +1,7 @@
 package tt
 
 import (
-	"bytes"
+	"io/ioutil"
 	"testing"
 )
 
@@ -9,7 +9,6 @@ func TestTransmitter(t *testing.T) {
 	var (
 		pool   = NewIDPool(5)
 		logger = NewLogger(LevelInfo)
-		buf    bytes.Buffer
 	)
-	_ = NewTransmitter(pool, logger, &buf)
+	_ = NewTransmitter(pool, logger, Send(ioutil.Discard))
 }
