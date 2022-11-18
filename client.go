@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
+	"net/url"
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/nexus"
@@ -18,18 +20,18 @@ func NewClient() *Client {
 }
 
 type Client struct {
-	// Dialer opens a network connection to some server
-	Dialer
 	Handler
 	*Logger
 
-	out      Handler       // set by Run
-	netio    io.ReadWriter // connection
-	clientID string
+	out   Handler       // set by Run
+	netio io.ReadWriter // connection
+
+	clientID   string
+	serverAddr *url.URL
 }
 
-func (c *Client) SetClientID(v string)         { c.clientID = v }
-func (c *Client) SetNetworkIO(v io.ReadWriter) { c.netio = v }
+func (c *Client) SetServerAddr(v *url.URL) { c.serverAddr = v }
+func (c *Client) SetClientID(v string)     { c.clientID = v }
 
 // Run activates this client. Should only be called once.
 func (c *Client) Run(ctx context.Context) error {
@@ -37,7 +39,8 @@ func (c *Client) Run(ctx context.Context) error {
 	next := nexus.NewStepper(&err)
 
 	next.Stepf("dial: %w", func() {
-		err = c.Dialer(ctx)
+		a := c.serverAddr
+		c.netio, err = net.Dial(a.Scheme, a.Host)
 	})
 
 	// create receiver
@@ -66,6 +69,7 @@ func (c *Client) Run(ctx context.Context) error {
 			// handled
 			return fmt.Errorf("remote disconnect")
 		}
+		return err
 	}
 	return err
 }

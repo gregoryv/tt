@@ -2,7 +2,6 @@ package tt
 
 import (
 	"context"
-	"net"
 	"testing"
 	"time"
 
@@ -10,24 +9,11 @@ import (
 )
 
 func TestClient(t *testing.T) {
-	dur := 10 * time.Millisecond
-	ctx, cancel := context.WithTimeout(context.Background(), dur)
-	defer cancel()
-	server, _ := Start(ctx, NewServer())
-	<-server.Up
+	server := newTestServer(t, "100ms")
 
 	c := NewClient()
 	c.SetClientID("testclient")
-
-	// Configure client features
-	c.Dialer = func(_ context.Context) error {
-		conn, err := net.Dial("tcp", server.Addr().String())
-		if err != nil {
-			return err
-		}
-		c.SetNetworkIO(conn)
-		return nil
-	}
+	c.SetServerAddr(server.URL())
 
 	c.Handler = func(_ context.Context, p mq.Packet) error {
 		switch p.(type) {
@@ -35,13 +21,26 @@ func TestClient(t *testing.T) {
 			p := mq.NewPublish()
 			p.SetTopicName("gopher/happy")
 			p.SetPayload([]byte("yes"))
-
 			return c.Send(context.Background(), p)
+
 		}
 		return nil
 	}
-
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	if err := c.Run(ctx); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func newTestServer(t *testing.T, duration string) *Server {
+	dur, err := time.ParseDuration(duration)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), dur)
+	t.Cleanup(cancel)
+	server, _ := Start(ctx, NewServer())
+	<-server.Up
+	time.AfterFunc(dur, func() { server.Close() })
+	return server
 }

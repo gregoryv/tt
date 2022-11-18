@@ -146,3 +146,10 @@ func (s *Server) CreateHandlers(conn io.ReadWriter) (in, out Handler) {
 	in = logger.In(CheckForm(pool.In(handler)))
 	return
 }
+
+func (s *Server) URL() *url.URL {
+	u, _ := url.Parse(
+		fmt.Sprintf("%s://%s", s.Addr().Network(), s.Addr().String()),
+	)
+	return u
+}
