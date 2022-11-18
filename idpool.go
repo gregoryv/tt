@@ -29,14 +29,11 @@ func (o *IDPool) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.PubAck:
+			o.reuse(p.PacketID())
 			// todo handle dropped acks as that packet is lost. Maybe
 			// a timeout for expected acks to arrive?
-			switch p.AckType() {
-			case mq.PUBACK:
-				o.reuse(p.PacketID())
-			case mq.PUBCOMP:
-				o.reuse(p.PacketID())
-			}
+		case *mq.PubComp:
+			o.reuse(p.PacketID())
 		}
 		return next(ctx, p)
 	}

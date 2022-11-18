@@ -85,15 +85,13 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			switch p := p.(type) {
 			case *mq.ConnAck:
 				return out(ctx, msg)
-			case *mq.PubAck:
-				switch p.AckType() {
-				case mq.PUBREC:
-					rel := mq.NewPubRel()
-					rel.SetPacketID(msg.PacketID())
-					return out(ctx, rel)
-				case mq.PUBCOMP:
-					close(done)
-				}
+			case *mq.PubRec:
+				rel := mq.NewPubRel()
+				rel.SetPacketID(msg.PacketID())
+				return out(ctx, rel)
+			case *mq.PubComp:
+				close(done)
+
 			default:
 				fmt.Println("unexpected:", p)
 			}
