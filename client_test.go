@@ -2,6 +2,7 @@ package tt
 
 import (
 	"context"
+	"net"
 	"testing"
 	"time"
 
@@ -9,13 +10,21 @@ import (
 )
 
 func TestClient(t *testing.T) {
+	dur := 10 * time.Millisecond
+	ctx, cancel := context.WithTimeout(context.Background(), dur)
+	defer cancel()
+	server, _ := Start(ctx, NewServer())
+	<-server.Up
+
 	c := NewClient()
 
 	// Configure client features
-
-	// todo replace this with our own server
 	c.Dialer = func(_ context.Context) error {
-		c.SetNetworkIO(Dial())
+		conn, err := net.Dial("tcp", server.Addr().String())
+		if err != nil {
+			return err
+		}
+		c.SetNetworkIO(conn)
 		return nil
 	}
 
@@ -31,8 +40,6 @@ func TestClient(t *testing.T) {
 		return nil
 	}
 
-	dur := 10 * time.Millisecond
-	ctx, _ := context.WithTimeout(context.Background(), dur)
 	if err := c.Run(ctx); err != nil {
 		t.Fatal(err)
 	}
