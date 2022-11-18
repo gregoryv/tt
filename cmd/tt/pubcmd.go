@@ -42,10 +42,10 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	// use middlewares and build your in/out queues with desired
 	// features
 	var (
-		pool   = tt.NewIDPool(100)
-		logger = tt.NewLogger(tt.LevelInfo)
+		pool     = tt.NewIDPool(100)
+		logger   = tt.NewLogger(tt.LevelInfo)
+		transmit = tt.NewTransmitter(pool, logger, conn)
 
-		out     = pool.Out(logger.Out(tt.Send(conn)))
 		done    = make(chan struct{}, 0) // closed by handler on success
 		handler tt.Handler
 		msg     = mq.Pub(c.qos, c.topic, c.payload)
@@ -58,7 +58,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		handler = func(ctx context.Context, p mq.Packet) error {
 			switch p.(type) {
 			case *mq.ConnAck:
-				if err := out(ctx, msg); err != nil {
+				if err := transmit(ctx, msg); err != nil {
 					return err
 				}
 				close(done)
@@ -71,7 +71,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		handler = func(ctx context.Context, p mq.Packet) error {
 			switch p.(type) {
 			case *mq.ConnAck:
-				return out(ctx, msg)
+				return transmit(ctx, msg)
 			case *mq.PubAck:
 				close(done)
 			default:
@@ -84,11 +84,11 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		handler = func(ctx context.Context, p mq.Packet) error {
 			switch p := p.(type) {
 			case *mq.ConnAck:
-				return out(ctx, msg)
+				return transmit(ctx, msg)
 			case *mq.PubRec:
 				rel := mq.NewPubRel()
 				rel.SetPacketID(msg.PacketID())
-				return out(ctx, rel)
+				return transmit(ctx, rel)
 			case *mq.PubComp:
 				close(done)
 
@@ -112,7 +112,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 
 	p := mq.NewConnect()
 	p.SetClientID(c.clientID)
-	_ = out(ctx, p)
+	_ = transmit(ctx, p)
 
 	select {
 	case err := <-running:
@@ -126,6 +126,6 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	case <-done:
 		defer fmt.Println("ok")
 	}
-	_ = out(ctx, mq.NewDisconnect())
+	_ = transmit(ctx, mq.NewDisconnect())
 	return nil
 }

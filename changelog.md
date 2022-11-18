@@ -7,7 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
-- Add types Client, PubHandler, Dialer
+- Add types Client, PubHandler, Dialer, Transmitter
 
 ## [0.2.0] 2022-11-06
 
