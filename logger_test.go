@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"testing"
@@ -24,8 +23,8 @@ func ExampleLogger_In() {
 }
 
 func ExampleLogger_Out() {
-	log.SetOutput(os.Stdout)
 	l := NewLogger(LevelInfo)
+	l.SetOutput(os.Stdout)
 
 	p := mq.Pub(0, "a/b", "gopher")
 	l.Out(NoopHandler)(nil, p)
@@ -35,8 +34,8 @@ func ExampleLogger_Out() {
 }
 
 func ExampleLogger_DumpPacket() {
-	log.SetOutput(os.Stdout)
 	l := NewLogger(LevelDebug)
+	l.SetOutput(os.Stdout)
 
 	p := mq.Pub(0, "a/b", "gopher")
 	l.In(NoopHandler)(nil, p)

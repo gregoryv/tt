@@ -18,18 +18,10 @@ func init() {
 // NewLogger returns a logger with max id len 11
 func NewLogger(v Level) *Logger {
 	l := &Logger{
-		logLevel: v,
-		info:     log.New(ioutil.Discard, "", log.Flags()),
-		debug:    log.New(ioutil.Discard, "", log.Flags()),
+		info:  log.New(ioutil.Discard, "", log.Flags()),
+		debug: log.New(ioutil.Discard, "", log.Flags()),
 	}
-	switch v {
-	case LevelDebug:
-		l.info.SetOutput(log.Writer())
-		l.debug.SetOutput(log.Writer())
-
-	case LevelInfo:
-		l.info.SetOutput(log.Writer())
-	}
+	l.SetLogLevel(v)
 	l.SetMaxIDLen(11)
 	return l
 }
@@ -41,6 +33,10 @@ type Logger struct {
 
 	// client ids
 	maxLen uint
+}
+
+func (l *Logger) SetLogLevel(v Level) {
+	l.logLevel = v
 }
 
 // SetMaxIDLen configures the logger to trim the client id to number of
