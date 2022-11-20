@@ -5,30 +5,36 @@ services:
         container_name: mosquitto
         ports:
           - 1883:1883
+          - 2883:2883            
         volumes:
         - type: bind
           source: ./mosquitto.conf
           target: /mosquitto/config/mosquitto.conf
           read_only: true
 
+        - type: bind
+          source: ./passwd
+          target: /mosquitto/config/passwd
+          read_only: true
+
     ttsub:
         image: tt:latest
         container_name: test-mosquitto
-        command: /tt sub -s broker:1883
+        command: /tt sub -s mosquitto:2883
         depends_on:
           - mosquitto
 
-    ttserve:
+    ttsrv:
         image: tt:latest
-        container_name: ttserve
+        container_name: ttsrv
         ports:
           - 1882:1882
         command: /tt srv -b "tcp://:1882"
 
-    ttsubserv:
+    ttsubsrv:
         image: tt:latest
-        container_name: test-ttserve
-        command: /tt sub -s ttserve:1882
+        container_name: test-ttsrv
+        command: /tt sub -s ttsrv:1882
         depends_on:
-          - ttserve
+          - ttsrv
           
