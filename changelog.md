@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Add flags --debug and --client-id to cmd/tt sub 
 - Add flags --username and --password to cmd/tt pub
 - Remove type LogLevel
 - Add types PubHandler, Transmitter

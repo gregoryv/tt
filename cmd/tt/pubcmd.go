@@ -52,12 +52,12 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	// features
 	var (
 		pool     = tt.NewIDPool(100)
-		logger   = tt.NewLogger()
-		transmit = tt.NewTransmitter(pool, logger, tt.Send(conn))
+		log      = tt.NewLogger()
+		transmit = tt.NewTransmitter(pool, log, tt.Send(conn))
 	)
-	logger.SetOutput(os.Stdout)
-	logger.SetLogPrefix(c.clientID)
-	logger.SetDebug(c.debug)
+	log.SetOutput(os.Stdout)
+	log.SetLogPrefix(c.clientID)
+	log.SetDebug(c.debug)
 
 	done := make(chan struct{}, 0)
 	msg := mq.Pub(c.qos, c.topic, c.payload)
@@ -82,7 +82,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		}
 		return nil
 	}
-	receive := tt.NewReceiver(conn, logger, pool, handler)
+	receive := tt.NewReceiver(conn, log, pool, handler)
 
 	// start handling packet flow
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)

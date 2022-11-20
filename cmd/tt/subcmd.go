@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"os"
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/mq"
@@ -14,11 +15,15 @@ import (
 type SubCmd struct {
 	server      *url.URL
 	topicFilter string
+	clientID    string
+	debug       bool
 }
 
 func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.server = cli.Option("-s, --server").Url("localhost:1883")
 	c.topicFilter = cli.Option("-f, --topic-filter").String("#")
+	c.clientID = cli.Option("-cid, --client-id").String("ttsub")
+	c.debug = cli.Flag("--debug")
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {
@@ -30,25 +35,28 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	// use middlewares and build your in/out queues with desired
 	// features
 	var (
-		pool   = tt.NewIDPool(100)
-		logger = tt.NewLogger()
+		pool = tt.NewIDPool(100)
+		log  = tt.NewLogger()
 
-		out     = pool.Out(logger.Out(tt.Send(conn)))
-		handler tt.Handler
+		transmit = tt.NewTransmitter(pool, log, tt.Send(conn))
+		handler  tt.Handler
 	)
+	log.SetOutput(os.Stdout)
+	log.SetLogPrefix(c.clientID)
+	log.SetDebug(c.debug)
 
 	handler = func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:
 			sub := mq.NewSubscribe()
 			sub.AddFilter(c.topicFilter, mq.OptNL)
-			return out(ctx, sub)
+			return transmit(ctx, sub)
 
 		case *mq.Publish:
 			if p.PacketID() > 0 {
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
-				return out(ctx, ack)
+				return transmit(ctx, ack)
 			}
 			fmt.Println("PAYLOAD", string(p.Payload()))
 		default:
@@ -58,14 +66,13 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	}
 
 	// start handling packet flow
-	in := logger.In(pool.In(handler))
-	r := tt.NewReceiver(conn, in)
-	_, done := tt.Start(context.Background(), r)
+	receive := tt.NewReceiver(conn, log, pool, handler)
+	_, done := tt.Start(context.Background(), receive)
 
 	// kick off with a connect
 	p := mq.NewConnect()
 	p.SetClientID("ttsub")
-	_ = out(ctx, p)
+	_ = transmit(ctx, p)
 
 	<-done
 
