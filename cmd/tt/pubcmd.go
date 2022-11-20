@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/gregoryv/cmdline"
@@ -22,6 +23,8 @@ type PubCmd struct {
 	qos      uint8
 	timeout  time.Duration
 	clientID string
+
+	debug bool
 }
 
 func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
@@ -31,6 +34,7 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.qos = cli.Option("-q, --qos").Uint8(0)
 	c.timeout = cli.Option("--timeout").Duration("1s")
 	c.clientID = cli.Option("-cid, --client-id").String("ttpub")
+	c.debug = cli.Flag("--debug")
 }
 
 func (c *PubCmd) Run(ctx context.Context) error {
@@ -46,8 +50,11 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		logger   = tt.NewLogger(tt.LevelInfo)
 		transmit = tt.NewTransmitter(pool, logger, tt.Send(conn))
 	)
+	logger.SetOutput(os.Stdout)
 	logger.SetLogPrefix(c.clientID)
-
+	if c.debug {
+		logger.SetLogLevel(tt.LevelDebug)
+	}
 	done := make(chan struct{}, 0)
 	msg := mq.Pub(c.qos, c.topic, c.payload)
 	handler := func(ctx context.Context, p mq.Packet) error {
