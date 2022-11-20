@@ -24,6 +24,9 @@ type PubCmd struct {
 	timeout  time.Duration
 	clientID string
 
+	username string
+	password string
+
 	debug bool
 }
 
@@ -34,6 +37,8 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.qos = cli.Option("-q, --qos").Uint8(0)
 	c.timeout = cli.Option("--timeout").Duration("1s")
 	c.clientID = cli.Option("-cid, --client-id").String("ttpub")
+	c.username = cli.Option("-u, --username").String("")
+	c.password = cli.Option("-p, --password").String("")
 	c.debug = cli.Flag("--debug")
 }
 
@@ -86,6 +91,10 @@ func (c *PubCmd) Run(ctx context.Context) error {
 
 	// kick off with a connect
 	p := mq.NewConnect()
+	if c.username != "" {
+		p.SetUsername(c.username)
+		p.SetPassword([]byte(c.password))
+	}
 	p.SetClientID(c.clientID)
 	_ = transmit(ctx, p)
 
