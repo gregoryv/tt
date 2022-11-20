@@ -10,8 +10,8 @@ import (
 var NextLogWriter io.Writer
 
 // NewLogger returns a logger with max id len 11
-func NewLogger(v tt.Level) *tt.Logger {
-	l := tt.NewLogger(v)
+func NewLogger() *tt.Logger {
+	l := tt.NewLogger()
 	if v := NextLogWriter; v != nil {
 		l.SetOutput(v)
 		NextLogWriter = nil

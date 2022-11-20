@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Remove type LogLevel
 - Add types PubHandler, Transmitter
 
 ## [0.2.0] 2022-11-06

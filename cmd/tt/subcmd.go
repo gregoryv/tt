@@ -31,7 +31,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	// features
 	var (
 		pool   = tt.NewIDPool(100)
-		logger = tt.NewLogger(tt.LevelInfo)
+		logger = tt.NewLogger()
 
 		out     = pool.Out(logger.Out(tt.Send(conn)))
 		handler tt.Handler

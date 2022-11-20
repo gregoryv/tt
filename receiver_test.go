@@ -15,7 +15,7 @@ import (
 func ExampleNewReceiver() {
 	var (
 		pool   = NewIDPool(10)
-		logger = NewLogger(LevelInfo)
+		logger = NewLogger()
 	)
 	_ = NewReceiver(os.Stdin, logger, pool, NoopHandler)
 	// output:

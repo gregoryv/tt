@@ -12,7 +12,7 @@ import (
 )
 
 func ExampleLogger_In() {
-	l := NewLogger(LevelInfo)
+	l := NewLogger()
 	l.SetOutput(os.Stdout)
 
 	p := mq.Pub(0, "a/b", "gopher")
@@ -23,7 +23,7 @@ func ExampleLogger_In() {
 }
 
 func ExampleLogger_Out() {
-	l := NewLogger(LevelInfo)
+	l := NewLogger()
 	l.SetOutput(os.Stdout)
 
 	p := mq.Pub(0, "a/b", "gopher")
@@ -34,8 +34,9 @@ func ExampleLogger_Out() {
 }
 
 func ExampleLogger_DumpPacket() {
-	l := NewLogger(LevelDebug)
+	l := NewLogger()
 	l.SetOutput(os.Stdout)
+	l.SetDebug(true)
 
 	p := mq.Pub(0, "a/b", "gopher")
 	l.In(NoopHandler)(nil, p)
@@ -46,7 +47,7 @@ func ExampleLogger_DumpPacket() {
 }
 
 func ExampleLogger_SetMaxIDLen() {
-	l := NewLogger(LevelInfo)
+	l := NewLogger()
 	l.SetOutput(os.Stdout)
 	l.SetMaxIDLen(6)
 	{
@@ -65,7 +66,7 @@ func ExampleLogger_SetMaxIDLen() {
 }
 
 func ExampleLogger_errors() {
-	l := NewLogger(LevelInfo)
+	l := NewLogger()
 	l.SetOutput(os.Stdout)
 
 	p := mq.Pub(0, "a/b", "gopher")
@@ -82,7 +83,7 @@ func ExampleLogger_errors() {
 }
 
 func BenchmarkLogger_Out(b *testing.B) {
-	l := NewLogger(LevelInfo)
+	l := NewLogger()
 	p := mq.NewConnect()
 	p.SetClientID("1bbde752-5161-11ed-a94b-675e009b6f46")
 	ctx := context.Background()
@@ -103,7 +104,7 @@ func BenchmarkLogger_Out(b *testing.B) {
 }
 
 func TestLogger(t *testing.T) {
-	l := NewLogger(LevelInfo)
+	l := NewLogger()
 	var buf bytes.Buffer
 	l.SetOutput(&buf)
 	cid := "1bbde752-5161-11ed-a94b-675e009b6f46"
@@ -123,8 +124,10 @@ func TestLogger(t *testing.T) {
 	}
 
 	// debug
-	l = NewLogger(LevelDebug)
+	l = NewLogger()
 	l.SetOutput(&buf)
+	l.SetDebug(true)
+
 	buf.Reset()
 	l.Out(NoopHandler)(nil, p)
 	if v := buf.String(); !strings.Contains(v, "|f46|") {

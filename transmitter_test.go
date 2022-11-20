@@ -8,7 +8,7 @@ import (
 func TestTransmitter(t *testing.T) {
 	var (
 		pool   = NewIDPool(5)
-		logger = NewLogger(LevelInfo)
+		logger = NewLogger()
 	)
 	_ = NewTransmitter(pool, logger, Send(ioutil.Discard))
 	_ = NewTransmitter(pool.Out, logger, Send(ioutil.Discard))

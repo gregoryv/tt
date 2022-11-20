@@ -47,14 +47,13 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	// features
 	var (
 		pool     = tt.NewIDPool(100)
-		logger   = tt.NewLogger(tt.LevelInfo)
+		logger   = tt.NewLogger()
 		transmit = tt.NewTransmitter(pool, logger, tt.Send(conn))
 	)
 	logger.SetOutput(os.Stdout)
 	logger.SetLogPrefix(c.clientID)
-	if c.debug {
-		logger.SetLogLevel(tt.LevelDebug)
-	}
+	logger.SetDebug(c.debug)
+
 	done := make(chan struct{}, 0)
 	msg := mq.Pub(c.qos, c.topic, c.payload)
 	handler := func(ctx context.Context, p mq.Packet) error {

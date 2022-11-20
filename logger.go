@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"io"
 	"io/ioutil"
 	"log"
 
@@ -16,38 +15,29 @@ func init() {
 }
 
 // NewLogger returns a logger with max id len 11
-func NewLogger(v Level) *Logger {
+func NewLogger() *Logger {
 	l := &Logger{
-		info:  log.New(ioutil.Discard, "", log.Flags()),
-		debug: log.New(ioutil.Discard, "", log.Flags()),
+		Logger: log.New(ioutil.Discard, "", log.Flags()),
 	}
-	l.SetLogLevel(v)
 	l.SetMaxIDLen(11)
 	return l
 }
 
 type Logger struct {
-	logLevel Level
-	info     *log.Logger
-	debug    *log.Logger
-
+	*log.Logger
+	debug bool
 	// client ids
 	maxLen uint
 }
 
-func (l *Logger) SetLogLevel(v Level) {
-	l.logLevel = v
+func (l *Logger) SetDebug(v bool) {
+	l.debug = v
 }
 
 // SetMaxIDLen configures the logger to trim the client id to number of
 // characters. Use 0 to not trim.
 func (l *Logger) SetMaxIDLen(max uint) {
 	l.maxLen = max
-}
-
-func (l *Logger) SetOutput(w io.Writer) {
-	l.info.SetOutput(w)
-	l.debug.SetOutput(w)
 }
 
 // In logs incoming packets. Log prefix is based on
@@ -62,13 +52,14 @@ func (f *Logger) In(next Handler) Handler {
 		// double spaces to align in/out. Usually this is not advised
 		// but in here it really does aid when scanning for patterns
 		// of packets.
-		f.info.Print("in  ", p)
+		if f.debug {
+			f.Print("in  ", p, "\n", dumpPacket(p))
+		} else {
+			f.Print("in  ", p)
+		}
 		err := next(ctx, p)
 		if err != nil {
-			f.info.Print(err)
-		}
-		if f.logLevel == LevelDebug {
-			f.dumpPacket(p)
+			f.Print(err)
 		}
 		// return error just incase this middleware is not the first
 		return err
@@ -82,13 +73,14 @@ func (f *Logger) Out(next Handler) Handler {
 		if p, ok := p.(*mq.Connect); ok {
 			f.SetLogPrefix(p.ClientID())
 		}
-		f.info.Print("out ", p)
+		if f.debug {
+			f.Print("out ", p, "\n", dumpPacket(p))
+		} else {
+			f.Print("out ", p)
+		}
 		err := next(ctx, p)
 		if err != nil {
-			f.info.Print(err)
-		}
-		if f.logLevel == LevelDebug {
-			f.dumpPacket(p)
+			f.Print(err)
 		}
 		return err
 	}
@@ -96,25 +88,16 @@ func (f *Logger) Out(next Handler) Handler {
 
 func (f *Logger) SetLogPrefix(v string) {
 	v = newPrefix(v, f.maxLen)
-	f.info.SetPrefix(v + " ")
-	f.debug.SetPrefix(v + " ")
+	f.SetPrefix(v + " ")
 }
 
-func (f *Logger) dumpPacket(p mq.Packet) {
+func dumpPacket(p mq.Packet) string {
 	var buf bytes.Buffer
 	p.WriteTo(&buf)
-	f.debug.Print(hex.Dump(buf.Bytes()), "\n")
+	return hex.Dump(buf.Bytes())
 }
 
 // ----------------------------------------
-
-type Level int
-
-const (
-	LevelNone Level = iota
-	LevelDebug
-	LevelInfo
-)
 
 func newPrefix(s string, width uint) string {
 	if v := uint(len(s)); v > width {

@@ -102,7 +102,7 @@ loop:
 
 // CreateHandlers returns in and out handlers for packets.
 func (s *Server) CreateHandlers(conn io.ReadWriter) (in, out Handler) {
-	logger := NewLogger(LevelInfo)
+	logger := NewLogger()
 	pool := NewIDPool(s.PoolSize)
 	out = pool.Out(logger.Out(Send(conn)))
 
