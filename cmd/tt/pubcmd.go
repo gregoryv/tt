@@ -84,19 +84,19 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	}
 	receive := tt.NewReceiver(conn, log, pool, handler)
 
-	// start handling packet flow
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-	_, running := tt.Start(ctx, receive)
-
 	// kick off with a connect
 	p := mq.NewConnect()
+	p.SetClientID(c.clientID)
 	if c.username != "" {
 		p.SetUsername(c.username)
 		p.SetPassword([]byte(c.password))
 	}
-	p.SetClientID(c.clientID)
 	_ = transmit(ctx, p)
+
+	// start handling packet flow
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+	_, running := tt.Start(ctx, receive)
 
 	select {
 	case err := <-running:
