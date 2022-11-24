@@ -5,7 +5,7 @@ documented in this file.
 The format is based on http://keepachangelog.com/en/1.0.0/
 and this project adheres to http://semver.org/spec/v2.0.0.html.
 
-## [unreleased]
+## [0.3.0] 2022-11-24
 
 - Add flags --debug and --client-id to cmd/tt sub 
 - Add flags --username and --password to cmd/tt pub
