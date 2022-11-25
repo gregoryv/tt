@@ -7,7 +7,7 @@
     $ go install github.com/gregoryv/tt/cmd/tt@latest
     $ tt -h
 
-Even though this repository provides a basic client/server command
+Even though this repository provides a basic client/server(WIP) command
 it's main purpose is to provide capabilities for others to write their
 own clients depending on their situation.
 
