@@ -24,6 +24,7 @@ func NewServer() *Server {
 		ConnectTimeout: 20 * time.Millisecond,
 		PoolSize:       100,
 		Up:             make(chan struct{}, 0),
+		Router:         NewRouter(),
 		Logger:         log.New(os.Stdout, "ttsrv ", log.Flags()),
 	}
 }
@@ -43,6 +44,8 @@ type Server struct {
 
 	// Up is closed when all listeners are running
 	Up chan struct{}
+
+	*Router
 
 	*log.Logger
 }
@@ -114,6 +117,7 @@ func (s *Server) CreateHandlers(conn Remote) (in, out Handler) {
 	out = pool.Out(logger.Out(Send(conn.(io.Writer))))
 
 	handler := func(ctx context.Context, p mq.Packet) error {
+		// todo these should probably just be implementations of Inner
 		switch p := p.(type) {
 		case *mq.Connect:
 			// connect came in...

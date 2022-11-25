@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Add field Server.Router
 - Add type Remote interface
 - Logger logs optional remote addr on mq.Connect
 
