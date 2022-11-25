@@ -3,9 +3,6 @@ services:
     mosquitto:
         image: eclipse-mosquitto:1.6
         container_name: mosquitto
-        ports:
-          - 1883:1883
-          - 2883:2883            
         volumes:
         - type: bind
           source: ./mosquitto.conf
