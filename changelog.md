@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Add type Remote interface
 - Logger logs optional remote addr on mq.Connect
 
 ## [0.4.0] 2022-11-25

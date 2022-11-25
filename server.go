@@ -24,6 +24,7 @@ func NewServer() *Server {
 		ConnectTimeout: 20 * time.Millisecond,
 		PoolSize:       100,
 		Up:             make(chan struct{}, 0),
+		Logger:         log.New(os.Stdout, "ttsrv ", log.Flags()),
 	}
 }
 
@@ -42,6 +43,8 @@ type Server struct {
 
 	// Up is closed when all listeners are running
 	Up chan struct{}
+
+	*log.Logger
 }
 
 // Run listens for tcp connections. Blocks until context is cancelled
@@ -90,6 +93,7 @@ loop:
 		}
 
 		// the server tracks active connections
+		s.Println("accept", conn.RemoteAddr())
 		go func() {
 			in, _ := s.CreateHandlers(conn)
 			_, done := Start(ctx, NewReceiver(conn, in))
@@ -101,10 +105,13 @@ loop:
 }
 
 // CreateHandlers returns in and out handlers for packets.
-func (s *Server) CreateHandlers(conn io.ReadWriter) (in, out Handler) {
+func (s *Server) CreateHandlers(conn Remote) (in, out Handler) {
 	logger := NewLogger()
+	logger.SetOutput(s.Logger.Writer())
+	logger.SetRemote(conn.RemoteAddr().String())
+
 	pool := NewIDPool(s.PoolSize)
-	out = pool.Out(logger.Out(Send(conn)))
+	out = pool.Out(logger.Out(Send(conn.(io.Writer))))
 
 	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
@@ -131,6 +138,7 @@ func (s *Server) CreateHandlers(conn io.ReadWriter) (in, out Handler) {
 				return out(ctx, a)
 			}
 			// todo route it
+			s.Print("FAIL todo implement routing")
 			return nil
 
 		case *mq.PubRel:
@@ -139,7 +147,7 @@ func (s *Server) CreateHandlers(conn io.ReadWriter) (in, out Handler) {
 			return out(ctx, comp)
 
 		default:
-			return fmt.Errorf("unhandled %v", p)
+			return fmt.Errorf("%v unhandled!", p)
 		}
 	}
 
@@ -152,4 +160,9 @@ func (s *Server) URL() *url.URL {
 		fmt.Sprintf("%s://%s", s.Addr().Network(), s.Addr().String()),
 	)
 	return u
+}
+
+type Remote interface {
+	io.Writer
+	RemoteAddr() net.Addr
 }

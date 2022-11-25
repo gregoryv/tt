@@ -3,6 +3,7 @@ package tt
 import (
 	"io"
 	"io/ioutil"
+	"net"
 	"testing"
 
 	"github.com/gregoryv/mq"
@@ -32,6 +33,14 @@ type TestConn struct {
 func (t *TestConn) Responds(p mq.Packet) {
 	p.WriteTo(t.client)
 }
+
+func (t *TestConn) RemoteAddr() net.Addr {
+	return t
+}
+
+// Network and String are used as implementation of net.Addr
+func (t *TestConn) Network() string { return "tcp" }
+func (t *TestConn) String() string  { return "testconn:0000" }
 
 func expPanic(t *testing.T) {
 	t.Helper()
