@@ -14,12 +14,14 @@ import (
 func ExampleLogger_In() {
 	l := NewLogger()
 	l.SetOutput(os.Stdout)
+	l.SetRemote("1.2.3.4:0001")
 
-	p := mq.Pub(0, "a/b", "gopher")
-	l.In(NoopHandler)(nil, p)
+	l.In(NoopHandler)(nil, mq.Pub(0, "a/b", "gopher"))
+	l.In(NoopHandler)(nil, mq.NewConnect())
 
 	// output:
 	// in  PUBLISH ---- p0 a/b 16 bytes
+	// in  CONNECT ---- -------- MQTT5  0s 15 bytes 1.2.3.4:0001
 }
 
 func ExampleLogger_Out() {
@@ -49,6 +51,7 @@ func ExampleLogger_DumpPacket() {
 func ExampleLogger_SetMaxIDLen() {
 	l := NewLogger()
 	l.SetOutput(os.Stdout)
+	l.SetRemote("1.2.3.4:0001")
 	l.SetMaxIDLen(6)
 	{
 		p := mq.NewConnect()
