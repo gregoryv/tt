@@ -122,18 +122,21 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 		case *mq.Connect:
 			// connect came in...
 			a := mq.NewConnAck()
+			a.SetMaxQoS(2) //
 			if id := p.ClientID(); id == "" {
 				a.SetAssignedClientID(uuid.NewString())
 			}
 			return transmit(ctx, a)
 
 		case *mq.Publish:
+
 			switch p.QoS() {
 			case 1:
 				a := mq.NewPubAck()
 				a.SetPacketID(p.PacketID())
 				return transmit(ctx, a)
 			case 2:
+				// todo handle duplicate publish messages
 				a := mq.NewPubRec()
 				a.SetPacketID(p.PacketID())
 				return transmit(ctx, a)
@@ -143,6 +146,10 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 			return nil
 
 		case *mq.PubRel:
+			// According to
+			// https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels/
+			// the pubcomp packet is send only after a successful
+			// pubrel has was received.
 			comp := mq.NewPubComp()
 			comp.SetPacketID(p.PacketID())
 			return transmit(ctx, comp)

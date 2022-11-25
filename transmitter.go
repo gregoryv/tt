@@ -9,8 +9,7 @@ import (
 // NewTransmitter returns a handler as a combination of the given
 // handlers and or last io.Writer. Same as
 //
-//   middleware0.Out(middleware1.Out(...handlerN))
-//
+//	middleware0.Out(middleware1.Out(...handlerN))
 func NewTransmitter(v ...any) Handler {
 	if i := len(v) - 1; i >= 0 {
 		switch v[i].(type) {
