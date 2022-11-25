@@ -108,13 +108,13 @@ loop:
 }
 
 // CreateHandlers returns in and out handlers for packets.
-func (s *Server) CreateHandlers(conn Remote) (in, out Handler) {
+func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	logger := NewLogger()
 	logger.SetOutput(s.Logger.Writer())
 	logger.SetRemote(conn.RemoteAddr().String())
 
 	pool := NewIDPool(s.PoolSize)
-	out = pool.Out(logger.Out(Send(conn.(io.Writer))))
+	transmit = NewTransmitter(pool, logger, Send(conn.(io.Writer)))
 
 	handler := func(ctx context.Context, p mq.Packet) error {
 		// todo these should probably just be implementations of Inner
@@ -128,18 +128,18 @@ func (s *Server) CreateHandlers(conn Remote) (in, out Handler) {
 			}
 			// todo make sure it's uniq
 			a.SetAssignedClientID(id)
-			return out(ctx, a)
+			return transmit(ctx, a)
 
 		case *mq.Publish:
 			switch p.QoS() {
 			case 1:
 				a := mq.NewPubAck()
 				a.SetPacketID(p.PacketID())
-				return out(ctx, a)
+				return transmit(ctx, a)
 			case 2:
 				a := mq.NewPubRec()
 				a.SetPacketID(p.PacketID())
-				return out(ctx, a)
+				return transmit(ctx, a)
 			}
 			// todo route it
 			s.Print("FAIL todo implement routing")
@@ -148,7 +148,7 @@ func (s *Server) CreateHandlers(conn Remote) (in, out Handler) {
 		case *mq.PubRel:
 			comp := mq.NewPubComp()
 			comp.SetPacketID(p.PacketID())
-			return out(ctx, comp)
+			return transmit(ctx, comp)
 
 		default:
 			return fmt.Errorf("%v unhandled!", p)
