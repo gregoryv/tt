@@ -1,4 +1,4 @@
-tt - package provides components for writing [mqtt-v5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html) clients and servers
+[gregoryv/tt](https://pkg.go.dev/github.com/gregoryv/tt) - package provides components for writing [mqtt-v5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html) clients and servers
 
 <img src="./etc/logo.svg" />
 
