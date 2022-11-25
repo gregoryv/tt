@@ -122,12 +122,9 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 		case *mq.Connect:
 			// connect came in...
 			a := mq.NewConnAck()
-			id := p.ClientID()
-			if id == "" {
-				id = uuid.NewString()
+			if id := p.ClientID(); id == "" {
+				a.SetAssignedClientID(uuid.NewString())
 			}
-			// todo make sure it's uniq
-			a.SetAssignedClientID(id)
 			return transmit(ctx, a)
 
 		case *mq.Publish:
