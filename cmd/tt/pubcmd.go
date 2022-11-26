@@ -43,6 +43,12 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *PubCmd) Run(ctx context.Context) error {
+	log := tt.NewLogger()
+	log.SetOutput(os.Stdout)
+	log.SetLogPrefix(c.clientID)
+	log.SetDebug(c.debug)
+
+	log.Print("dial ", "tcp://", c.server.String())
 	conn, err := net.Dial("tcp", c.server.String())
 	if err != nil {
 		return err
@@ -51,19 +57,19 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	// use middlewares and build your in/out queues with desired
 	// features
 	var (
-		pool     = tt.NewIDPool(100)
-		log      = tt.NewLogger()
+		pool = tt.NewIDPool(100)
+
 		transmit = tt.CombineOut(tt.Send(conn), pool, log)
 	)
-	log.SetOutput(os.Stdout)
-	log.SetLogPrefix(c.clientID)
-	log.SetDebug(c.debug)
 
 	done := make(chan struct{}, 0)
 	msg := mq.Pub(c.qos, c.topic, c.payload)
 	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:
+			if c.qos == 0 {
+				defer close(done)
+			}
 			return transmit(ctx, msg)
 
 		case *mq.PubRec:

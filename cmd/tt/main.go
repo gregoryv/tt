@@ -30,7 +30,7 @@ func main() {
 	sh := cmdline.DefaultShell
 	if cmd == nil {
 		// this shouldn't happen, default should be the first one. When testing it's empty
-		log.Println("empty command")
+		log.Println("empty command", sh.Args())
 		return
 	}
 
