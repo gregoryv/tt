@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/gregoryv/tt.svg?branch=main)](https://travis-ci.org/gregoryv/tt)
+[![Build Status](https://app.travis-ci.com/gregoryv/tt.svg?branch=main)](https://app.travis-ci.com/gregoryv/tt)
 [![codecov](https://codecov.io/gh/gregoryv/tt/branch/main/graph/badge.svg)](https://codecov.io/gh/gregoryv/tt)
 [![Maintainability](https://api.codeclimate.com/v1/badges/fdf6273e87ed5324b6a2/maintainability)](https://codeclimate.com/github/gregoryv/tt/maintainability)
 
