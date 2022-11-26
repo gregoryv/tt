@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"os"
@@ -12,11 +13,14 @@ import (
 	"github.com/gregoryv/tt"
 )
 
+var subWriter io.Writer = os.Stdout
+
 type SubCmd struct {
 	server      *url.URL
 	topicFilter string
 	clientID    string
 	debug       bool
+	output      io.Writer
 }
 
 func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
@@ -58,7 +62,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 				ack.SetPacketID(p.PacketID())
 				return transmit(ctx, ack)
 			}
-			fmt.Println("PAYLOAD", string(p.Payload()))
+			fmt.Fprintln(subWriter, "PAYLOAD", string(p.Payload()))
 		default:
 
 		}

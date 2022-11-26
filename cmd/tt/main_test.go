@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -42,6 +43,23 @@ func Test_main_pub(t *testing.T) {
 			t.Fatalf("unexpected exit code %v", code)
 		}
 	}
+}
+func Test_main_sub(t *testing.T) {
+	srv := tt.NewServer()
+	go srv.Run(context.Background())
+
+	<-time.After(2 * time.Millisecond) // let it start
+	defer srv.Close()
+
+	// then use
+	u, err := url.Parse(fmt.Sprintf("%s://%s", srv.Addr().Network(), srv.Addr().String()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	host := fmt.Sprintf("localhost:%v", u.Port())
+	log.Print(host)
+
 	{ // sub
 		sh := clitest.NewShellT("test", "sub", "-s", host)
 		cmdline.DefaultShell = sh
@@ -50,6 +68,25 @@ func Test_main_pub(t *testing.T) {
 		if code := sh.ExitCode; code != 0 {
 			t.Fatalf("unexpected exit code %v", code)
 		}
+		var buf bytes.Buffer
+		subWriter = &buf
+		{ // publish something
+			// let's use the pubcmd directly
+			u, _ := url.Parse(host)
+			c := &PubCmd{
+				server:  u,
+				topic:   "gopher/pink",
+				payload: "hug",
+				timeout: time.Second,
+				//debug:    true,
+				clientID: "test-pub",
+			}
+			c.Run(context.Background())
+			if v := buf.String(); v != "PAYLOAD hug" {
+				t.Error("output was", v)
+			}
+		}
+		// todo verify publish
 	}
 }
 
