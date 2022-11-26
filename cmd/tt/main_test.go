@@ -34,8 +34,23 @@ func Test_main_pub(t *testing.T) {
 	host := fmt.Sprintf("localhost:%v", u.Port())
 	log.Print(host)
 
-	cmdline.DefaultShell = clitest.NewShellT("test", "pub", "-s", host)
-	main()
+	{ // pub
+		sh := clitest.NewShellT("test", "pub", "-s", host)
+		cmdline.DefaultShell = sh
+		main()
+		if code := sh.ExitCode; code != 0 {
+			t.Fatalf("unexpected exit code %v", code)
+		}
+	}
+	{ // sub
+		sh := clitest.NewShellT("test", "sub", "-s", host)
+		cmdline.DefaultShell = sh
+		go main()
+		<-time.After(2 * time.Millisecond) // let it start
+		if code := sh.ExitCode; code != 0 {
+			t.Fatalf("unexpected exit code %v", code)
+		}
+	}
 }
 
 func Test_main_fails(t *testing.T) {
