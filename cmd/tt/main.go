@@ -36,6 +36,7 @@ func main() {
 
 	if err := cmd.(Command).Run(context.Background()); err != nil {
 		sh.Fatal(err)
+		return // return here so we can test func main()
 	}
 	sh.Exit(0)
 }

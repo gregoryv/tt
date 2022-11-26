@@ -37,3 +37,13 @@ func Test_main_pub(t *testing.T) {
 	cmdline.DefaultShell = clitest.NewShellT("test", "pub", "-s", host)
 	main()
 }
+
+func Test_main_fails(t *testing.T) {
+	// should fail
+	sh := clitest.NewShellT("test", "pub", "-s", "nosuchthing:123")
+	cmdline.DefaultShell = sh
+	main()
+	if sh.ExitCode != 1 {
+		t.Fatal("pub should fail when bad server provided")
+	}
+}
