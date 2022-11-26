@@ -51,6 +51,7 @@ type Server struct {
 func (s *Server) Run(ctx Context) error {
 	l := s.Listener
 	if s.Listener == nil {
+		s.Println("listen", s.Bind)
 		u, err := url.Parse(s.Bind)
 		if err != nil {
 			return err
