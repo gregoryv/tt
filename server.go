@@ -3,7 +3,6 @@ package tt
 import (
 	. "context"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -119,13 +118,6 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	// todo maybe use a more comples Remote and just create the receiver here
 	in = logger.In(CheckForm(pool.In(quality.In(clientIDmaker.In(s.Router.Handle)))))
 	return
-}
-
-func (s *Server) URL() *url.URL {
-	u, _ := url.Parse(
-		fmt.Sprintf("%s://%s", s.Addr().Network(), s.Addr().String()),
-	)
-	return u
 }
 
 type Remote interface {
