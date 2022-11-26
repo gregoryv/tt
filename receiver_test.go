@@ -16,8 +16,10 @@ func ExampleNewReceiver() {
 	var (
 		pool   = NewIDPool(10)
 		logger = NewLogger()
+		in     = CombineIn([]Inner{logger, pool}, NoopHandler)
 	)
-	_ = NewReceiver(os.Stdin, logger, pool, NoopHandler)
+
+	_ = NewReceiver(os.Stdin, in)
 	// output:
 }
 
@@ -77,11 +79,6 @@ func TestReceiver(t *testing.T) {
 			t.Errorf("unexpected error: %T", err)
 		}
 	}
-}
-
-func TestNewReceiver_panics(t *testing.T) {
-	defer expPanic(t)
-	NewReceiver(os.Stdin, 1)
 }
 
 // ----------------------------------------

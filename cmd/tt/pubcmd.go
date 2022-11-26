@@ -82,7 +82,8 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		}
 		return nil
 	}
-	receive := tt.NewReceiver(conn, log, pool, handler)
+	in := tt.CombineIn([]tt.Inner{log, pool}, handler)
+	receive := tt.NewReceiver(conn, in)
 
 	// kick off with a connect
 	p := mq.NewConnect()
