@@ -122,7 +122,7 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 		case *mq.Connect:
 			// connect came in...
 			a := mq.NewConnAck()
-			a.SetMaxQoS(2) //
+			a.SetMaxQoS(1) //
 			if id := p.ClientID(); id == "" {
 				a.SetAssignedClientID(uuid.NewString())
 			}
