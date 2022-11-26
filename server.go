@@ -1,7 +1,6 @@
 package tt
 
 import (
-	"context"
 	. "context"
 	"errors"
 	"fmt"
@@ -11,9 +10,6 @@ import (
 	"net/url"
 	"os"
 	"time"
-
-	"github.com/google/uuid"
-	"github.com/gregoryv/mq"
 )
 
 // NewServer returns a server that binds to a random port.
@@ -114,31 +110,14 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	logger.SetRemote(conn.RemoteAddr().String())
 
 	pool := NewIDPool(s.PoolSize)
-	quality := NewQualitySupport(NewTransmitter(logger, Send(conn.(io.Writer))))
+	subtransmit := NewTransmitter(logger, Send(conn.(io.Writer)))
+	quality := NewQualitySupport(subtransmit)
 	transmit = NewTransmitter(pool, quality, logger, Send(conn.(io.Writer)))
 
-	handler := func(ctx context.Context, p mq.Packet) error {
-		// todo these should probably just be implementations of Inner
-		switch p := p.(type) {
-		case *mq.Connect:
-			// connect came in...
-			a := mq.NewConnAck()
-			if id := p.ClientID(); id == "" {
-				a.SetAssignedClientID(uuid.NewString())
-			}
-			return transmit(ctx, a)
+	clientIDmaker := NewClientIDMaker(subtransmit)
 
-		case *mq.Publish:
-			// todo route it
-			s.Print("todo implement routing")
-			return nil
-
-		default:
-			return fmt.Errorf("%v unhandled!", p)
-		}
-	}
-
-	in = logger.In(CheckForm(pool.In(quality.In(handler))))
+	// todo maybe use a more comples Remote and just create the receiver here
+	in = logger.In(CheckForm(pool.In(quality.In(clientIDmaker.In(s.Router.Handle)))))
 	return
 }
 

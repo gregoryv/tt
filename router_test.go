@@ -25,7 +25,7 @@ func TestRouter(t *testing.T) {
 	// number of handle routes that should be triggered by below Pub
 	wg.Add(2)
 	ctx := context.Background()
-	if err := r.In(ctx, mq.Pub(0, "gopher/pink", "hi")); err != nil {
+	if err := r.Handle(ctx, mq.Pub(0, "gopher/pink", "hi")); err != nil {
 		t.Error(err)
 	}
 	wg.Wait()

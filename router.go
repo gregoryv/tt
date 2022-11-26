@@ -20,8 +20,9 @@ func (r *Router) String() string {
 }
 
 // In forwards routes mq.Publish packets by topic name.
-func (r *Router) In(ctx context.Context, p mq.Packet) error {
-	if p, ok := p.(*mq.Publish); ok {
+func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
+	switch p := p.(type) {
+	case *mq.Publish:
 		// todo naive implementation looping over each route
 		for _, route := range r.routes {
 			if _, ok := route.Match(p.TopicName()); ok {
@@ -30,6 +31,9 @@ func (r *Router) In(ctx context.Context, p mq.Packet) error {
 				}
 			}
 		}
+		// todo handle subscriptions
+	default:
+		return fmt.Errorf("%T unhandled!", p)
 	}
 	return ctx.Err()
 }
