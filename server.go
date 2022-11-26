@@ -110,9 +110,9 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	logger.SetRemote(conn.RemoteAddr().String())
 
 	pool := NewIDPool(s.PoolSize)
-	subtransmit := NewTransmitter(logger, Send(conn.(io.Writer)))
+	subtransmit := CombineOut(Send(conn.(io.Writer)), logger)
 	quality := NewQualitySupport(subtransmit)
-	transmit = NewTransmitter(pool, quality, logger, Send(conn.(io.Writer)))
+	transmit = CombineOut(Send(conn.(io.Writer)), pool, quality, logger)
 
 	clientIDmaker := NewClientIDMaker(subtransmit)
 

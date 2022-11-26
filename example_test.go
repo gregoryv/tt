@@ -16,7 +16,7 @@ func Example_client() {
 	// standin for a network connection
 	conn := tt.Dial()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	transmit := tt.NewTransmitter(tt.Send(conn))
+	transmit := tt.CombineOut(tt.Send(conn))
 	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:

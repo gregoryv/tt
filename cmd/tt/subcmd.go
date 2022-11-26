@@ -38,7 +38,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		pool = tt.NewIDPool(100)
 		log  = tt.NewLogger()
 
-		transmit = tt.NewTransmitter(pool, log, tt.Send(conn))
+		transmit = tt.CombineOut(tt.Send(conn), pool, log)
 		handler  tt.Handler
 	)
 	log.SetOutput(os.Stdout)
