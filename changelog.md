@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Server supports QoS 0 only with proper disconnect semantics
 - Add type QualitySupport
 - Add field Server.Router
 - Add type Remote interface

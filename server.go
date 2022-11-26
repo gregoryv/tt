@@ -114,7 +114,8 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	logger.SetRemote(conn.RemoteAddr().String())
 
 	pool := NewIDPool(s.PoolSize)
-	transmit = NewTransmitter(pool, logger, Send(conn.(io.Writer)))
+	quality := NewQualitySupport(NewTransmitter(logger, Send(conn.(io.Writer))))
+	transmit = NewTransmitter(pool, quality, logger, Send(conn.(io.Writer)))
 
 	handler := func(ctx context.Context, p mq.Packet) error {
 		// todo these should probably just be implementations of Inner
@@ -122,44 +123,22 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 		case *mq.Connect:
 			// connect came in...
 			a := mq.NewConnAck()
-			a.SetMaxQoS(1) //
 			if id := p.ClientID(); id == "" {
 				a.SetAssignedClientID(uuid.NewString())
 			}
 			return transmit(ctx, a)
 
 		case *mq.Publish:
-
-			switch p.QoS() {
-			case 1:
-				a := mq.NewPubAck()
-				a.SetPacketID(p.PacketID())
-				return transmit(ctx, a)
-			case 2:
-				// todo handle duplicate publish messages
-				a := mq.NewPubRec()
-				a.SetPacketID(p.PacketID())
-				return transmit(ctx, a)
-			}
 			// todo route it
-			s.Print("FAIL todo implement routing")
+			s.Print("todo implement routing")
 			return nil
-
-		case *mq.PubRel:
-			// According to
-			// https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels/
-			// the pubcomp packet is send only after a successful
-			// pubrel has was received.
-			comp := mq.NewPubComp()
-			comp.SetPacketID(p.PacketID())
-			return transmit(ctx, comp)
 
 		default:
 			return fmt.Errorf("%v unhandled!", p)
 		}
 	}
 
-	in = logger.In(CheckForm(pool.In(handler)))
+	in = logger.In(CheckForm(pool.In(quality.In(handler))))
 	return
 }
 

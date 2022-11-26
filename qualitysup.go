@@ -12,6 +12,7 @@ func NewQualitySupport(transmit Handler) *QualitySupport {
 	}
 }
 
+// QualitySupport middleware which for now only supports QoS 0.
 type QualitySupport struct {
 	max      uint8
 	transmit Handler
@@ -40,3 +41,8 @@ func (s *QualitySupport) Out(next Handler) Handler {
 		return next(ctx, p)
 	}
 }
+
+// According to
+// https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels/
+// the pubcomp packet is send only after a successful
+// pubrel has was received. It feels like if the QoS 2 level is for udp like transports.

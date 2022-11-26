@@ -66,21 +66,17 @@ func TestServer_CreateHandlers(t *testing.T) {
 				p.SetPacketID(1)
 				return p
 			}(),
+			// rejected with a disconnect, but handled properly
 			func() mq.Packet {
 				p := mq.Pub(2, "a/b", "")
 				p.SetPacketID(11)
-				return p
-			}(),
-			func() mq.Packet {
-				p := mq.NewPubRel()
-				p.SetPacketID(12)
 				return p
 			}(),
 		}
 		ctx := context.Background()
 		for _, p := range packets {
 			if err := in(ctx, p); err != nil {
-				t.Fatal(p, err)
+				t.Fatal(err)
 			}
 		}
 	}
