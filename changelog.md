@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Use gregoryv/mq v0.25.0
 - Use Router in Server
 - Add type ClientIDMaker
 - Server supports QoS 0 only with proper disconnect semantics
