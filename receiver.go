@@ -21,13 +21,6 @@ func NewReceiver(r io.Reader, h Handler) *Receiver {
 	}
 }
 
-func CombineIn(v []Inner, h Handler) Handler {
-	if len(v) == 1 {
-		return v[0].In(h)
-	}
-	return CombineIn(v[1:], h)
-}
-
 type Receiver struct {
 	wire        io.Reader
 	handle      Handler

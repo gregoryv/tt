@@ -48,3 +48,17 @@ func CheckForm(next Handler) Handler {
 		return next(ctx, p)
 	}
 }
+
+func CombineIn(h Handler, v ...Inner) Handler {
+	if len(v) == 1 {
+		return v[0].In(h)
+	}
+	return CombineIn(h, v[1:]...)
+}
+
+func CombineOut(h Handler, v ...Outer) Handler {
+	if len(v) == 1 {
+		return v[0].Out(h)
+	}
+	return CombineOut(h, v[1:]...)
+}

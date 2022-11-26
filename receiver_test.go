@@ -16,7 +16,7 @@ func ExampleNewReceiver() {
 	var (
 		pool   = NewIDPool(10)
 		logger = NewLogger()
-		in     = CombineIn([]Inner{logger, pool}, NoopHandler)
+		in     = CombineIn(NoopHandler, logger, pool)
 	)
 
 	_ = NewReceiver(os.Stdin, in)
