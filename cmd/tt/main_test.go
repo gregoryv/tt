@@ -80,14 +80,14 @@ func Test_main_sub(t *testing.T) {
 				payload: "hug",
 				timeout: time.Second,
 				//debug:    true,
-				clientID: "test-pub",
+				clientID: "test ",
 			}
 			c.Run(context.Background())
+			<-time.After(2 * time.Millisecond)
 			if v := buf.String(); !strings.Contains(v, "PAYLOAD hug") {
-				t.Error("missing logged payload")
+				t.Error("missing logged payload", v)
 			}
 		}
-		// todo verify publish
 	}
 }
 
