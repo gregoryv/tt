@@ -19,16 +19,6 @@ func (r *Router) String() string {
 	return plural(len(r.routes), "route")
 }
 
-// SubscribeHandler should be used for incoming packets.
-//
-// We cannot use Inner as the connection information is missing.
-func (r *Router) NewSubscriber(transmit Handler) *Subscriber {
-	return &Subscriber{
-		Router:   r,
-		transmit: transmit,
-	}
-}
-
 // In forwards routes mq.Publish packets by topic name.
 func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
 	switch p := p.(type) {
@@ -50,7 +40,15 @@ func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
 
 // ----------------------------------------
 
-// Subscriber keeps track of subscriptions
+func NewSubscriber(r *Router, transmit Handler) *Subscriber {
+	return &Subscriber{
+		Router:   r,
+		transmit: transmit,
+	}
+}
+
+// Subscriber adds routes to a routes to a router on incomming
+// subscribe packets.
 type Subscriber struct {
 	*Router
 	transmit Handler
@@ -58,7 +56,12 @@ type Subscriber struct {
 
 func (s *Subscriber) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
-		return fmt.Errorf(": todo")
+		switch p := p.(type) {
+		case *mq.Subscribe:
+			_ = p
+			return fmt.Errorf("Subscriber.In: todo")
+		}
+		return next(ctx, p)
 	}
 }
 

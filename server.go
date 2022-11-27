@@ -25,7 +25,8 @@ func NewServer() *Server {
 }
 
 type Server struct {
-	Bind string // todo support multiple binds, ie. tcp://:1883,ws://:8080
+	// todo support multiple binds, ie. tcp://:1883,ws://:8080
+	Bind string
 	net.Listener
 
 	// AcceptTimeout is used as deadline for new connections before
@@ -115,9 +116,13 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	transmit = CombineOut(Send(conn.(io.Writer)), pool, quality, logger)
 
 	clientIDmaker := NewClientIDMaker(subtransmit)
+	checker := &FormChecker{}
+	subscriber := NewSubscriber(s.Router, transmit)
 
-	// todo maybe use a more comples Remote and just create the receiver here
-	in = logger.In(CheckForm(pool.In(quality.In(clientIDmaker.In(s.Router.Handle)))))
+	in = CombineIn(
+		s.Router.Handle,
+		logger, checker, pool, subscriber, quality, clientIDmaker,
+	)
 	return
 }
 
