@@ -35,10 +35,13 @@ type Conn interface {
 
 // ----------------------------------------
 
+// FormChecker rejects any malformed packet
+type FormChecker struct{}
+
 // CheckForm returns a handler that checks if a packet is well
 // formed. The handler returns *mq.Malformed error without calling
 // next if malformed.
-func CheckForm(next Handler) Handler {
+func (f *FormChecker) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 			if err := p.WellFormed(); err != nil {
@@ -50,15 +53,15 @@ func CheckForm(next Handler) Handler {
 }
 
 func CombineIn(h Handler, v ...Inner) Handler {
-	if len(v) == 1 {
-		return v[0].In(h)
+	if len(v) == 0 {
+		return h
 	}
-	return CombineIn(h, v[1:]...)
+	return v[0].In(CombineIn(h, v[1:]...))
 }
 
 func CombineOut(h Handler, v ...Outer) Handler {
-	if len(v) == 1 {
-		return v[0].Out(h)
+	if len(v) == 0 {
+		return h
 	}
-	return CombineOut(h, v[1:]...)
+	return v[0].Out(CombineOut(h, v[1:]...))
 }
