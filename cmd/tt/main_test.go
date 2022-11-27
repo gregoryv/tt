@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -82,8 +83,8 @@ func Test_main_sub(t *testing.T) {
 				clientID: "test-pub",
 			}
 			c.Run(context.Background())
-			if v := buf.String(); v != "PAYLOAD hug" {
-				t.Error("output was", v)
+			if v := buf.String(); !strings.Contains(v, "PAYLOAD hug") {
+				t.Error("missing logged payload")
 			}
 		}
 		// todo verify publish

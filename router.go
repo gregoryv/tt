@@ -19,6 +19,10 @@ func (r *Router) String() string {
 	return plural(len(r.routes), "route")
 }
 
+func (r *Router) AddRoute(v *Route) {
+	r.routes = append(r.routes, v)
+}
+
 // In forwards routes mq.Publish packets by topic name.
 func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
 	switch p := p.(type) {
@@ -54,11 +58,18 @@ type Subscriber struct {
 	transmit Handler
 }
 
+// todo mq.Subscriber has no WellFormed
 func (s *Subscriber) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.Subscribe:
-			_ = p
+			h := func(ctx context.Context, p *mq.Publish) error {
+				return s.transmit(ctx, p)
+			}
+			f := p.Filters()[0] // todo add route for all
+			_ = f               // todo cannot access TopicFilter.filter
+			r := NewRoute("", h)
+			s.Router.AddRoute(r)
 			return fmt.Errorf("Subscriber.In: todo")
 		}
 		return next(ctx, p)
