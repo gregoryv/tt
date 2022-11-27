@@ -115,7 +115,6 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		return ctx.Err()
 
 	case <-done:
-		defer fmt.Println("ok")
 	}
 	_ = transmit(ctx, mq.NewDisconnect())
 	return nil
