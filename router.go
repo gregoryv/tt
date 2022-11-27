@@ -47,8 +47,10 @@ func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
 
 func NewSubscriber(r *Router, transmit Handler) *Subscriber {
 	return &Subscriber{
-		Router:   r,
-		transmit: transmit,
+		Router: r,
+		PubHandler: func(ctx context.Context, p *mq.Publish) error {
+			return transmit(ctx, p)
+		},
 	}
 }
 
@@ -56,7 +58,7 @@ func NewSubscriber(r *Router, transmit Handler) *Subscriber {
 // subscribe packets.
 type Subscriber struct {
 	*Router
-	transmit Handler
+	PubHandler
 }
 
 // todo mq.Subscriber has no WellFormed
@@ -64,13 +66,10 @@ func (s *Subscriber) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.Subscribe:
-			h := func(ctx context.Context, p *mq.Publish) error {
-				return s.transmit(ctx, p)
+			for _, f := range p.Filters() {
+				r := NewRoute(f.Filter(), s.PubHandler)
+				s.Router.AddRoute(r)
 			}
-			f := p.Filters()[0] // todo add route for all
-			r := NewRoute(f.Filter(), h)
-			s.Router.AddRoute(r)
-			return fmt.Errorf("Subscriber.In: todo")
 		}
 		return next(ctx, p)
 	}
