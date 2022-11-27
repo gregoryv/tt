@@ -36,9 +36,6 @@ func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
 				}
 			}
 		}
-
-	default:
-		return fmt.Errorf("%T unhandled!", p)
 	}
 	return ctx.Err()
 }
