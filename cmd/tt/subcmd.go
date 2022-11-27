@@ -53,7 +53,8 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:
 			sub := mq.NewSubscribe()
-			sub.AddFilter(c.topicFilter, mq.OptNL)
+			f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
+			sub.AddFilters(f)
 			return transmit(ctx, sub)
 
 		case *mq.Publish:

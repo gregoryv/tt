@@ -67,8 +67,7 @@ func (s *Subscriber) In(next Handler) Handler {
 				return s.transmit(ctx, p)
 			}
 			f := p.Filters()[0] // todo add route for all
-			_ = f               // todo cannot access TopicFilter.filter
-			r := NewRoute("", h)
+			r := NewRoute(f.Filter(), h)
 			s.Router.AddRoute(r)
 			return fmt.Errorf("Subscriber.In: todo")
 		}
