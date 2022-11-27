@@ -109,6 +109,7 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	logger := NewLogger()
 	logger.SetOutput(s.Logger.Writer())
 	logger.SetRemote(conn.RemoteAddr().String())
+	logger.SetPrefix("ttsrv ")
 
 	pool := NewIDPool(s.PoolSize)
 	subtransmit := CombineOut(Send(conn.(io.Writer)), logger)
