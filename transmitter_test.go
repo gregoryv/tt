@@ -10,5 +10,5 @@ func TestTransmitter(t *testing.T) {
 		pool   = NewIDPool(5)
 		logger = NewLogger()
 	)
-	_ = CombineOut(Send(ioutil.Discard), pool, logger)
+	_ = CombineOut(Send(ioutil.Discard), logger, pool)
 }

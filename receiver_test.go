@@ -14,11 +14,10 @@ import (
 
 func ExampleNewReceiver() {
 	var (
-		pool   = NewIDPool(10)
-		logger = NewLogger()
-		in     = CombineIn(NoopHandler, logger, pool)
+		pool = NewIDPool(10)
+		log  = NewLogger()
+		in   = CombineIn(NoopHandler, pool, log)
 	)
-
 	_ = NewReceiver(os.Stdin, in)
 	// output:
 }

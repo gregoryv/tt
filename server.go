@@ -113,7 +113,7 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	pool := NewIDPool(s.PoolSize)
 	subtransmit := CombineOut(Send(conn.(io.Writer)), logger)
 	quality := NewQualitySupport(subtransmit)
-	transmit = CombineOut(Send(conn.(io.Writer)), pool, quality, logger)
+	transmit = CombineOut(Send(conn.(io.Writer)), logger, quality, pool)
 
 	clientIDmaker := NewClientIDMaker(subtransmit)
 	checker := &FormChecker{}
@@ -121,7 +121,7 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 
 	in = CombineIn(
 		s.Router.Handle,
-		logger, checker, pool, subscriber, quality, clientIDmaker,
+		clientIDmaker, quality, subscriber, pool, checker, logger,
 	)
 	return
 }

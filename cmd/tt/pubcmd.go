@@ -59,7 +59,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	var (
 		pool = tt.NewIDPool(100)
 
-		transmit = tt.CombineOut(tt.Send(conn), pool, log)
+		transmit = tt.CombineOut(tt.Send(conn), log, pool)
 	)
 
 	done := make(chan struct{}, 0)
@@ -88,7 +88,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		}
 		return nil
 	}
-	in := tt.CombineIn(handler, log, pool)
+	in := tt.CombineIn(handler, pool, log)
 	receive := tt.NewReceiver(conn, in)
 
 	// kick off with a connect

@@ -42,7 +42,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		pool = tt.NewIDPool(100)
 		log  = tt.NewLogger()
 
-		transmit = tt.CombineOut(tt.Send(conn), pool, log)
+		transmit = tt.CombineOut(tt.Send(conn), log, pool)
 		handler  tt.Handler
 	)
 	log.SetOutput(os.Stdout)
@@ -71,7 +71,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	}
 
 	// start handling packet flow
-	in := tt.CombineIn(handler, log, pool)
+	in := tt.CombineIn(handler, pool, log)
 	receive := tt.NewReceiver(conn, in)
 	_, done := tt.Start(context.Background(), receive)
 
