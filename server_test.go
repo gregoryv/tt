@@ -83,8 +83,6 @@ func TestServer_CreateHandlers(t *testing.T) {
 	{ // denied packets
 		packets := []mq.Packet{
 			mq.Pub(0, "", ""), // malformed, missing topic
-			mq.NewPubComp(),
-			mq.NewPingReq(),
 			mq.NewSubscribe(),
 		}
 		ctx := context.Background()
