@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Subscriber responds with SubAck
 - Reverse order of CombineIn and CombineOut
 - Use gregoryv/mq@902e660
 - Use Router in Server

@@ -12,6 +12,7 @@ func NewSubscriber(r *Router, transmit Handler) *Subscriber {
 		PubHandler: func(ctx context.Context, p *mq.Publish) error {
 			return transmit(ctx, p)
 		},
+		transmit: transmit,
 	}
 }
 
@@ -19,17 +20,27 @@ func NewSubscriber(r *Router, transmit Handler) *Subscriber {
 // subscribe packets.
 type Subscriber struct {
 	*Router
+
+	// PubHandler is used in the routes to transmit packets to a
+	// specific client
 	PubHandler
+
+	transmit func(ctx context.Context, p mq.Packet) error
 }
 
 func (s *Subscriber) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.Subscribe:
+			a := mq.NewSubAck()
+			a.SetPacketID(p.PacketID())
 			for _, f := range p.Filters() {
 				r := NewRoute(f.Filter(), s.PubHandler)
 				s.Router.AddRoute(r)
+				// 3.9.3 SUBACK Payload
+				a.AddReasonCode(mq.Success)
 			}
+			s.transmit(ctx, a)
 		}
 		return next(ctx, p)
 	}

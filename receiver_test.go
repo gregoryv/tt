@@ -93,6 +93,10 @@ type Called struct {
 }
 
 func (c *Called) Handler(_ context.Context, _ mq.ControlPacket) error {
+	defer func() {
+		// close may panic, just ignore it
+		_ = recover()
+	}()
 	close(c.c)
 	return nil
 }
