@@ -29,10 +29,11 @@ func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
 	case *mq.Publish:
 		// todo naive implementation looping over each route
 		for _, route := range r.routes {
-			fmt.Println("route", route)
 			if _, ok := route.Match(p.TopicName()); ok {
 				for _, h := range route.handlers {
-					_ = h(ctx, p) // todo how to handle errors
+					// todo how to handle errors when routing to clients?
+					// this will depend on QoS aswell
+					_ = h(ctx, p)
 				}
 			}
 		}
