@@ -2,7 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/gregoryv/cmdline"
 )
@@ -34,11 +39,28 @@ func main() {
 		return
 	}
 
-	if err := cmd.(Command).Run(context.Background()); err != nil {
-		sh.Fatal(err)
-		return // return here so we can test func main()
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Kill, os.Interrupt)
+
+	// Run command in the background so we can interrupt it
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		if err := cmd.(Command).Run(ctx); err != nil {
+			if errors.Is(err, context.Canceled) {
+				return
+			}
+			sh.Fatal(err)
+		}
+	}()
+
+	// Handle interruptions gracefully
+	select {
+	case <-interrupt:
+		fmt.Println("interrupted")
+		cancel()
+		<-time.After(time.Millisecond)
+		sh.Exit(0)
 	}
-	sh.Exit(0)
 }
 
 type Command interface {

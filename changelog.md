@@ -7,7 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
-- tt sub can be gracefully interrupted
+- Handle interruptions gracefully
 - Subscriber responds with SubAck
 - Reverse order of CombineIn and CombineOut
 - Use gregoryv/mq@902e660
