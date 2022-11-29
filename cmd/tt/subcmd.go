@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"os/signal"
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/mq"
@@ -80,8 +81,13 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	p.SetClientID("ttsub")
 	_ = transmit(ctx, p)
 
-	<-done
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Kill, os.Interrupt)
 
-	// todo handle ctrl+c with gracefule disconnect
+	select {
+	case <-done:
+	case <-interrupt:
+		fmt.Println("interrupted")
+	}
 	return nil
 }
