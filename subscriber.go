@@ -41,6 +41,8 @@ func (s *Subscriber) In(next Handler) Handler {
 				a.AddReasonCode(mq.Success)
 			}
 			s.transmit(ctx, a)
+			// todo should we return here, ie. not let subsequent
+			// handlers do their thing? I guess it's an optimization thing
 		}
 		return next(ctx, p)
 	}
