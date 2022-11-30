@@ -80,13 +80,13 @@ func Test_main_sub(t *testing.T) {
 		{ // publish something
 			// let's use the pubcmd directly
 			u, _ := url.Parse(host)
-			c := &PubCmd{
-				server:  u,
-				topic:   "gopher/pink",
-				payload: "hug",
-				timeout: time.Second,
+			c := &tt.PubCmd{
+				Server:  u,
+				Topic:   "gopher/pink",
+				Payload: "hug",
+				Timeout: time.Second,
 				//debug:    true,
-				clientID: "test ",
+				ClientID: "test ",
 			}
 			c.Run(context.Background())
 			<-time.After(2 * time.Millisecond)

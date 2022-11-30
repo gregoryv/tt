@@ -7,6 +7,8 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Move PubCmd to root
+
 ## [0.5.0] 2022-11-30
 
 - tt pub exits when message is published successfully

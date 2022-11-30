@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gregoryv/cmdline"
+	"github.com/gregoryv/tt"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 		// SubCmd commands
 		commands = cli.Group("Commands", "COMMAND")
 
-		_ = commands.New("pub", &PubCmd{})
+		_ = commands.New("pub", &tt.PubCmd{})
 		_ = commands.New("sub", &SubCmd{})
 		_ = commands.New("srv", &SrvCmd{})
 
