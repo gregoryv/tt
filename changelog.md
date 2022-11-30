@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- tt pub exits when message is published successfully
 - Handle interruptions gracefully
 - Subscriber responds with SubAck
 - Reverse order of CombineIn and CombineOut

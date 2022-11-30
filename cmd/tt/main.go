@@ -42,9 +42,13 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Kill, os.Interrupt)
 
+	// closed when command execution returns
+	done := make(chan struct{})
+
 	// Run command in the background so we can interrupt it
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
+		defer close(done)
 		if err := cmd.(Command).Run(ctx); err != nil {
 			if errors.Is(err, context.Canceled) {
 				return
@@ -55,6 +59,9 @@ func main() {
 
 	// Handle interruptions gracefully
 	select {
+	case <-done:
+		cancel()
+
 	case <-interrupt:
 		fmt.Println("interrupted")
 		cancel()
