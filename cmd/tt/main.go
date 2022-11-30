@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -29,15 +28,25 @@ func main() {
 	)
 	u := cli.Usage()
 	u.Preface(
-		"mqtt-v5 server and client by Gregory Vinčić",
+		"mqtt-v5 client and broker by Gregory Vinčić",
 	)
 	cli.Parse()
 
-	sh := cmdline.DefaultShell
-	if cmd == nil {
-		// this shouldn't happen, default should be the first one. When testing it's empty
-		log.Println("empty command", sh.Args())
-		return
+	// run the selected command
+	if err := runCommand(cmd); err != nil {
+		// using DefaultShell.Fatal so we can verify the behavior
+		cmdline.DefaultShell.Fatal(err)
+	}
+}
+
+func runCommand(command any) (err error) {
+	if command == nil {
+		return fmt.Errorf("empty command")
+	}
+
+	cmd, ok := command.(Command)
+	if !ok {
+		return fmt.Errorf("%T is missing Run(context.Context) error", command)
 	}
 
 	interrupt := make(chan os.Signal, 1)
@@ -50,11 +59,11 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		defer close(done)
-		if err := cmd.(Command).Run(ctx); err != nil {
+		// note that the outer err is set here
+		if err = cmd.(Command).Run(ctx); err != nil {
 			if errors.Is(err, context.Canceled) {
-				return
+				err = nil
 			}
-			sh.Fatal(err)
 		}
 	}()
 
@@ -67,8 +76,8 @@ func main() {
 		fmt.Println("interrupted")
 		cancel()
 		<-time.After(time.Millisecond)
-		sh.Exit(0)
 	}
+	return
 }
 
 type Command interface {
