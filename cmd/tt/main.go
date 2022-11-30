@@ -1,3 +1,4 @@
+// Command tt is a mqtt pub/sub client and broker
 package main
 
 import (
