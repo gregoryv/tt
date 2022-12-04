@@ -16,6 +16,11 @@ func NewMemConn() *MemConn {
 	fromClient, toServer := io.Pipe()
 
 	c := &MemConn{
+		client: &conn{
+			Reader:      fromServer,
+			WriteCloser: toServer,
+			remote:      addr("tcp://:1234"),
+		},
 		server: &conn{
 			Reader:      fromClient,
 			WriteCloser: toClient,
@@ -24,20 +29,14 @@ func NewMemConn() *MemConn {
 				fmt.Sprintf("tcp://%s:%v", randIP(), 1024+rand.Int31n(64512)),
 			),
 		},
-		client: &conn{
-			Reader:      fromServer,
-			WriteCloser: toServer,
-			remote:      addr("tcp://:1234"),
-		},
 	}
 	return c
 }
 
 type MemConn struct {
-	*conn // active side, set by Server() or Client() methods
-
-	server *conn
+	*conn  // active side, set by Server() or Client() methods
 	client *conn
+	server *conn
 }
 
 // Close closes both sides of the connection.
@@ -72,11 +71,8 @@ type conn struct {
 	remote addr
 }
 
-func (t *conn) RemoteAddr() net.Addr { return t.remote }
-
+func (c *conn) RemoteAddr() net.Addr { return c.remote }
 func (c *conn) Responds(p mq.Packet) { p.WriteTo(c) }
-
-func (c *conn) String() string { return c.remote.String() }
 
 func randIP() string {
 	buf := make([]byte, 4)
