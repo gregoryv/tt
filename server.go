@@ -25,8 +25,10 @@ func NewServer() *Server {
 }
 
 type Server struct {
-	// todo support multiple binds, ie. tcp://:1883,ws://:8080
+	// Scheme://[hostname]:port
 	Bind string
+
+	// Listener is set once run
 	net.Listener
 
 	// AcceptTimeout is used as deadline for new connections before
