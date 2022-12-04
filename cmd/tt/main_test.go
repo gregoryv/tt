@@ -117,9 +117,8 @@ func TestIntegration(t *testing.T) {
 	os.Chdir(os.Getenv("PWD"))
 	// Run compatibility tests towards mosquitto broker.
 	cmd := exec.Command("docker-compose", "up", "--remove-orphans", "-d")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Log(string(out))
+
+	if err := cmd.Run(); err != nil {
 		t.Skip("docker-compose up failed")
 	}
 
@@ -127,6 +126,8 @@ func TestIntegration(t *testing.T) {
 	defer func() {
 		exec.Command("docker-compose", "down").Run()
 	}()
-	// wip define integration tests
 
+	t.Log(
+		"todo implement server integration tests",
+	)
 }
