@@ -43,10 +43,11 @@ func (s *Server) Stat() ServerStats {
 // receiver is done. Usually called in go routine.
 func (s *Server) AddConnection(ctx context.Context, conn Remote) {
 	// the server tracks active connections
-	s.Println("new conn", conn.RemoteAddr())
+	a := conn.RemoteAddr()
+	s.Logger.Printf("new conn %s://%s", a.Network(), a)
 	s.stat.AddConn()
 	defer func() {
-		s.Logger.Println("del conn", conn.RemoteAddr())
+		s.Logger.Printf("del conn %s://%s", a.Network(), a)
 		s.stat.RemoveConn()
 	}()
 	in, _ := s.CreateHandlers(conn)

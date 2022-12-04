@@ -14,7 +14,7 @@ func NewListener() *Listener {
 	return &Listener{
 		Bind:          "tcp://:", // random
 		Up:            make(chan struct{}, 0),
-		AcceptTimeout: time.Millisecond,
+		AcceptTimeout: 100 * time.Millisecond,
 		Logger:        log.New(os.Stdout, "tcp ", log.Flags()),
 		AddConnection: func(context.Context, Remote) { /*noop*/ },
 	}
