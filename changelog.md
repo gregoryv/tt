@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Server disconnects on incomming malformed publish
 - Add type Listener
 - Decouple server from net.Listener
 - Add server statistics
