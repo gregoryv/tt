@@ -30,8 +30,7 @@ func (o *IDPool) In(next Handler) Handler {
 		switch p := p.(type) {
 		case *mq.PubAck:
 			o.reuse(p.PacketID())
-			// todo handle dropped acks as that packet is lost. Maybe
-			// a timeout for expected acks to arrive?
+
 		case *mq.PubComp:
 			o.reuse(p.PacketID())
 		}
@@ -64,6 +63,11 @@ func (o *IDPool) Out(next Handler) Handler {
 		case *mq.Unsubscribe:
 			p.SetPacketID(o.next(ctx))
 		}
+
+		// todo handle dropped acks as that packet is lost.
+		//
+		// Maybe a timeout for expected acks to arrive?
+
 		return next(ctx, p)
 	}
 }

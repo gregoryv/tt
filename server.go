@@ -58,7 +58,7 @@ func (s *Server) AddConnection(ctx context.Context, conn Remote) {
 	}()
 	in, _ := s.CreateHandlers(conn)
 	if err := NewReceiver(conn, in).Run(ctx); err != nil {
-		s.Logger.Print(err)
+		s.Logger.Printf("%T %v", err, err)
 	}
 }
 
