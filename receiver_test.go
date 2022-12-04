@@ -37,13 +37,13 @@ func TestReceiver(t *testing.T) {
 	{ // handler is called on packet from server
 		conn := NewMemConn()
 		called := NewCalled()
-		receiver := NewReceiver(conn, called.Handler)
+		receiver := NewReceiver(conn.Server(), called.Handler)
 
 		go receiver.Run(context.Background())
 		p := mq.NewPublish()
 		p.SetTopicName("a/b")
 		p.SetPayload([]byte("gopher"))
-		conn.Responds(p)
+		conn.Client().Responds(p)
 		<-called.Done()
 	}
 

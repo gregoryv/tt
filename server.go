@@ -35,13 +35,20 @@ type Server struct {
 	stat *ServerStats
 }
 
+func (s *Server) Stat() ServerStats {
+	return *s.stat
+}
+
 // AddConnection handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.
 func (s *Server) AddConnection(ctx context.Context, conn Remote) {
 	// the server tracks active connections
-	//s.Println("accept", conn.RemoteAddr())
+	s.Println("new conn", conn.RemoteAddr())
 	s.stat.AddConn()
-	defer s.stat.RemoveConn()
+	defer func() {
+		s.Logger.Println("del conn", conn)
+		s.stat.RemoveConn()
+	}()
 	in, _ := s.CreateHandlers(conn)
 	if err := NewReceiver(conn, in).Run(ctx); err != nil {
 		s.Logger.Print(err)

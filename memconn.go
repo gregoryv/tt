@@ -2,9 +2,7 @@ package tt
 
 import (
 	"io"
-	"io/ioutil"
 	"net"
-	"testing"
 
 	"github.com/gregoryv/mq"
 )
@@ -14,41 +12,61 @@ import (
 // destination.
 func NewMemConn() *MemConn {
 	fromServer, toClient := io.Pipe()
-	toServer := ioutil.Discard
+	fromClient, toServer := io.Pipe()
+
 	c := &MemConn{
-		Reader: fromServer,
-		Writer: toServer,
-		client: toClient,
+		server: &conn{
+			Reader:      fromClient,
+			WriteCloser: toClient,
+		},
+		client: &conn{
+			Reader:      fromServer,
+			WriteCloser: toServer,
+		},
 	}
 	return c
 }
 
 type MemConn struct {
-	io.Reader // incoming from server
-	io.Writer // outgoing to server
+	*conn
 
-	client io.Writer
+	server *conn
+	client *conn
 }
 
-func (t *MemConn) Close() error {
+func (c *MemConn) Close() error {
+	c.server.Close()
+	c.client.Close()
 	return nil
 }
 
-func (t *MemConn) Responds(p mq.Packet) {
-	p.WriteTo(t.client)
+func (c *MemConn) Server() *MemConn {
+	return &MemConn{
+		conn:   c.server,
+		client: c.client,
+		server: c.server,
+	}
 }
 
-func (t *MemConn) RemoteAddr() net.Addr {
+func (c *MemConn) Client() *MemConn {
+	return &MemConn{
+		conn:   c.client,
+		client: c.client,
+		server: c.server,
+	}
+}
+
+type conn struct {
+	io.Reader
+	io.WriteCloser
+}
+
+func (t *conn) RemoteAddr() net.Addr {
 	return t
 }
 
 // Network and String are used as implementation of net.Addr
-func (t *MemConn) Network() string { return "tcp" }
-func (t *MemConn) String() string  { return "testconn:0000" }
+func (t *conn) Network() string { return "tcp" }
+func (t *conn) String() string  { return "testconn:0000" }
 
-func expPanic(t *testing.T) {
-	t.Helper()
-	if e := recover(); e == nil {
-		t.Fatal("expect panic")
-	}
-}
+func (c *conn) Responds(p mq.Packet) { p.WriteTo(c) }

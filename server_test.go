@@ -2,13 +2,32 @@ package tt
 
 import (
 	"context"
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/gregoryv/mq"
 )
 
-func TestServer_CreateHandlers(t *testing.T) {
+func TestServer_AddConnection(t *testing.T) {
+	s := NewServer()
 	conn := NewMemConn()
+	go s.AddConnection(context.Background(), conn.Server())
+	<-time.After(10 * time.Millisecond)
+	before := s.Stat()
+
+	conn.Client().Responds(mq.NewDisconnect())
+
+	<-time.After(10 * time.Millisecond)
+	after := s.Stat()
+
+	if reflect.DeepEqual(before, after) {
+		t.Error("stats are equal")
+	}
+}
+
+func TestServer_CreateHandlers(t *testing.T) {
+	conn := NewMemConn().Server()
 	in, _ := NewServer().CreateHandlers(conn)
 	{ // accepted packets
 		packets := []mq.Packet{

@@ -14,7 +14,7 @@ import (
 // disconnect.
 func Example_client() {
 	// standin for a network connection
-	conn := tt.NewMemConn()
+	conn := tt.NewMemConn().Client()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	transmit := tt.Send(conn)
 	handler := func(ctx context.Context, p mq.Packet) error {
