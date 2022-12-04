@@ -47,6 +47,38 @@ func TestServer_AssignsID(t *testing.T) {
 	}
 }
 
+func TestServer_DisconnectOnMalformed(t *testing.T) {
+	// If server gets a malformed packet it should disconnect with the
+	// reason code MalformedPacket 0x81
+	s := NewServer()
+	conn := s.NewMemConn()
+	{
+		p := mq.NewConnect()
+		p.WriteTo(conn)
+		_, _ = mq.ReadPacket(conn)
+	}
+	{
+		p := mq.NewPublish()
+		p.SetQoS(mq.QoS3) // malformed
+		p.WriteTo(conn)
+	}
+	{
+		p, _ := mq.ReadPacket(conn)
+		switch p := p.(type) {
+		case *mq.Disconnect:
+			if p.ReasonCode() != mq.MalformedPacket {
+				t.Error(p)
+			}
+		default:
+			t.Fatal(p)
+		}
+	}
+	<-time.After(10 * time.Millisecond)
+	if s := s.Stat(); s.ConnActive != 0 {
+		t.Error(s)
+	}
+}
+
 func xTestServer_CreateHandlers(t *testing.T) {
 	conn := NewMemConn().Server()
 	in, _ := NewServer().CreateHandlers(conn)

@@ -29,8 +29,16 @@ func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }
 
 // ----------------------------------------
 
+func NewFormChecker(transmit Handler) *FormChecker {
+	return &FormChecker{
+		transmit: transmit,
+	}
+}
+
 // FormChecker rejects any malformed packet
-type FormChecker struct{}
+type FormChecker struct {
+	transmit Handler
+}
 
 // CheckForm returns a handler that checks if a packet is well
 // formed. The handler returns *mq.Malformed error without calling
@@ -39,6 +47,9 @@ func (f *FormChecker) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 			if err := p.WellFormed(); err != nil {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.MalformedPacket)
+				f.transmit(ctx, d)
 				return err
 			}
 		}

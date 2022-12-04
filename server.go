@@ -70,18 +70,18 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	logger.SetPrefix("ttsrv ")
 
 	pool := NewIDPool(s.PoolSize)
-	subtransmit := CombineOut(Send(conn.(io.Writer)), logger)
+	disco := NewDisconnector(conn)
+	subtransmit := CombineOut(Send(conn), logger, disco)
 	quality := NewQualitySupport(subtransmit)
-	transmit = CombineOut(Send(conn.(io.Writer)), logger, quality, pool)
+	transmit = CombineOut(Send(conn), logger, disco, quality, pool)
 
 	clientIDmaker := NewClientIDMaker(subtransmit)
-	checker := &FormChecker{}
+	checker := NewFormChecker(subtransmit)
 	subscriber := NewSubscriber(s.Router, transmit)
 
 	in = CombineIn(
-		Disconnect(conn),
-		s.Router,
-		clientIDmaker, quality, subscriber, pool, checker, logger,
+		s.Router.Handle,
+		disco, clientIDmaker, quality, subscriber, pool, checker, logger,
 	)
 	return
 }
@@ -91,12 +91,31 @@ type Remote interface {
 	RemoteAddr() net.Addr
 }
 
-func Disconnect(c io.Closer) Handler {
-	return func(_ context.Context, p mq.Packet) error {
+func NewDisconnector(conn io.Closer) *Disconnector {
+	return &Disconnector{conn: conn}
+}
+
+type Disconnector struct {
+	conn io.Closer
+}
+
+func (d *Disconnector) In(next Handler) Handler {
+	return func(ctx context.Context, p mq.Packet) error {
 		switch p.(type) {
 		case *mq.Disconnect:
-			c.Close()
+			d.conn.Close()
 		}
-		return nil
+		return next(ctx, p)
+	}
+}
+
+func (d *Disconnector) Out(next Handler) Handler {
+	return func(ctx context.Context, p mq.Packet) error {
+		err := next(ctx, p) // send it first
+		switch p.(type) {
+		case *mq.Disconnect:
+			d.conn.Close()
+		}
+		return err
 	}
 }
