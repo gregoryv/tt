@@ -11,18 +11,39 @@ import (
 
 func TestServer_AddConnection(t *testing.T) {
 	s := NewServer()
-	conn := NewMemConn()
-	go s.AddConnection(context.Background(), conn.Server())
+	conn := s.NewMemConn()
 	<-time.After(10 * time.Millisecond)
 	before := s.Stat()
 
-	conn.Client().Responds(mq.NewDisconnect())
+	mq.NewDisconnect().WriteTo(conn)
 
 	<-time.After(10 * time.Millisecond)
 	after := s.Stat()
 
 	if reflect.DeepEqual(before, after) {
 		t.Error("stats are equal")
+	}
+}
+
+func TestServer_AssignsID(t *testing.T) {
+	// If a client connects without any id set the server should
+	// assign one in the returning ConnAck.
+	s := NewServer()
+	conn := s.NewMemConn()
+	{
+		p := mq.NewConnect()
+		p.WriteTo(conn)
+	}
+	{
+		p, _ := mq.ReadPacket(conn)
+		switch p := p.(type) {
+		case *mq.ConnAck:
+			if p.AssignedClientID() == "" {
+				t.Error("missing assigned client id")
+			}
+		default:
+			t.Fatal(p)
+		}
 	}
 }
 
