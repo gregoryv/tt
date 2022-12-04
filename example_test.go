@@ -54,10 +54,14 @@ func Example_client() {
 // Example shows how to run the provided server.
 func Example_server() {
 	srv := tt.NewServer()
-	go srv.Run(context.Background())
+	ln := tt.NewListener()
+	ln.SetServer(srv)
+	go ln.Run(context.Background())
 
+	<-ln.Up
 	// then use
-	conn, err := net.Dial(srv.Addr().Network(), srv.Addr().String())
+	a := ln.Addr()
+	conn, err := net.Dial(a.Network(), a.String())
 	if err != nil {
 		log.Fatal(err)
 	}
