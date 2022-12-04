@@ -23,13 +23,6 @@ func (r *Router) AddRoute(v *Route) {
 	r.routes = append(r.routes, v)
 }
 
-func (r *Router) In(next Handler) Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		r.Handle(ctx, p)
-		return next(ctx, p)
-	}
-}
-
 // In forwards routes mq.Publish packets by topic name.
 func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
 	switch p := p.(type) {
