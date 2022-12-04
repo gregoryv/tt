@@ -81,7 +81,7 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 }
 
 type Remote interface {
-	Conn
+	io.ReadWriteCloser
 	RemoteAddr() net.Addr
 }
 
