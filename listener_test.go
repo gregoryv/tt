@@ -25,10 +25,10 @@ func TestListener(t *testing.T) {
 	{ // accepts connections
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		s, _ := Start(ctx, NewListener())
-		<-s.Up
+		ln, _ := Start(ctx, NewListener())
+		<-ln.Up
 
-		conn, err := net.Dial("tcp", s.Addr().String())
+		conn, err := net.Dial("tcp", ln.Addr().String())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -36,18 +36,22 @@ func TestListener(t *testing.T) {
 	}
 	{ // accept respects deadline
 		ctx, cancel := context.WithCancel(context.Background())
-		s := NewListener()
-		time.AfterFunc(2*s.AcceptTimeout, cancel)
-		if err := s.Run(ctx); !errors.Is(err, context.Canceled) {
+		ln := NewListener()
+		time.AfterFunc(2*ln.AcceptTimeout, cancel)
+		if err := ln.Run(ctx); !errors.Is(err, context.Canceled) {
 			t.Error(err)
 		}
 	}
 	{ // ends on listener close
-		s := NewListener()
-		time.AfterFunc(time.Millisecond, func() { s.Close() })
-		err := s.Run(context.Background())
+		ln := NewListener()
+		time.AfterFunc(time.Millisecond, func() { ln.Close() })
+		err := ln.Run(context.Background())
 		if !errors.Is(err, net.ErrClosed) {
 			t.Error(err)
 		}
+	}
+	{ // accepts default server
+		ln := NewListener()
+		ln.SetServer(NewServer())
 	}
 }

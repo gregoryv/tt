@@ -24,7 +24,7 @@ type Listener struct {
 	// Scheme://[hostname]:port
 	Bind string
 
-	// Up is closed when all listeners are running
+	// Up is closed when listener is running
 	Up chan struct{}
 
 	// Listener is set once run
@@ -34,6 +34,7 @@ type Listener struct {
 	// checking if context has been cancelled.
 	AcceptTimeout time.Duration
 
+	// AddConnection handles new remote connections
 	AddConnection func(context.Context, Remote)
 	*log.Logger
 }
@@ -42,9 +43,9 @@ func (s *Listener) SetServer(v *Server) {
 	s.AddConnection = v.AddConnection
 }
 
-// Run listens for tcp connections. Blocks until context is cancelled
-// or accepting a connection fails. Accepting new connection can only
-// be interrupted if listener has SetDeadline method.
+// Run enables listener. Blocks until context is cancelled or
+// accepting a connection fails. Accepting new connection can only be
+// interrupted if listener has SetDeadline method.
 func (s *Listener) Run(ctx context.Context) error {
 	l := s.Listener
 	if s.Listener == nil {
@@ -62,10 +63,7 @@ func (s *Listener) Run(ctx context.Context) error {
 	}
 
 	close(s.Up)
-	return s.run(ctx, l)
-}
 
-func (s *Listener) run(ctx context.Context, l net.Listener) error {
 loop:
 	for {
 		if err := ctx.Err(); err != nil {
