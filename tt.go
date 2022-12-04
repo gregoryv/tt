@@ -30,7 +30,7 @@ func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }
 
 // Conn represents a connection
 type Conn interface {
-	io.ReadWriter
+	io.ReadWriteCloser
 }
 
 // ----------------------------------------

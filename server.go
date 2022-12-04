@@ -7,6 +7,8 @@ import (
 	"net"
 	"os"
 	"time"
+
+	"github.com/gregoryv/mq"
 )
 
 // NewServer returns a server that binds to a random port.
@@ -33,20 +35,17 @@ type Server struct {
 	stat *ServerStats
 }
 
-// AddConnection handles the given remote connection in a go routine.
+// AddConnection handles the given remote connection. Blocks until
+// receiver is done. Usually called in go routine.
 func (s *Server) AddConnection(ctx context.Context, conn Remote) {
-
 	// the server tracks active connections
 	//s.Println("accept", conn.RemoteAddr())
-	go func() {
-		s.stat.AddConn()
-		defer s.stat.RemoveConn()
-		in, _ := s.CreateHandlers(conn)
-		_, done := Start(ctx, NewReceiver(conn, in))
-		if err := <-done; err != nil {
-			s.Print(err)
-		}
-	}()
+	s.stat.AddConn()
+	defer s.stat.RemoveConn()
+	in, _ := s.CreateHandlers(conn)
+	if err := NewReceiver(conn, in).Run(ctx); err != nil {
+		s.Logger.Print(err)
+	}
 }
 
 // CreateHandlers returns in and out handlers for packets.
@@ -66,7 +65,8 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	subscriber := NewSubscriber(s.Router, transmit)
 
 	in = CombineIn(
-		s.Router.Handle,
+		Disconnect(conn),
+		s.Router,
 		clientIDmaker, quality, subscriber, pool, checker, logger,
 	)
 	return
@@ -75,4 +75,14 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 type Remote interface {
 	Conn
 	RemoteAddr() net.Addr
+}
+
+func Disconnect(c io.Closer) Handler {
+	return func(_ context.Context, p mq.Packet) error {
+		switch p.(type) {
+		case *mq.Disconnect:
+			c.Close()
+		}
+		return nil
+	}
 }

@@ -9,9 +9,9 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-// Dial returns a test connection where writes are discarded. The
+// NewMemConn returns a test connection where writes are discarded. The
 // returned writer is used to inject responses from the connected
-// destiantion.
+// destination.
 func NewMemConn() *MemConn {
 	fromServer, toClient := io.Pipe()
 	toServer := ioutil.Discard
@@ -28,6 +28,10 @@ type MemConn struct {
 	io.Writer // outgoing to server
 
 	client io.Writer
+}
+
+func (t *MemConn) Close() error {
+	return nil
 }
 
 func (t *MemConn) Responds(p mq.Packet) {
