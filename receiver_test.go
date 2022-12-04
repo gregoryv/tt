@@ -35,7 +35,7 @@ func TestStart(t *testing.T) {
 
 func TestReceiver(t *testing.T) {
 	{ // handler is called on packet from server
-		conn := Dial()
+		conn := NewMemConn()
 		called := NewCalled()
 		receiver := NewReceiver(conn, called.Handler)
 

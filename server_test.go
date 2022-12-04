@@ -8,7 +8,7 @@ import (
 )
 
 func TestServer_CreateHandlers(t *testing.T) {
-	conn := Dial()
+	conn := NewMemConn()
 	in, _ := NewServer().CreateHandlers(conn)
 	{ // accepted packets
 		packets := []mq.Packet{

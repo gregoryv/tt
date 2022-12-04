@@ -12,10 +12,10 @@ import (
 // Dial returns a test connection where writes are discarded. The
 // returned writer is used to inject responses from the connected
 // destiantion.
-func Dial() *TestConn {
+func NewMemConn() *MemConn {
 	fromServer, toClient := io.Pipe()
 	toServer := ioutil.Discard
-	c := &TestConn{
+	c := &MemConn{
 		Reader: fromServer,
 		Writer: toServer,
 		client: toClient,
@@ -23,24 +23,24 @@ func Dial() *TestConn {
 	return c
 }
 
-type TestConn struct {
+type MemConn struct {
 	io.Reader // incoming from server
 	io.Writer // outgoing to server
 
 	client io.Writer
 }
 
-func (t *TestConn) Responds(p mq.Packet) {
+func (t *MemConn) Responds(p mq.Packet) {
 	p.WriteTo(t.client)
 }
 
-func (t *TestConn) RemoteAddr() net.Addr {
+func (t *MemConn) RemoteAddr() net.Addr {
 	return t
 }
 
 // Network and String are used as implementation of net.Addr
-func (t *TestConn) Network() string { return "tcp" }
-func (t *TestConn) String() string  { return "testconn:0000" }
+func (t *MemConn) Network() string { return "tcp" }
+func (t *MemConn) String() string  { return "testconn:0000" }
 
 func expPanic(t *testing.T) {
 	t.Helper()
