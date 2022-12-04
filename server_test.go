@@ -26,7 +26,7 @@ func TestServer_AddConnection(t *testing.T) {
 	}
 }
 
-func TestServer_CreateHandlers(t *testing.T) {
+func xTestServer_CreateHandlers(t *testing.T) {
 	conn := NewMemConn().Server()
 	in, _ := NewServer().CreateHandlers(conn)
 	{ // accepted packets
