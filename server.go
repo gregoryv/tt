@@ -1,6 +1,7 @@
 package tt
 
 import (
+	"context"
 	. "context"
 	"errors"
 	"io"
@@ -21,6 +22,7 @@ func NewServer() *Server {
 		Up:             make(chan struct{}, 0),
 		Router:         NewRouter(),
 		Logger:         log.New(os.Stdout, "ttsrv ", log.Flags()),
+		stat:           NewServerStats(),
 	}
 }
 
@@ -46,6 +48,9 @@ type Server struct {
 	*Router
 
 	*log.Logger
+
+	// statistics
+	stat *ServerStats
 }
 
 // Run listens for tcp connections. Blocks until context is cancelled
@@ -94,16 +99,23 @@ loop:
 			return err
 		}
 
-		// the server tracks active connections
-		s.Println("accept", conn.RemoteAddr())
-		go func() {
-			in, _ := s.CreateHandlers(conn)
-			_, done := Start(ctx, NewReceiver(conn, in))
-			if err := <-done; err != nil {
-				log.Print(err)
-			}
-		}()
+		s.AddConnection(ctx, conn)
 	}
+}
+
+// AddConnection handles the given remote connection in a go routine.
+func (s *Server) AddConnection(ctx context.Context, conn Remote) {
+	// the server tracks active connections
+	s.Println("accept", conn.RemoteAddr())
+	go func() {
+		s.stat.AddConn()
+		defer s.stat.RemoveConn()
+		in, _ := s.CreateHandlers(conn)
+		_, done := Start(ctx, NewReceiver(conn, in))
+		if err := <-done; err != nil {
+			log.Print(err)
+		}
+	}()
 }
 
 // CreateHandlers returns in and out handlers for packets.
@@ -130,6 +142,6 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 }
 
 type Remote interface {
-	io.Writer
+	Conn
 	RemoteAddr() net.Addr
 }
