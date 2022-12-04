@@ -28,6 +28,7 @@ type Subscriber struct {
 	transmit func(ctx context.Context, p mq.Packet) error
 }
 
+// In responds to subscribe packets with a SubAck
 func (s *Subscriber) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
@@ -41,8 +42,7 @@ func (s *Subscriber) In(next Handler) Handler {
 				a.AddReasonCode(mq.Success)
 			}
 			s.transmit(ctx, a)
-			// todo should we return here, ie. not let subsequent
-			// handlers do their thing? I guess it's an optimization thing
+			// Don't return here as subsequent handlers may need it.
 		}
 		return next(ctx, p)
 	}
