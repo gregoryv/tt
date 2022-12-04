@@ -23,16 +23,17 @@ func Test_main_help(t *testing.T) {
 	main()
 }
 
-// disabled once we added feature to interrupt commands gracefully
 func Test_main_pub(t *testing.T) {
 	srv := tt.NewServer()
-	go srv.Run(context.Background())
+	ln := tt.NewListener()
+	ln.SetServer(srv)
+	go ln.Run(context.Background())
 
 	<-time.After(2 * time.Millisecond) // let it start
-	defer srv.Close()
+	defer ln.Close()
 
 	// then use
-	u, err := url.Parse(fmt.Sprintf("%s://%s", srv.Addr().Network(), srv.Addr().String()))
+	u, err := url.Parse(fmt.Sprintf("%s://%s", ln.Addr().Network(), ln.Addr().String()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,16 +51,17 @@ func Test_main_pub(t *testing.T) {
 	}
 }
 
-// disabled once we added feature to interrupt commands gracefully
 func Test_main_sub(t *testing.T) {
 	srv := tt.NewServer()
-	go srv.Run(context.Background())
+	ln := tt.NewListener()
+	ln.SetServer(srv)
+	go ln.Run(context.Background())
 
 	<-time.After(2 * time.Millisecond) // let it start
-	defer srv.Close()
+	defer ln.Close()
 
 	// then use
-	u, err := url.Parse(fmt.Sprintf("%s://%s", srv.Addr().Network(), srv.Addr().String()))
+	u, err := url.Parse(fmt.Sprintf("%s://%s", ln.Addr().Network(), ln.Addr().String()))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -88,6 +88,6 @@ loop:
 			return err
 		}
 
-		s.AddConnection(ctx, conn)
+		go s.AddConnection(ctx, conn)
 	}
 }

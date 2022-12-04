@@ -46,7 +46,7 @@ func (s *Server) AddConnection(ctx context.Context, conn Remote) {
 	s.Println("new conn", conn.RemoteAddr())
 	s.stat.AddConn()
 	defer func() {
-		s.Logger.Println("del conn", conn)
+		s.Logger.Println("del conn", conn.RemoteAddr())
 		s.stat.RemoveConn()
 	}()
 	in, _ := s.CreateHandlers(conn)
