@@ -7,9 +7,7 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-// NewMemConn returns a test connection where writes are discarded. The
-// returned writer is used to inject responses from the connected
-// destination.
+// NewMemConn returns a duplex in memory connection.
 func NewMemConn() *MemConn {
 	fromServer, toClient := io.Pipe()
 	fromClient, toServer := io.Pipe()
@@ -28,18 +26,20 @@ func NewMemConn() *MemConn {
 }
 
 type MemConn struct {
-	*conn
+	*conn // active side, set by Server() or Client() methods
 
 	server *conn
 	client *conn
 }
 
+// Close closes both sides of the connection.
 func (c *MemConn) Close() error {
 	c.server.Close()
 	c.client.Close()
 	return nil
 }
 
+// Server returns the server side of the connection.
 func (c *MemConn) Server() *MemConn {
 	return &MemConn{
 		conn:   c.server,
@@ -48,6 +48,7 @@ func (c *MemConn) Server() *MemConn {
 	}
 }
 
+// Client returns the client side of the connection.
 func (c *MemConn) Client() *MemConn {
 	return &MemConn{
 		conn:   c.client,
