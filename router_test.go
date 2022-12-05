@@ -16,7 +16,7 @@ func TestRouter(t *testing.T) {
 		wg.Done()
 		return nil
 	}
-	routes := []*Subscription{
+	subs := []*Subscription{
 		NewSubscription("gopher/pink", handle),
 		NewSubscription("gopher/blue", NoopPub),
 		NewSubscription("#", handle),
@@ -24,7 +24,7 @@ func TestRouter(t *testing.T) {
 			return fmt.Errorf("failed")
 		}),
 	}
-	r := NewRouter(routes...)
+	r := NewRouter(subs...)
 
 	// number of handle routes that should be triggered by below Pub
 	wg.Add(2)
@@ -42,11 +42,11 @@ func TestRouter(t *testing.T) {
 }
 
 func BenchmarkRouter_10routesAllMatch(b *testing.B) {
-	routes := make([]*Subscription, 10)
-	for i, _ := range routes {
-		routes[i] = NewSubscription("gopher/+", NoopPub)
+	subs := make([]*Subscription, 10)
+	for i, _ := range subs {
+		subs[i] = NewSubscription("gopher/+", NoopPub)
 	}
-	r := NewRouter(routes...)
+	r := NewRouter(subs...)
 
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
@@ -57,11 +57,11 @@ func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 }
 
 func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
-	routes := make([]*Subscription, 10)
-	for i, _ := range routes {
-		routes[i] = NewSubscription(fmt.Sprintf("gopher/%v", i), NoopPub)
+	subs := make([]*Subscription, 10)
+	for i, _ := range subs {
+		subs[i] = NewSubscription(fmt.Sprintf("gopher/%v", i), NoopPub)
 	}
-	r := NewRouter(routes...)
+	r := NewRouter(subs...)
 
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
@@ -72,11 +72,11 @@ func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 }
 
 func BenchmarkRouter_10routesEndMatch(b *testing.B) {
-	routes := make([]*Subscription, 10)
-	for i, _ := range routes {
-		routes[i] = NewSubscription(fmt.Sprintf("gopher/%v", i), NoopPub)
+	subs := make([]*Subscription, 10)
+	for i, _ := range subs {
+		subs[i] = NewSubscription(fmt.Sprintf("gopher/%v", i), NoopPub)
 	}
-	r := NewRouter(routes...)
+	r := NewRouter(subs...)
 
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()

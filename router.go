@@ -10,22 +10,22 @@ import (
 
 func NewRouter(v ...*Subscription) *Router {
 	return &Router{
-		routes: v,
+		subs:   v,
 		Logger: log.New(log.Writer(), "router ", log.Flags()),
 	}
 }
 
 type Router struct {
-	routes []*Subscription
+	subs []*Subscription
 	*log.Logger
 }
 
 func (r *Router) String() string {
-	return plural(len(r.routes), "route")
+	return plural(len(r.subs), "route")
 }
 
 func (r *Router) AddRoute(v *Subscription) {
-	r.routes = append(r.routes, v)
+	r.subs = append(r.subs, v)
 }
 
 // In forwards routes mq.Publish packets by topic name.
@@ -34,7 +34,7 @@ func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
 	case *mq.Publish:
 		// naive implementation looping over each route, improve at
 		// some point
-		for _, s := range r.routes {
+		for _, s := range r.subs {
 			if _, ok := s.Match(p.TopicName()); ok {
 				for _, h := range s.handlers {
 					// maybe we'll have to have a different routing mechanism for
