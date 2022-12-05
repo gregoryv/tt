@@ -20,6 +20,9 @@ func TestRouter(t *testing.T) {
 		NewRoute("gopher/pink", handle),
 		NewRoute("gopher/blue", NoopPub),
 		NewRoute("#", handle),
+		NewRoute("#", func(_ context.Context, _ *mq.Publish) error {
+			return fmt.Errorf("failed")
+		}),
 	}
 	r := NewRouter(routes...)
 
@@ -30,9 +33,12 @@ func TestRouter(t *testing.T) {
 		t.Error(err)
 	}
 	wg.Wait()
-	if v := r.String(); !strings.Contains(v, "3 routes") {
+	if v := r.String(); !strings.Contains(v, "4 routes") {
 		t.Error(v)
 	}
+
+	// router logs errors
+
 }
 
 func BenchmarkRouter_10routesAllMatch(b *testing.B) {
