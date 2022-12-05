@@ -8,6 +8,7 @@ import (
 	"github.com/gregoryv/mq"
 )
 
+// NewRouter returns a router for handling the given subscriptions.
 func NewRouter(v ...*Subscription) *Router {
 	return &Router{
 		subs:   v,
@@ -21,7 +22,7 @@ type Router struct {
 }
 
 func (r *Router) String() string {
-	return plural(len(r.subs), "route")
+	return plural(len(r.subs), "subscription")
 }
 
 func (r *Router) AddRoute(v *Subscription) {

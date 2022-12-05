@@ -33,7 +33,7 @@ func TestRouter(t *testing.T) {
 		t.Error(err)
 	}
 	wg.Wait()
-	if v := r.String(); !strings.Contains(v, "4 routes") {
+	if v := r.String(); !strings.Contains(v, "4 subscriptions") {
 		t.Error(v)
 	}
 
