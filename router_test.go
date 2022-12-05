@@ -16,11 +16,11 @@ func TestRouter(t *testing.T) {
 		wg.Done()
 		return nil
 	}
-	routes := []*Route{
-		NewRoute("gopher/pink", handle),
-		NewRoute("gopher/blue", NoopPub),
-		NewRoute("#", handle),
-		NewRoute("#", func(_ context.Context, _ *mq.Publish) error {
+	routes := []*Subscription{
+		NewSubscription("gopher/pink", handle),
+		NewSubscription("gopher/blue", NoopPub),
+		NewSubscription("#", handle),
+		NewSubscription("#", func(_ context.Context, _ *mq.Publish) error {
 			return fmt.Errorf("failed")
 		}),
 	}
@@ -42,9 +42,9 @@ func TestRouter(t *testing.T) {
 }
 
 func BenchmarkRouter_10routesAllMatch(b *testing.B) {
-	routes := make([]*Route, 10)
+	routes := make([]*Subscription, 10)
 	for i, _ := range routes {
-		routes[i] = NewRoute("gopher/+", NoopPub)
+		routes[i] = NewSubscription("gopher/+", NoopPub)
 	}
 	r := NewRouter(routes...)
 
@@ -57,9 +57,9 @@ func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 }
 
 func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
-	routes := make([]*Route, 10)
+	routes := make([]*Subscription, 10)
 	for i, _ := range routes {
-		routes[i] = NewRoute(fmt.Sprintf("gopher/%v", i), NoopPub)
+		routes[i] = NewSubscription(fmt.Sprintf("gopher/%v", i), NoopPub)
 	}
 	r := NewRouter(routes...)
 
@@ -72,9 +72,9 @@ func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 }
 
 func BenchmarkRouter_10routesEndMatch(b *testing.B) {
-	routes := make([]*Route, 10)
+	routes := make([]*Subscription, 10)
 	for i, _ := range routes {
-		routes[i] = NewRoute(fmt.Sprintf("gopher/%v", i), NoopPub)
+		routes[i] = NewSubscription(fmt.Sprintf("gopher/%v", i), NoopPub)
 	}
 	r := NewRouter(routes...)
 

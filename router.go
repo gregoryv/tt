@@ -8,7 +8,7 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-func NewRouter(v ...*Route) *Router {
+func NewRouter(v ...*Subscription) *Router {
 	return &Router{
 		routes: v,
 		Logger: log.New(log.Writer(), "router ", log.Flags()),
@@ -16,7 +16,7 @@ func NewRouter(v ...*Route) *Router {
 }
 
 type Router struct {
-	routes []*Route
+	routes []*Subscription
 	*log.Logger
 }
 
@@ -24,7 +24,7 @@ func (r *Router) String() string {
 	return plural(len(r.routes), "route")
 }
 
-func (r *Router) AddRoute(v *Route) {
+func (r *Router) AddRoute(v *Subscription) {
 	r.routes = append(r.routes, v)
 }
 
@@ -34,9 +34,9 @@ func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
 	case *mq.Publish:
 		// naive implementation looping over each route, improve at
 		// some point
-		for _, route := range r.routes {
-			if _, ok := route.Match(p.TopicName()); ok {
-				for _, h := range route.handlers {
+		for _, s := range r.routes {
+			if _, ok := s.Match(p.TopicName()); ok {
+				for _, h := range s.handlers {
 					// maybe we'll have to have a different routing mechanism for
 					// client side handling subscriptions compared to server side.
 					// As server may have to adapt packages before sending and

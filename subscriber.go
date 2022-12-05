@@ -36,7 +36,7 @@ func (s *Subscriber) In(next Handler) Handler {
 			a := mq.NewSubAck()
 			a.SetPacketID(p.PacketID())
 			for _, f := range p.Filters() {
-				r := NewRoute(f.Filter(), s.PubHandler)
+				r := NewSubscription(f.Filter(), s.PubHandler)
 				s.Router.AddRoute(r)
 				// 3.9.3 SUBACK Payload
 				a.AddReasonCode(mq.Success)

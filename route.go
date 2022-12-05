@@ -4,8 +4,8 @@ import (
 	"strings"
 )
 
-func NewRoute(filter string, handlers ...PubHandler) *Route {
-	r := &Route{
+func NewSubscription(filter string, handlers ...PubHandler) *Subscription {
+	r := &Subscription{
 		filter:   filter,
 		filters:  strings.Split(filter, "/"),
 		always:   filter == "#",
@@ -18,7 +18,7 @@ func NewRoute(filter string, handlers ...PubHandler) *Route {
 	return r
 }
 
-type Route struct {
+type Subscription struct {
 	filter    string
 	filters   []string // topicFilter split into words a/# becomes "a", "#"
 	always    bool
@@ -28,12 +28,12 @@ type Route struct {
 	handlers []PubHandler
 }
 
-func (r *Route) String() string {
+func (r *Subscription) String() string {
 	return r.filter
 }
 
 // Match topic name and return any wildcard words.
-func (r *Route) Match(name string) ([]string, bool) {
+func (r *Subscription) Match(name string) ([]string, bool) {
 	// special case always
 	if r.always {
 		return nil, true
@@ -76,7 +76,7 @@ func (r *Route) Match(name string) ([]string, bool) {
 	return words, true
 }
 
-func (r *Route) Filter() string { return r.filter }
+func (r *Subscription) Filter() string { return r.filter }
 
 func word(name string, i int) string {
 	width := strings.Index(name[i:], "/")
