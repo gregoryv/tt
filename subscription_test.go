@@ -5,6 +5,7 @@ import (
 )
 
 func TestSubscription(t *testing.T) {
+	// todo move this on TopicFilter instead
 	// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 	spec := []string{
 		"sport/tennis/player1",
@@ -16,26 +17,25 @@ func TestSubscription(t *testing.T) {
 		expMatch bool
 		names    []string
 		*Subscription
-		expWords []string
 	}{
-		{true, spec, NewSubscription("sport/tennis/player1/#"), nil},
-		{true, spec, NewSubscription("sport/#"), nil},
-		{true, spec, NewSubscription("#"), nil},
-		{true, spec, NewSubscription("+/tennis/#"), []string{"sport"}},
+		{true, spec, MustNewSubscription("sport/tennis/player1/#")},
+		{true, spec, MustNewSubscription("sport/#")},
+		{true, spec, MustNewSubscription("#")},
+		{true, spec, MustNewSubscription("+/tennis/#")},
 
-		{true, []string{"a/b/c"}, NewSubscription("a/+/+"), []string{"b", "c"}},
-		{true, []string{"a/b/c"}, NewSubscription("a/+/c"), []string{"b"}},
+		{true, []string{"a/b/c"}, MustNewSubscription("a/+/+")},
+		{true, []string{"a/b/c"}, MustNewSubscription("a/+/c")},
 
-		{false, spec, NewSubscription("+"), nil},
-		{false, spec, NewSubscription("tennis/player1/#"), nil},
-		{false, spec, NewSubscription("sport/tennis#"), nil},
+		{false, spec, MustNewSubscription("+")},
+		{false, spec, MustNewSubscription("tennis/player1/#")},
+		{false, spec, MustNewSubscription("sport/tennis#")},
 	}
 
 	for _, c := range cases {
 		for _, name := range c.names {
 			words, match := c.Subscription.Match(name)
 
-			if !equal(words, c.expWords) || match != c.expMatch {
+			if match != c.expMatch {
 				t.Errorf("%s %s exp:%v got:%v %q",
 					name, c.Subscription, c.expMatch, match, words,
 				)
@@ -48,7 +48,7 @@ func TestSubscription(t *testing.T) {
 	}
 
 	// check String
-	if v := NewSubscription("sport/#").String(); v != "sport/#" {
+	if v := MustNewSubscription("sport/#").String(); v != "sport/#" {
 		t.Error("Route.String missing filter", v)
 	}
 }

@@ -2,6 +2,7 @@ package tt
 
 import (
 	"context"
+	"log"
 
 	"github.com/gregoryv/mq"
 )
@@ -36,7 +37,14 @@ func (s *Subscriber) In(next Handler) Handler {
 			a := mq.NewSubAck()
 			a.SetPacketID(p.PacketID())
 			for _, f := range p.Filters() {
-				r := NewSubscription(f.Filter(), s.PubHandler)
+				tf, err := ParseTopicFilter(f.Filter())
+				if err != nil {
+					// todo should probably disconnect here
+					log.Println(err)
+					return err
+				}
+
+				r := NewSubscription(tf, s.PubHandler)
 				s.Router.AddRoute(r)
 				// 3.9.3 SUBACK Payload
 				a.AddReasonCode(mq.Success)

@@ -1,80 +1,61 @@
 package tt
 
-import "strings"
+import (
+	"fmt"
+	"regexp"
+	"strings"
+)
 
-func NewTopicFilter(filter string) *TopicFilter {
-	r := &TopicFilter{
-		filter: filter,
-		levels: strings.Split(filter, "/"),
-		always: filter == "#",
+func MustParseTopicFilter(v string) *TopicFilter {
+	re, err := ParseTopicFilter(v)
+	if err != nil {
+		panic(err.Error())
 	}
-	if !r.always {
-		r.hasMulti = strings.HasSuffix(filter, "/#")
-		r.hasSingle = strings.Contains(filter, "+")
+	return re
+}
+
+// lets try regexp
+func ParseTopicFilter(v string) (*TopicFilter, error) {
+	if len(v) == 0 {
+		return nil, fmt.Errorf("empty filter")
 	}
-	return r
+	if i := strings.Index(v, "#"); i >= 0 && i < len(v)-1 {
+		// i.e. /a/#/b
+		return nil, fmt.Errorf("%q # not allowed there", v)
+	}
+
+	// build regexp
+	var expr string
+	if v == "#" {
+		expr = "^(.*)$"
+	} else {
+		expr = strings.ReplaceAll(v, "+", `([\w\s]+)`)
+		expr = strings.ReplaceAll(expr, "/#", `(.*)`)
+		expr = "^" + expr + "$"
+	}
+	re, err := regexp.Compile(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	tf := &TopicFilter{
+		re:     re,
+		filter: v,
+	}
+	return tf, nil
 }
 
 type TopicFilter struct {
-	filter    string
-	levels    []string // topicFilter split into words a/# becomes "a", "#"
-	always    bool
-	hasMulti  bool
-	hasSingle bool
+	re     *regexp.Regexp
+	filter string
 }
 
 // Match topic name and return any wildcard words.
 func (r *TopicFilter) Match(name string) ([]string, bool) {
-	// special case always
-	if r.always {
-		return nil, true
-	}
-	// without wildcards
-	if !r.hasMulti && !r.hasSingle {
-		return nil, name == r.filter
-	}
-
-	// + matches are saved for easy access by handlers
-	var words []string
-
-	// wip don't like this algorithm one bit
-
-	var j int // index in name
-	for _, f := range r.levels {
-		switch f {
-		case "#":
-			if r.hasMulti {
-				return words, true
-			}
-			// todo maybe warn on bad filter, eg. a/#/b
-
-		case "+":
-			// wip what does j mean here, next position? weird
-			w := word(name, j)
-			words = append(words, w)
-			j += len(w) + 1
-
-		case name[j : j+len(f)]: // word match
-			j += len(f) + 1
-
-		default:
-			return nil, false
-		}
-	}
-
-	// if name not consumed by filter
-	if j < len(name) {
+	res := r.re.FindAllStringSubmatch(name, -1)
+	if len(res) == 0 {
 		return nil, false
 	}
-
-	return words, true
-}
-
-func word(name string, i int) string {
-	width := strings.Index(name[i:], "/")
-	if width > 0 {
-		return name[i : i+width]
-	}
-	return name[i:]
-
+	// skip the entire match, ie. the first element
+	return res[0][1:], true
 }

@@ -1,8 +1,17 @@
 package tt
 
-func NewSubscription(filter string, handlers ...PubHandler) *Subscription {
+// MustNewSubscription panics on bad filter
+func MustNewSubscription(filter string, handlers ...PubHandler) *Subscription {
+	tf, err := ParseTopicFilter(filter)
+	if err != nil {
+		panic(err.Error())
+	}
+	return NewSubscription(tf, handlers...)
+}
+
+func NewSubscription(filter *TopicFilter, handlers ...PubHandler) *Subscription {
 	r := &Subscription{
-		TopicFilter: NewTopicFilter(filter),
+		TopicFilter: filter,
 		handlers:    handlers,
 	}
 	return r
