@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Add type TopicFilter
 - Don't log read errors from closed connections
 - Server disconnects on incomming malformed publish
 - Add type Listener
