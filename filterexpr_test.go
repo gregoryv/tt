@@ -6,7 +6,7 @@ import (
 )
 
 func ExampleTopicFilter() {
-	tf := MustParseTopicFilter("/a/+/b/+/+")
+	tf := MustParseFilterExpr("/a/+/b/+/+")
 	groups, _ := tf.Match("/a/gopher/b/is/cute")
 	fmt.Println(groups)
 	// output:
@@ -18,7 +18,7 @@ func TestParseTopicFilter(t *testing.T) {
 		"#",
 	}
 	for _, filter := range okcases {
-		_, err := ParseTopicFilter(filter)
+		_, err := ParseFilterExpr(filter)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -29,7 +29,7 @@ func TestParseTopicFilter(t *testing.T) {
 		"#/",
 	}
 	for _, filter := range badcases {
-		_, err := ParseTopicFilter(filter)
+		_, err := ParseFilterExpr(filter)
 		if err == nil {
 			t.Fatalf("%s should fail", filter)
 		}

@@ -5,7 +5,7 @@ import (
 )
 
 func TestSubscription(t *testing.T) {
-	// todo move this on TopicFilter instead
+	// todo move this on FilterExpr instead
 	// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 	spec := []string{
 		"sport/tennis/player1",

@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-func MustParseTopicFilter(v string) *TopicFilter {
-	re, err := ParseTopicFilter(v)
+func MustParseFilterExpr(v string) *FilterExpr {
+	re, err := ParseFilterExpr(v)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -15,7 +15,7 @@ func MustParseTopicFilter(v string) *TopicFilter {
 }
 
 // lets try regexp
-func ParseTopicFilter(v string) (*TopicFilter, error) {
+func ParseFilterExpr(v string) (*FilterExpr, error) {
 	if len(v) == 0 {
 		return nil, fmt.Errorf("empty filter")
 	}
@@ -38,20 +38,20 @@ func ParseTopicFilter(v string) (*TopicFilter, error) {
 		return nil, err
 	}
 
-	tf := &TopicFilter{
+	tf := &FilterExpr{
 		re:     re,
 		filter: v,
 	}
 	return tf, nil
 }
 
-type TopicFilter struct {
+type FilterExpr struct {
 	re     *regexp.Regexp
 	filter string
 }
 
 // Match topic name and return any wildcard words.
-func (r *TopicFilter) Match(name string) ([]string, bool) {
+func (r *FilterExpr) Match(name string) ([]string, bool) {
 	res := r.re.FindAllStringSubmatch(name, -1)
 	if len(res) == 0 {
 		return nil, false

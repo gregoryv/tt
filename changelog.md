@@ -8,7 +8,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 ## [unreleased]
 
 - Use gregoryv/mq v0.26.0
-- Add type TopicFilter
+- Add type FilterExpr
 - Don't log read errors from closed connections
 - Server disconnects on incomming malformed publish
 - Add type Listener

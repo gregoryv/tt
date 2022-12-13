@@ -2,23 +2,23 @@ package tt
 
 // MustNewSubscription panics on bad filter
 func MustNewSubscription(filter string, handlers ...PubHandler) *Subscription {
-	tf, err := ParseTopicFilter(filter)
+	tf, err := ParseFilterExpr(filter)
 	if err != nil {
 		panic(err.Error())
 	}
 	return NewSubscription(tf, handlers...)
 }
 
-func NewSubscription(filter *TopicFilter, handlers ...PubHandler) *Subscription {
+func NewSubscription(filter *FilterExpr, handlers ...PubHandler) *Subscription {
 	r := &Subscription{
-		TopicFilter: filter,
-		handlers:    handlers,
+		FilterExpr: filter,
+		handlers:   handlers,
 	}
 	return r
 }
 
 type Subscription struct {
-	*TopicFilter
+	*FilterExpr
 
 	handlers []PubHandler
 }
