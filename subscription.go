@@ -26,5 +26,3 @@ type Subscription struct {
 func (r *Subscription) String() string {
 	return r.filter
 }
-
-func (r *Subscription) Filter() string { return r.filter }

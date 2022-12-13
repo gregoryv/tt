@@ -59,3 +59,7 @@ func (r *FilterExpr) Match(name string) ([]string, bool) {
 	// skip the entire match, ie. the first element
 	return res[0][1:], true
 }
+
+func (r *FilterExpr) Filter() string {
+	return r.filter
+}
