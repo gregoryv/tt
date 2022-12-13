@@ -72,10 +72,10 @@ func ExampleLogger_errors() {
 	l := NewLogger()
 	l.SetOutput(os.Stdout)
 
-	p := mq.Pub(0, "a/b", "gopher")
 	broken := func(context.Context, mq.Packet) error {
 		return fmt.Errorf("broken")
 	}
+	p := mq.Pub(0, "a/b", "gopher")
 	l.In(broken)(nil, p)
 	l.Out(broken)(nil, p)
 	// output:
