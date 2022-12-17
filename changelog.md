@@ -5,7 +5,7 @@ documented in this file.
 The format is based on http://keepachangelog.com/en/1.0.0/
 and this project adheres to http://semver.org/spec/v2.0.0.html.
 
-## [unreleased]
+## [0.6.0] 2022-12-17
 
 - Use gregoryv/mq v0.26.0
 - Add type FilterExpr
