@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/google/uuid v1.3.0
 	github.com/gregoryv/cmdline v0.12.0
+	github.com/gregoryv/draw v0.25.0
 	github.com/gregoryv/mq v0.26.0
 )
 
