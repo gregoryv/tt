@@ -10,21 +10,23 @@ func NewDesignDiagram() *design.ClassDiagram {
 		d      = design.NewClassDiagram()
 		router = d.Struct(tt.Router{})
 		//handler = d.Interface((*tt.Handler)(nil)) // func, unsupported in draw/design :-/
-		idpool   = d.Struct(tt.IDPool{})
-		inner    = d.Interface((*tt.Inner)(nil))
-		outer    = d.Interface((*tt.Outer)(nil))
 		listener = d.Struct(tt.Listener{})
 
-		logger   = d.Struct(tt.Logger{})
-		qsupport = d.Struct(tt.QualitySupport{})
+		receiver = d.Struct(tt.Receiver{})
+		remote   = d.Interface((*tt.Remote)(nil))
+
+		server = d.Struct(tt.Server{})
+
+		_ = []design.VRecord{
+			router, listener,
+			receiver, remote, server,
+		}
 	)
+	d.Style.Spacing = 70
+	d.HideRealizations()
 
-	d.Place(router).At(100, 100)
-	//d.Place(handler).RightOf(router)
-	d.Place(idpool, inner, outer).RightOf(router)
+	d.Place(server).At(120, 20)
 
-	d.Place(listener).Below(idpool)
-
-	d.Place(logger, qsupport).RightOf(listener).Move(100, 0)
+	d.Place(router).Below(server)
 	return d
 }

@@ -11,14 +11,15 @@ import (
 // NewRouter returns a router for handling the given subscriptions.
 func NewRouter(v ...*Subscription) *Router {
 	return &Router{
-		subs:   v,
-		Logger: log.New(log.Writer(), "router ", log.Flags()),
+		subs: v,
+		log:  log.New(log.Writer(), "router ", log.Flags()),
 	}
 }
 
 type Router struct {
 	subs []*Subscription
-	*log.Logger
+
+	log *log.Logger
 }
 
 func (r *Router) String() string {
@@ -43,7 +44,7 @@ func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
 					// As server may have to adapt packages before sending and
 					// there will be a QoS on each subscription that we need to consider.
 					if err := h(ctx, p); err != nil {
-						r.Logger.Println("handle", p, err)
+						r.log.Println("handle", p, err)
 					}
 				}
 			}
