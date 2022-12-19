@@ -7,6 +7,7 @@ and this project adheres to http://semver.org/spec/v2.0.0.html.
 
 ## [unreleased]
 
+- Hide field Server.Logger
 - Hide field Router.Logger
 - Add docs directory with design digram
 

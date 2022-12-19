@@ -16,7 +16,7 @@ func NewServer() *Server {
 	return &Server{
 		PoolSize: 100,
 		Router:   NewRouter(),
-		Logger:   log.New(os.Stdout, "ttsrv ", log.Flags()),
+		log:      log.New(os.Stdout, "ttsrv ", log.Flags()),
 		stat:     NewServerStats(),
 	}
 }
@@ -29,7 +29,7 @@ type Server struct {
 
 	*Router
 
-	*log.Logger
+	log *log.Logger
 
 	// statistics
 	stat *ServerStats
@@ -50,22 +50,22 @@ func (s *Server) NewMemConn() Remote {
 func (s *Server) AddConnection(ctx context.Context, conn Remote) {
 	// the server tracks active connections
 	a := conn.RemoteAddr()
-	s.Logger.Printf("new conn %s://%s", a.Network(), a)
+	s.log.Printf("new conn %s://%s", a.Network(), a)
 	s.stat.AddConn()
 	defer func() {
-		s.Logger.Printf("del conn %s://%s", a.Network(), a)
+		s.log.Printf("del conn %s://%s", a.Network(), a)
 		s.stat.RemoveConn()
 	}()
 	in, _ := s.CreateHandlers(conn)
 	if err := NewReceiver(conn, in).Run(ctx); err != nil {
-		s.Logger.Printf("%T %v", err, err)
+		s.log.Printf("%T %v", err, err)
 	}
 }
 
 // CreateHandlers returns in and out handlers for packets.
 func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	logger := NewLogger()
-	logger.SetOutput(s.Logger.Writer())
+	logger.SetOutput(s.log.Writer())
 	logger.SetRemote(conn.RemoteAddr().String())
 	logger.SetPrefix("ttsrv ")
 
