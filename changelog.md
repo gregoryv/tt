@@ -5,8 +5,10 @@ documented in this file.
 The format is based on http://keepachangelog.com/en/1.0.0/
 and this project adheres to http://semver.org/spec/v2.0.0.html.
 
-## [unreleased]
+## [0.7.0] 2023-01-15
 
+- Use latest gregoryv/mq
+- Hide field Server.Router
 - Hide field Server.Logger
 - Hide field Router.Logger
 - Add docs directory with design digram
