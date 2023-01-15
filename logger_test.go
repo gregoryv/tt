@@ -20,7 +20,7 @@ func ExampleLogger_In() {
 	l.In(NoopHandler)(nil, mq.NewConnect())
 
 	// output:
-	// in  PUBLISH ---- p0 a/b 16 bytes
+	// in  PUBLISH ---- p0 a/b 14 bytes
 	// in  CONNECT ---- -------- MQTT5  0s 15 bytes 1.2.3.4:0001
 }
 
@@ -32,7 +32,7 @@ func ExampleLogger_Out() {
 	l.Out(NoopHandler)(nil, p)
 
 	// output:
-	// out PUBLISH ---- p0 a/b 16 bytes
+	// out PUBLISH ---- p0 a/b 14 bytes
 }
 
 func ExampleLogger_DumpPacket() {
@@ -44,8 +44,8 @@ func ExampleLogger_DumpPacket() {
 	l.In(NoopHandler)(nil, p)
 
 	// output:
-	// in  PUBLISH ---- p0 a/b 16 bytes
-	// 00000000  30 0e 00 03 61 2f 62 00  00 06 67 6f 70 68 65 72  |0...a/b...gopher|
+	// in  PUBLISH ---- p0 a/b 14 bytes
+	// 00000000  30 0c 00 03 61 2f 62 00  67 6f 70 68 65 72        |0...a/b.gopher|
 }
 
 func ExampleLogger_SetMaxIDLen() {
@@ -79,9 +79,9 @@ func ExampleLogger_errors() {
 	l.In(broken)(nil, p)
 	l.Out(broken)(nil, p)
 	// output:
-	// in  PUBLISH ---- p0 a/b 16 bytes
+	// in  PUBLISH ---- p0 a/b 14 bytes
 	// broken
-	// out PUBLISH ---- p0 a/b 16 bytes
+	// out PUBLISH ---- p0 a/b 14 bytes
 	// broken
 }
 
