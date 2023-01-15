@@ -15,7 +15,7 @@ import (
 func NewServer() *Server {
 	return &Server{
 		PoolSize: 100,
-		Router:   NewRouter(),
+		router:   NewRouter(),
 		log:      log.New(os.Stdout, "ttsrv ", log.Flags()),
 		stat:     NewServerStats(),
 	}
@@ -27,7 +27,7 @@ type Server struct {
 
 	PoolSize uint16
 
-	*Router
+	router *Router
 
 	log *log.Logger
 
@@ -77,10 +77,10 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 
 	clientIDmaker := NewClientIDMaker(subtransmit)
 	checker := NewFormChecker(subtransmit)
-	subscriber := NewSubscriber(s.Router, transmit)
+	subscriber := NewSubscriber(s.router, transmit)
 
 	in = CombineIn(
-		s.Router.Handle,
+		s.router.Handle,
 		disco, clientIDmaker, quality, subscriber, pool, checker, logger,
 	)
 	return
