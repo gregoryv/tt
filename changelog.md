@@ -1,9 +1,9 @@
 # Changelog
-All notable changes to github.com/gregoryv/mq/tt module will be
-documented in this file.
 
-The format is based on http://keepachangelog.com/en/1.0.0/
-and this project adheres to http://semver.org/spec/v2.0.0.html.
+This project adheres to semantic versioning and all notable
+changes will be documented in this file.
+
+## [unreleased]
 
 ## [0.7.0] 2023-01-15
 
