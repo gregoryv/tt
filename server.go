@@ -24,9 +24,10 @@ func NewServer() *Server {
 type Server struct {
 	// client has to send the initial connect packet
 	connectTimeout time.Duration
-
+	// poolSize is the max packet id for each connection
 	poolSize uint16
-
+	// router is used to route incoming publish packets to subscribing
+	// clients
 	router *Router
 
 	log *log.Logger
