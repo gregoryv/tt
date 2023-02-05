@@ -26,8 +26,6 @@ github.com/gregoryv/gocyclo v0.1.1 h1:wRhY+jEiXtNqtxOSI1XfXmbRaRknzvVtO5QOSg5KVH
 github.com/gregoryv/gocyclo v0.1.1/go.mod h1:e1PwkEyshvXjhPGP0RUXqlEXx09aBSSNj0wL8I/P/3I=
 github.com/gregoryv/golden v0.6.1 h1:vZY0sBsmvIHu2SJdFc9C4WP6XNCPlUlRTEqEoVDA0qk=
 github.com/gregoryv/golden v0.6.1/go.mod h1:Y4isDieWcbO/Wf7u1wBHAXF4KD0xfaix0W0sEkKY8HU=
-github.com/gregoryv/mq v0.26.0 h1:Ok0hw2k2GWnRMHZvpdnUnYbG1G5MiAuGxmNq0aXbtFM=
-github.com/gregoryv/mq v0.26.0/go.mod h1:Ebcm1RxUjob2s5htpGQ0ukAAfhBmvAktGuzH+u+rW5k=
 github.com/gregoryv/mq v0.27.0 h1:v6NLC/L976GH8w6LUyLGtsgBpBkWxC5og4jYZtYnfKk=
 github.com/gregoryv/mq v0.27.0/go.mod h1:fLUZihmPqEDHepCnQheGWnjUtM/0FYA4hxiwC1fAdLU=
 github.com/gregoryv/must v0.1.0/go.mod h1:1HQ/4FuSFr52clBKUWSaibQTnZRKnWtbBZRxC5cii1A=
