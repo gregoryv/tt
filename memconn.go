@@ -1,6 +1,7 @@
 package tt
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -9,6 +10,13 @@ import (
 
 	"github.com/gregoryv/mq"
 )
+
+// dial opens a new in memory connection to the server, useful for testing.
+func dial(s *Server) Remote {
+	conn := NewMemConn()
+	go s.AddConnection(context.Background(), conn.Server())
+	return conn.Client()
+}
 
 // NewMemConn returns a duplex in memory connection.
 func NewMemConn() *MemConn {

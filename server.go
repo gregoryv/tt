@@ -51,12 +51,6 @@ func (s *Server) Stat() ServerStats {
 	return *s.stat
 }
 
-func (s *Server) NewMemConn() Remote {
-	conn := NewMemConn()
-	go s.AddConnection(context.Background(), conn.Server())
-	return conn.Client()
-}
-
 // AddConnection handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.
 func (s *Server) AddConnection(ctx context.Context, conn Remote) {

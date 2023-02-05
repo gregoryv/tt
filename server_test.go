@@ -11,7 +11,7 @@ import (
 
 func TestServer_AddConnection(t *testing.T) {
 	s := NewServer()
-	conn := s.NewMemConn()
+	conn := dial(s)
 	<-time.After(10 * time.Millisecond)
 	before := s.Stat()
 
@@ -29,7 +29,7 @@ func TestServer_AssignsID(t *testing.T) {
 	// If a client connects without any id set the server should
 	// assign one in the returning ConnAck.
 	s := NewServer()
-	conn := s.NewMemConn()
+	conn := dial(s)
 	{
 		p := mq.NewConnect()
 		p.WriteTo(conn)
@@ -51,7 +51,7 @@ func TestServer_DisconnectOnMalformed(t *testing.T) {
 	// If server gets a malformed packet it should disconnect with the
 	// reason code MalformedPacket 0x81
 	s := NewServer()
-	conn := s.NewMemConn()
+	conn := dial(s)
 	{
 		p := mq.NewConnect()
 		p.WriteTo(conn)
