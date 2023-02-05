@@ -14,7 +14,7 @@ import (
 // NewServer returns a server that binds to a random port.
 func NewServer() *Server {
 	return &Server{
-		PoolSize: 100,
+		poolSize: 100,
 		router:   NewRouter(),
 		log:      log.New(os.Stdout, "ttsrv ", log.Flags()),
 		stat:     NewServerStats(),
@@ -25,7 +25,7 @@ type Server struct {
 	// client has to send the initial connect packet
 	connectTimeout time.Duration
 
-	PoolSize uint16
+	poolSize uint16
 
 	router *Router
 
@@ -38,6 +38,13 @@ type Server struct {
 // SetConnectTimeout is the duration within which a client must send a
 // mq.Connect packet or once a connection is opened.
 func (s *Server) SetConnectTimeout(v time.Duration) { s.connectTimeout = v }
+
+// SetPoolSize sets the total number of packets in transit for one
+// connection. If e.g. set to 10, packets will be numbered 1 .. 10
+func (s *Server) SetPoolSize(v uint16) {
+	// +1 because 0 is not a valid packet ID
+	s.poolSize = v + 1
+}
 
 func (s *Server) Stat() ServerStats {
 	return *s.stat
@@ -73,7 +80,7 @@ func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
 	logger.SetRemote(conn.RemoteAddr().String())
 	logger.SetPrefix("ttsrv ")
 
-	pool := NewIDPool(s.PoolSize)
+	pool := NewIDPool(s.poolSize)
 	disco := NewDisconnector(conn)
 	subtransmit := CombineOut(Send(conn), logger, disco)
 	quality := NewQualitySupport(subtransmit)
