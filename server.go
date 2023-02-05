@@ -23,7 +23,7 @@ func NewServer() *Server {
 
 type Server struct {
 	// client has to send the initial connect packet
-	ConnectTimeout time.Duration
+	connectTimeout time.Duration
 
 	PoolSize uint16
 
@@ -34,6 +34,10 @@ type Server struct {
 	// statistics
 	stat *ServerStats
 }
+
+// SetConnectTimeout is the duration within which a client must send a
+// mq.Connect packet or once a connection is opened.
+func (s *Server) SetConnectTimeout(v time.Duration) { s.connectTimeout = v }
 
 func (s *Server) Stat() ServerStats {
 	return *s.stat

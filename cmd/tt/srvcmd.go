@@ -13,7 +13,7 @@ type SrvCmd struct {
 
 func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 	s := tt.NewServer()
-	s.ConnectTimeout = cli.Option("-c, --connect-timeout").Duration("20ms")
+	s.SetConnectTimeout(cli.Option("-c, --connect-timeout").Duration("20ms"))
 	s.PoolSize = cli.Option("-p, --pool-size").Uint16(200)
 
 	b := tt.NewListener()
