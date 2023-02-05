@@ -79,9 +79,9 @@ func TestServer_DisconnectOnMalformed(t *testing.T) {
 	}
 }
 
-func xTestServer_CreateHandlers(t *testing.T) {
+func xTestServer_createHandlers(t *testing.T) {
 	conn := NewMemConn().Server()
-	in, _ := NewServer().CreateHandlers(conn)
+	in, _ := NewServer().createHandlers(conn)
 	{ // accepted packets
 		packets := []mq.Packet{
 			mq.NewConnect(),

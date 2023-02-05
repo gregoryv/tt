@@ -68,14 +68,14 @@ func (s *Server) AddConnection(ctx context.Context, conn Remote) {
 		s.log.Printf("del conn %s://%s", a.Network(), a)
 		s.stat.RemoveConn()
 	}()
-	in, _ := s.CreateHandlers(conn)
+	in, _ := s.createHandlers(conn)
 	if err := NewReceiver(conn, in).Run(ctx); err != nil {
 		s.log.Printf("%T %v", err, err)
 	}
 }
 
-// CreateHandlers returns in and out handlers for packets.
-func (s *Server) CreateHandlers(conn Remote) (in, transmit Handler) {
+// createHandlers returns in and out handlers for packets.
+func (s *Server) createHandlers(conn Remote) (in, transmit Handler) {
 	logger := NewLogger()
 	logger.SetOutput(s.log.Writer())
 	logger.SetRemote(conn.RemoteAddr().String())
