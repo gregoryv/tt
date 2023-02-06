@@ -15,6 +15,9 @@ Even though this repository provides a basic client/server(WIP) command
 it's main purpose is to provide capabilities for others to write their
 own clients depending on their situation.
 
+*NOTE! this module is still not ready for public use. I'm
+experimenting with the design, so major changes will occur.*
+
 This package uses the sibling package
 [gregoryv/mq](https://github.com/gregoryv/mq) for encoding control
 packets on the wire.
