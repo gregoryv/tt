@@ -28,9 +28,10 @@ type Server struct {
 	connectTimeout time.Duration
 	// poolSize is the max packet id for each connection
 	poolSize uint16
+
 	// router is used to route incoming publish packets to subscribing
 	// clients
-	router *Router // todo replace this with a server side router
+	router *Router
 
 	log *log.Logger
 
@@ -85,7 +86,7 @@ func (s *Server) createHandlers(conn tt.Remote) (in, transmit tt.Handler) {
 
 	clientIDmaker := NewClientIDMaker(subtransmit)
 	checker := NewFormChecker(subtransmit)
-	subscriber := NewSubscriber(s.router, transmit) // todo replace with server side subscriber
+	subscriber := NewSubscriber(s.router, transmit)
 
 	in = tt.CombineIn(
 		s.router.Handle,
