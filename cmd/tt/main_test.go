@@ -16,7 +16,7 @@ import (
 	"github.com/gregoryv/cmdline/clitest"
 	"github.com/gregoryv/tt"
 	"github.com/gregoryv/tt/ttsrv"
-	"github.com/gregoryv/tt/tttest"
+	"github.com/gregoryv/tt/ttx"
 )
 
 func Test_main_help(t *testing.T) {
@@ -135,7 +135,7 @@ func TestIntegration(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	r := tt.NewReceiver(&tttest.ClosedConn{}, tt.NoopHandler)
+	r := tt.NewReceiver(&ttx.ClosedConn{}, tt.NoopHandler)
 	_, done := Start(context.Background(), r)
 	select {
 	case err := <-done:

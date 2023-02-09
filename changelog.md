@@ -5,7 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
-- Move type ClosedConn to tttest
+- Move type ClosedConn to ttx
 - Move tt.Start to cmd/tt
 - Add type ttsrv/IDPool
 - Move server related components to subdirectory ttsrv

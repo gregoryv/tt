@@ -11,7 +11,7 @@ import (
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/testnet"
-	"github.com/gregoryv/tt/tttest"
+	"github.com/gregoryv/tt/ttx"
 )
 
 func ExampleNewReceiver() {
@@ -27,7 +27,7 @@ func ExampleNewReceiver() {
 func TestReceiver(t *testing.T) {
 	{ // handler is called on packet from server
 		conn, srvconn := testnet.Dial("tcp", "someserver:1234")
-		called := tttest.NewCalled()
+		called := ttx.NewCalled()
 		receiver := NewReceiver(srvconn, called.Handler)
 
 		go receiver.Run(context.Background())
@@ -63,7 +63,7 @@ func TestReceiver(t *testing.T) {
 	}
 
 	{ // Run is stopped on closed connection
-		receiver := NewReceiver(&tttest.ClosedConn{}, NoopHandler)
+		receiver := NewReceiver(&ttx.ClosedConn{}, NoopHandler)
 		err := receiver.Run(context.Background())
 		if !errors.Is(err, io.EOF) {
 			t.Errorf("unexpected error: %T", err)

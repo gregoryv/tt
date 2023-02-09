@@ -6,12 +6,12 @@ import (
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
-	"github.com/gregoryv/tt/tttest"
+	"github.com/gregoryv/tt/ttx"
 )
 
 func TestSubscriber(t *testing.T) {
 	r := NewRouter()
-	called := tttest.NewCalled()
+	called := ttx.NewCalled()
 	s := NewSubscriber(r, called.Handler)
 
 	{
