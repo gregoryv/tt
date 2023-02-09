@@ -1,12 +1,13 @@
-package tt
+package ttsrv
 
 import (
 	"context"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt"
 )
 
-func NewQualitySupport(transmit Handler) *QualitySupport {
+func NewQualitySupport(transmit tt.Handler) *QualitySupport {
 	return &QualitySupport{
 		transmit: transmit,
 	}
@@ -15,10 +16,10 @@ func NewQualitySupport(transmit Handler) *QualitySupport {
 // QualitySupport middleware which for now only supports QoS 0.
 type QualitySupport struct {
 	max      uint8
-	transmit Handler
+	transmit tt.Handler
 }
 
-func (s *QualitySupport) In(next Handler) Handler {
+func (s *QualitySupport) In(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.Publish:
@@ -34,7 +35,7 @@ func (s *QualitySupport) In(next Handler) Handler {
 	}
 }
 
-func (s *QualitySupport) Out(next Handler) Handler {
+func (s *QualitySupport) Out(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:

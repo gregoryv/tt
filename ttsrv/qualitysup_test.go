@@ -1,4 +1,4 @@
-package tt
+package ttsrv
 
 import (
 	"context"
@@ -6,16 +6,17 @@ import (
 	"testing"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt"
 	"github.com/gregoryv/tt/tttest"
 )
 
 func TestQualitySupport(t *testing.T) {
-	f := NewQualitySupport(Send(ioutil.Discard))
+	f := NewQualitySupport(tt.Send(ioutil.Discard))
 	ctx := context.Background()
 
 	{ // ok pub
 		p := mq.Pub(0, "a/b", "hi")
-		if err := f.In(NoopHandler)(ctx, p); err != nil {
+		if err := f.In(tt.NoopHandler)(ctx, p); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -33,7 +34,7 @@ func TestQualitySupport(t *testing.T) {
 	}
 	{ // outgoing ack
 		p := mq.NewConnAck()
-		if err := f.Out(NoopHandler)(ctx, p); err != nil {
+		if err := f.Out(tt.NoopHandler)(ctx, p); err != nil {
 			t.Fatal(err)
 		}
 		if v := p.MaxQoS(); v != 0 {

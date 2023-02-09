@@ -81,7 +81,7 @@ func (s *Server) createHandlers(conn tt.Remote) (in, transmit tt.Handler) {
 	pool := NewIDPool(s.poolSize)
 	disco := NewDisconnector(conn)
 	subtransmit := tt.CombineOut(tt.Send(conn), logger, disco)
-	quality := tt.NewQualitySupport(subtransmit)
+	quality := NewQualitySupport(subtransmit)
 	transmit = tt.CombineOut(tt.Send(conn), logger, disco, quality, pool)
 
 	clientIDmaker := NewClientIDMaker(subtransmit)
