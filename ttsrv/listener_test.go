@@ -6,8 +6,6 @@ import (
 	"net"
 	"testing"
 	"time"
-
-	"github.com/gregoryv/tt"
 )
 
 func TestListener(t *testing.T) {
@@ -27,7 +25,8 @@ func TestListener(t *testing.T) {
 	{ // accepts connections
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		ln, _ := tt.Start(ctx, NewListener())
+		ln := NewListener()
+		go ln.Run(ctx)
 		<-ln.Up
 
 		conn, err := net.Dial("tcp", ln.Addr().String())

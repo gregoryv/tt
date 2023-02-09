@@ -14,7 +14,9 @@ import (
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/cmdline/clitest"
+	"github.com/gregoryv/tt"
 	"github.com/gregoryv/tt/ttsrv"
+	"github.com/gregoryv/tt/tttest"
 )
 
 func Test_main_help(t *testing.T) {
@@ -130,4 +132,15 @@ func TestIntegration(t *testing.T) {
 	t.Log(
 		"todo implement server integration tests",
 	)
+}
+
+func TestStart(t *testing.T) {
+	r := tt.NewReceiver(&tttest.ClosedConn{}, tt.NoopHandler)
+	_, done := Start(context.Background(), r)
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fail()
+		}
+	}
 }

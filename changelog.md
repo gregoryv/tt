@@ -5,6 +5,8 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Move type ClosedConn to tttest
+- Move tt.Start to cmd/tt
 - Add type ttsrv/IDPool
 - Move server related components to subdirectory ttsrv
 - Replace type MemConn with testnet.Conn

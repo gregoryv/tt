@@ -106,7 +106,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	// start handling packet flow
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
-	_, running := tt.Start(ctx, receive)
+	_, running := Start(ctx, receive)
 
 	select {
 	case err := <-running:

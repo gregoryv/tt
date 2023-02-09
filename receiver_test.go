@@ -24,17 +24,6 @@ func ExampleNewReceiver() {
 	// output:
 }
 
-func TestStart(t *testing.T) {
-	r := NewReceiver(&ClosedConn{}, NoopHandler)
-	_, done := Start(context.Background(), r)
-	select {
-	case err := <-done:
-		if err == nil {
-			t.Fail()
-		}
-	}
-}
-
 func TestReceiver(t *testing.T) {
 	{ // handler is called on packet from server
 		conn, srvconn := testnet.Dial("tcp", "someserver:1234")
@@ -74,7 +63,7 @@ func TestReceiver(t *testing.T) {
 	}
 
 	{ // Run is stopped on closed connection
-		receiver := NewReceiver(&ClosedConn{}, NoopHandler)
+		receiver := NewReceiver(&tttest.ClosedConn{}, NoopHandler)
 		err := receiver.Run(context.Background())
 		if !errors.Is(err, io.EOF) {
 			t.Errorf("unexpected error: %T", err)
