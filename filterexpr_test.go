@@ -13,7 +13,7 @@ func ExampleTopicFilter() {
 	// [gopher is cute]
 }
 
-func TestParseTopicFilter(t *testing.T) {
+func TestParseFilterExpr(t *testing.T) {
 	okcases := []string{
 		"#",
 	}
@@ -27,6 +27,7 @@ func TestParseTopicFilter(t *testing.T) {
 	badcases := []string{
 		"a/#/c",
 		"#/",
+		"",
 	}
 	for _, filter := range badcases {
 		_, err := ParseFilterExpr(filter)
@@ -37,7 +38,7 @@ func TestParseTopicFilter(t *testing.T) {
 
 }
 
-func TestMustParseFilterExpr(t *testing.T) {
+func TestFilterExpr_Match(t *testing.T) {
 	// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 	spec := []string{
 		"sport/tennis/player1",
