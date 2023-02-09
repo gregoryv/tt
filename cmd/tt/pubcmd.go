@@ -48,6 +48,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	log.SetLogPrefix(c.clientID)
 	log.SetDebug(c.debug)
 
+	// create network connection
 	log.Print("dial ", "tcp://", c.server.String())
 	conn, err := net.Dial("tcp", c.server.String())
 	if err != nil {
@@ -82,6 +83,8 @@ func (c *PubCmd) Run(ctx context.Context) error {
 
 		case *mq.PubComp:
 			close(done)
+
+		case *mq.Disconnect:
 
 		default:
 			fmt.Println("unexpected:", p)

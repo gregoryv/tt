@@ -5,6 +5,8 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Ignore Disconnect in pubcmd
+
 ## [0.7.0] 2023-01-15
 
 - Use latest gregoryv/mq
