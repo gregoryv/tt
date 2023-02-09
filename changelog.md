@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Add type ttsrv/IDPool
 - Move server related components to subdirectory ttsrv
 - Replace type MemConn with testnet.Conn
 - Ignore Disconnect in pubcmd

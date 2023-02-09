@@ -78,7 +78,7 @@ func (s *Server) createHandlers(conn tt.Remote) (in, transmit tt.Handler) {
 	logger.SetRemote(conn.RemoteAddr().String())
 	logger.SetPrefix("ttsrv ")
 
-	pool := tt.NewIDPool(s.poolSize) // todo replace this with server side pool
+	pool := NewIDPool(s.poolSize)
 	disco := NewDisconnector(conn)
 	subtransmit := tt.CombineOut(tt.Send(conn), logger, disco)
 	quality := tt.NewQualitySupport(subtransmit)
