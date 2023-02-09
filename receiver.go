@@ -6,7 +6,6 @@ import (
 	"io"
 	"net"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gregoryv/mq"
@@ -44,10 +43,7 @@ loop:
 			if errors.Is(err, os.ErrDeadlineExceeded) {
 				continue loop
 			}
-			if !strings.Contains(err.Error(), "use of closed network connection") {
-				return err
-			}
-			return nil
+			return err
 		}
 		// ignore error here, it's up to the user to configure a queue
 		// where the first middleware handles any errors, eg. Logger

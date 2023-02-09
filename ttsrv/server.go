@@ -66,9 +66,8 @@ func (s *Server) AddConnection(ctx context.Context, conn tt.Remote) {
 		s.stat.RemoveConn()
 	}()
 	in, _ := s.createHandlers(conn)
-	if err := tt.NewReceiver(conn, in).Run(ctx); err != nil {
-		s.log.Printf("%T %v", err, err)
-	}
+	// ignore error here, the connection is done
+	_ = tt.NewReceiver(conn, in).Run(ctx)
 }
 
 // createHandlers returns in and out handlers for packets.

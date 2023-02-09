@@ -3,7 +3,6 @@ package tt
 import (
 	"context"
 	"errors"
-	"io"
 	"net"
 	"os"
 	"testing"
@@ -64,9 +63,8 @@ func TestReceiver(t *testing.T) {
 
 	{ // Run is stopped on closed connection
 		receiver := NewReceiver(&ttx.ClosedConn{}, NoopHandler)
-		err := receiver.Run(context.Background())
-		if !errors.Is(err, io.EOF) {
-			t.Errorf("unexpected error: %T", err)
+		if err := receiver.Run(context.Background()); err == nil {
+			t.Errorf("receiver should fail once connection is closed")
 		}
 	}
 }
