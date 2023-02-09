@@ -81,3 +81,14 @@ func TestMustParseFilterExpr(t *testing.T) {
 		t.Error("Route.String missing filter", v)
 	}
 }
+
+func TestMustParseFilterExpr_panics(t *testing.T) {
+	defer catchPanic(t)
+	MustParseFilterExpr("sport/(.")
+}
+
+func catchPanic(t *testing.T) {
+	if e := recover(); e == nil {
+		t.Error("expected panic")
+	}
+}
