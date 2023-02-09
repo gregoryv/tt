@@ -4,19 +4,20 @@ import (
 	"github.com/gregoryv/draw/design"
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
+	"github.com/gregoryv/tt/ttsrv"
 )
 
 func NewDesignDiagram() *design.ClassDiagram {
 	var (
 		d      = design.NewClassDiagram()
-		router = d.Struct(tt.Router{})
+		router = d.Struct(ttsrv.Router{})
 		//handler = d.Interface((*tt.Handler)(nil)) // func, unsupported in draw/design :-/
-		listener = d.Struct(tt.Listener{})
+		listener = d.Struct(ttsrv.Listener{})
 
 		receiver = d.Struct(tt.Receiver{})
 		remote   = d.Interface((*tt.Remote)(nil))
 
-		server = d.Struct(tt.Server{})
+		server = d.Struct(ttsrv.Server{})
 
 		_ = []design.VRecord{
 			router, listener,

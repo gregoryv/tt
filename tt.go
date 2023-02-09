@@ -5,6 +5,8 @@ package tt
 
 import (
 	"context"
+	"io"
+	"net"
 
 	"github.com/gregoryv/mq"
 )
@@ -21,8 +23,6 @@ type Outer interface {
 
 // Handler handles a mqtt control packet
 type Handler func(context.Context, mq.Packet) error
-
-type PubHandler func(context.Context, *mq.Publish) error
 
 func NoopHandler(_ context.Context, _ mq.Packet) error { return nil }
 func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }
@@ -71,4 +71,9 @@ func CombineOut(h Handler, v ...Outer) Handler {
 	}
 	n := len(v) - 1
 	return v[n].Out(CombineOut(h, v[:n]...))
+}
+
+type Remote interface {
+	io.ReadWriteCloser
+	RemoteAddr() net.Addr
 }

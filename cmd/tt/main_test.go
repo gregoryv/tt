@@ -14,7 +14,7 @@ import (
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/cmdline/clitest"
-	"github.com/gregoryv/tt"
+	"github.com/gregoryv/tt/ttsrv"
 )
 
 func Test_main_help(t *testing.T) {
@@ -24,8 +24,8 @@ func Test_main_help(t *testing.T) {
 }
 
 func Test_main_pub(t *testing.T) {
-	srv := tt.NewServer()
-	ln := tt.NewListener()
+	srv := ttsrv.NewServer()
+	ln := ttsrv.NewListener()
 	ln.SetServer(srv)
 	go ln.Run(context.Background())
 
@@ -52,8 +52,8 @@ func Test_main_pub(t *testing.T) {
 }
 
 func Test_main_sub(t *testing.T) {
-	srv := tt.NewServer()
-	ln := tt.NewListener()
+	srv := ttsrv.NewServer()
+	ln := ttsrv.NewListener()
 	ln.SetServer(srv)
 	go ln.Run(context.Background())
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt/tttest"
 )
 
 func TestQualitySupport(t *testing.T) {
@@ -20,7 +21,7 @@ func TestQualitySupport(t *testing.T) {
 	}
 	{ // pub with unsupported qos
 		p := mq.Pub(1, "a/b", "hi")
-		called := NewCalled()
+		called := tttest.NewCalled()
 		if err := f.In(called.Handler)(ctx, p); err != nil {
 			t.Fatal(err)
 		}

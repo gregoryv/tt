@@ -11,6 +11,7 @@ import (
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/testnet"
+	"github.com/gregoryv/tt/tttest"
 )
 
 func ExampleNewReceiver() {
@@ -37,7 +38,7 @@ func TestStart(t *testing.T) {
 func TestReceiver(t *testing.T) {
 	{ // handler is called on packet from server
 		conn, srvconn := testnet.Dial("tcp", "someserver:1234")
-		called := NewCalled()
+		called := tttest.NewCalled()
 		receiver := NewReceiver(srvconn, called.Handler)
 
 		go receiver.Run(context.Background())
@@ -79,29 +80,4 @@ func TestReceiver(t *testing.T) {
 			t.Errorf("unexpected error: %T", err)
 		}
 	}
-}
-
-// ----------------------------------------
-
-func NewCalled() *Called {
-	return &Called{
-		c: make(chan struct{}, 0),
-	}
-}
-
-type Called struct {
-	c chan struct{}
-}
-
-func (c *Called) Handler(_ context.Context, _ mq.ControlPacket) error {
-	defer func() {
-		// close may panic, just ignore it
-		_ = recover()
-	}()
-	close(c.c)
-	return nil
-}
-
-func (c *Called) Done() <-chan struct{} {
-	return c.c
 }

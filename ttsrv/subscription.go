@@ -1,15 +1,17 @@
-package tt
+package ttsrv
+
+import "github.com/gregoryv/tt"
 
 // MustNewSubscription panics on bad filter
 func MustNewSubscription(filter string, handlers ...PubHandler) *Subscription {
-	tf, err := ParseFilterExpr(filter)
+	tf, err := tt.ParseFilterExpr(filter)
 	if err != nil {
 		panic(err.Error())
 	}
 	return NewSubscription(tf, handlers...)
 }
 
-func NewSubscription(filter *FilterExpr, handlers ...PubHandler) *Subscription {
+func NewSubscription(filter *tt.FilterExpr, handlers ...PubHandler) *Subscription {
 	r := &Subscription{
 		FilterExpr: filter,
 		handlers:   handlers,
@@ -18,11 +20,11 @@ func NewSubscription(filter *FilterExpr, handlers ...PubHandler) *Subscription {
 }
 
 type Subscription struct {
-	*FilterExpr
+	*tt.FilterExpr
 
 	handlers []PubHandler
 }
 
 func (r *Subscription) String() string {
-	return r.filter
+	return r.Filter()
 }

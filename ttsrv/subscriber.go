@@ -1,13 +1,14 @@
-package tt
+package ttsrv
 
 import (
 	"context"
 	"log"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt"
 )
 
-func NewSubscriber(r *Router, transmit Handler) *Subscriber {
+func NewSubscriber(r *Router, transmit tt.Handler) *Subscriber {
 	return &Subscriber{
 		Router: r,
 		PubHandler: func(ctx context.Context, p *mq.Publish) error {
@@ -30,14 +31,14 @@ type Subscriber struct {
 }
 
 // In responds to subscribe packets with a SubAck
-func (s *Subscriber) In(next Handler) Handler {
+func (s *Subscriber) In(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.Subscribe:
 			a := mq.NewSubAck()
 			a.SetPacketID(p.PacketID())
 			for _, f := range p.Filters() {
-				tf, err := ParseFilterExpr(f.Filter())
+				tf, err := tt.ParseFilterExpr(f.Filter())
 				if err != nil {
 					// todo should probably disconnect here
 					log.Println(err)

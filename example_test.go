@@ -3,7 +3,6 @@ package tt_test
 import (
 	"context"
 	"log"
-	"net"
 	"time"
 
 	"github.com/gregoryv/mq"
@@ -50,22 +49,4 @@ func Example_client() {
 	if err := receive.Run(ctx); err != nil {
 		log.Print(err)
 	}
-}
-
-// Example shows how to run the provided server.
-func Example_server() {
-	srv := tt.NewServer()
-	ln := tt.NewListener()
-	ln.SetServer(srv)
-	go ln.Run(context.Background())
-
-	<-ln.Up
-	// then use
-	a := ln.Addr()
-	conn, err := net.Dial(a.Network(), a.String())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-	_ = conn // use it in your client
 }

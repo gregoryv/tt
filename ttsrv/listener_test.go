@@ -1,4 +1,4 @@
-package tt
+package ttsrv
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"net"
 	"testing"
 	"time"
+
+	"github.com/gregoryv/tt"
 )
 
 func TestListener(t *testing.T) {
@@ -25,7 +27,7 @@ func TestListener(t *testing.T) {
 	{ // accepts connections
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		ln, _ := Start(ctx, NewListener())
+		ln, _ := tt.Start(ctx, NewListener())
 		<-ln.Up
 
 		conn, err := net.Dial("tcp", ln.Addr().String())

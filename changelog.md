@@ -5,7 +5,8 @@ changes will be documented in this file.
 
 ## [unreleased]
 
-- Replate type MemConn with testnet.Conn
+- Move server related components to subdirectory ttsrv
+- Replace type MemConn with testnet.Conn
 - Ignore Disconnect in pubcmd
 
 ## [0.7.0] 2023-01-15

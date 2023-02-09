@@ -1,4 +1,4 @@
-package tt
+package ttsrv
 
 import (
 	"context"
@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/gregoryv/tt"
 )
 
 func NewListener() *Listener {
@@ -16,7 +18,7 @@ func NewListener() *Listener {
 		Up:            make(chan struct{}, 0),
 		AcceptTimeout: 100 * time.Millisecond,
 		Logger:        log.New(os.Stdout, "tcp ", log.Flags()),
-		AddConnection: func(context.Context, Remote) { /*noop*/ },
+		AddConnection: func(context.Context, tt.Remote) { /*noop*/ },
 	}
 }
 
@@ -35,7 +37,7 @@ type Listener struct {
 	AcceptTimeout time.Duration
 
 	// AddConnection handles new remote connections
-	AddConnection func(context.Context, Remote)
+	AddConnection func(context.Context, tt.Remote)
 	*log.Logger
 }
 
