@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/testnet"
 )
 
 func ExampleNewReceiver() {
@@ -35,15 +36,15 @@ func TestStart(t *testing.T) {
 
 func TestReceiver(t *testing.T) {
 	{ // handler is called on packet from server
-		conn := NewMemConn()
+		conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 		called := NewCalled()
-		receiver := NewReceiver(conn.Server(), called.Handler)
+		receiver := NewReceiver(srvconn, called.Handler)
 
 		go receiver.Run(context.Background())
 		p := mq.NewPublish()
 		p.SetTopicName("a/b")
 		p.SetPayload([]byte("gopher"))
-		conn.Client().Responds(p)
+		p.WriteTo(conn)
 		<-called.Done()
 	}
 

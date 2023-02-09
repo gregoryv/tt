@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/testnet"
 	"github.com/gregoryv/tt"
 )
 
@@ -14,7 +15,7 @@ import (
 // disconnect.
 func Example_client() {
 	// standin for a network connection
-	conn := tt.NewMemConn().Client()
+	conn, _ := testnet.Dial("tcp", "someserver:1234")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	transmit := tt.Send(conn)
 	handler := func(ctx context.Context, p mq.Packet) error {

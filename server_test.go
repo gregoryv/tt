@@ -1,17 +1,20 @@
 package tt
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/testnet"
 )
 
 func TestServer_AddConnection(t *testing.T) {
 	// Server keeps statistics of active and total connections
+	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 	s := NewServer()
-	conn := dial(s)
+	go s.AddConnection(context.Background(), srvconn)
 	<-time.After(5 * time.Millisecond)
 	before := s.Stat()
 
@@ -27,8 +30,9 @@ func TestServer_AddConnection(t *testing.T) {
 func TestServer_AssignsID(t *testing.T) {
 	// If a client connects without any id set the server should
 	// assign one in the returning ConnAck.
+	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 	s := NewServer()
-	conn := dial(s)
+	go s.AddConnection(context.Background(), srvconn)
 	mq.NewConnect().WriteTo(conn)
 
 	p, _ := mq.ReadPacket(conn)
@@ -45,8 +49,9 @@ func TestServer_AssignsID(t *testing.T) {
 func TestServer_DisconnectOnMalformed(t *testing.T) {
 	// If server gets a malformed packet it should disconnect with the
 	// reason code MalformedPacket 0x81
+	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 	s := NewServer()
-	conn := dial(s)
+	go s.AddConnection(context.Background(), srvconn)
 	{
 		p := mq.NewConnect()
 		p.WriteTo(conn)
