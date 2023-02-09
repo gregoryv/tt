@@ -1,0 +1,19 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  font-family="Arial,Helvetica,sans-serif" width="343" height="155">
+<path stroke="#d3d3d3" d="M24,24 L24,101" />
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="10" y="18">client</text>
+<path stroke="#d3d3d3" d="M324,24 L324,101" />
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="307" y="18">server</text>
+<path stroke="black" d="M24,57 L324,57" />
+<g transform="rotate(90 324 57)"><path stroke="black" fill="#ffffff" d="M320,65 l4,-8 l 4,8 Z" /></g>
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="60" y="54">CONNECT ---- ------s- MQTT5  0s 15 bytes</text>
+<path stroke="black" d="M324,90 L24,90" />
+<g transform="rotate(270 24 90)"><path stroke="black" fill="#ffffff" d="M20,98 l4,-8 l 4,8 Z" /></g>
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="94" y="87">CONNACK ---- --------  5 bytes</text>
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="51" y="148">Client connects with clean start flag set to tru</text></svg>

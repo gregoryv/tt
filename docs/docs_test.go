@@ -2,7 +2,9 @@ package docs
 
 import "testing"
 
-func TestDesignDiagram(t *testing.T) {
-	d := NewDesignDiagram()
-	d.SaveAs("design.svg")
+func Test_generateDiagram(t *testing.T) {
+	if err := NewDesignDiagram().SaveAs("design.svg"); err != nil {
+		t.Fatal(err)
+	}
+	_ = NewConnectCleanStart().SaveAs("connect_clean_start.svg")
 }

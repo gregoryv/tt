@@ -2,6 +2,7 @@ package docs
 
 import (
 	"github.com/gregoryv/draw/design"
+	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
 )
 
@@ -26,7 +27,29 @@ func NewDesignDiagram() *design.ClassDiagram {
 	d.HideRealizations()
 
 	d.Place(server).At(120, 20)
-
 	d.Place(router).Below(server)
+	return d
+}
+
+// NewConnectCleanStart returns a sequence diagram showing the
+// sequence of packets exchanged.
+func NewConnectCleanStart() *design.SequenceDiagram {
+	var (
+		d = design.NewSequenceDiagram()
+		c = d.Add("client")
+		s = d.Add("server")
+	)
+	d.ColWidth = 300
+
+	{
+		p := mq.NewConnect()
+		p.SetCleanStart(true)
+		d.Link(c, s, p.String())
+	}
+	{
+		p := mq.NewConnAck()
+		d.Link(s, c, p.String())
+	}
+	d.SetCaption("Client connects with clean start flag set to tru")
 	return d
 }
