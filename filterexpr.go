@@ -14,7 +14,10 @@ func MustParseFilterExpr(v string) *FilterExpr {
 	return re
 }
 
-// lets try regexp
+// ParseFilterExpr parses a topic filter as specified in [4.7 Topic
+// Names and Topic Filters]
+//
+// [4.7 Topic Names and Topic Filters]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 func ParseFilterExpr(v string) (*FilterExpr, error) {
 	if len(v) == 0 {
 		return nil, fmt.Errorf("empty filter")
