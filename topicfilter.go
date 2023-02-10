@@ -14,10 +14,6 @@ func MustParseTopicFilter(v string) *TopicFilter {
 	return re
 }
 
-// ParseTopicFilter parses a topic filter as specified in [4.7 Topic
-// Names and Topic Filters]
-//
-// [4.7 Topic Names and Topic Filters]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 func ParseTopicFilter(v string) (*TopicFilter, error) {
 	if len(v) == 0 {
 		return nil, fmt.Errorf("empty filter")
@@ -48,6 +44,10 @@ func ParseTopicFilter(v string) (*TopicFilter, error) {
 	return tf, nil
 }
 
+// TopicFilter is used to match topic names as specified in [4.7 Topic
+// Names and Topic Filters]
+//
+// [4.7 Topic Names and Topic Filters]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 type TopicFilter struct {
 	re     *regexp.Regexp
 	filter string
