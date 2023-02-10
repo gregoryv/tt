@@ -1,3 +1,4 @@
+// Package ttx provides test types
 package ttx
 
 import (
