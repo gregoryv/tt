@@ -6,19 +6,19 @@ import (
 	"strings"
 )
 
-func MustParseFilterExpr(v string) *FilterExpr {
-	re, err := ParseFilterExpr(v)
+func MustParseTopicFilter(v string) *TopicFilter {
+	re, err := ParseTopicFilter(v)
 	if err != nil {
 		panic(err.Error())
 	}
 	return re
 }
 
-// ParseFilterExpr parses a topic filter as specified in [4.7 Topic
+// ParseTopicFilter parses a topic filter as specified in [4.7 Topic
 // Names and Topic Filters]
 //
 // [4.7 Topic Names and Topic Filters]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
-func ParseFilterExpr(v string) (*FilterExpr, error) {
+func ParseTopicFilter(v string) (*TopicFilter, error) {
 	if len(v) == 0 {
 		return nil, fmt.Errorf("empty filter")
 	}
@@ -41,20 +41,20 @@ func ParseFilterExpr(v string) (*FilterExpr, error) {
 		return nil, err
 	}
 
-	tf := &FilterExpr{
+	tf := &TopicFilter{
 		re:     re,
 		filter: v,
 	}
 	return tf, nil
 }
 
-type FilterExpr struct {
+type TopicFilter struct {
 	re     *regexp.Regexp
 	filter string
 }
 
 // Match topic name and return any wildcard words.
-func (r *FilterExpr) Match(name string) ([]string, bool) {
+func (r *TopicFilter) Match(name string) ([]string, bool) {
 	res := r.re.FindAllStringSubmatch(name, -1)
 	if len(res) == 0 {
 		return nil, false
@@ -63,6 +63,6 @@ func (r *FilterExpr) Match(name string) ([]string, bool) {
 	return res[0][1:], true
 }
 
-func (r *FilterExpr) Filter() string {
+func (r *TopicFilter) Filter() string {
 	return r.filter
 }

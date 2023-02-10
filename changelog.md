@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Rename type FilterExpr -> TopicFilter
 - Move type ClosedConn to ttx
 - Move tt.Start to cmd/tt
 - Add type ttsrv/IDPool

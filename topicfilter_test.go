@@ -6,19 +6,19 @@ import (
 )
 
 func ExampleTopicFilter() {
-	tf := MustParseFilterExpr("/a/+/b/+/+")
+	tf := MustParseTopicFilter("/a/+/b/+/+")
 	groups, _ := tf.Match("/a/gopher/b/is/cute")
 	fmt.Println(groups)
 	// output:
 	// [gopher is cute]
 }
 
-func TestParseFilterExpr(t *testing.T) {
+func TestParseTopicFilter(t *testing.T) {
 	okcases := []string{
 		"#",
 	}
 	for _, filter := range okcases {
-		_, err := ParseFilterExpr(filter)
+		_, err := ParseTopicFilter(filter)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -30,7 +30,7 @@ func TestParseFilterExpr(t *testing.T) {
 		"",
 	}
 	for _, filter := range badcases {
-		_, err := ParseFilterExpr(filter)
+		_, err := ParseTopicFilter(filter)
 		if err == nil {
 			t.Fatalf("%s should fail", filter)
 		}
@@ -38,7 +38,7 @@ func TestParseFilterExpr(t *testing.T) {
 
 }
 
-func TestFilterExpr_Match(t *testing.T) {
+func TestTopicFilter_Match(t *testing.T) {
 	// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 	spec := []string{
 		"sport/tennis/player1",
@@ -49,43 +49,43 @@ func TestFilterExpr_Match(t *testing.T) {
 	cases := []struct {
 		expMatch bool
 		names    []string
-		*FilterExpr
+		*TopicFilter
 	}{
-		{true, spec, MustParseFilterExpr("sport/tennis/player1/#")},
-		{true, spec, MustParseFilterExpr("sport/#")},
-		{true, spec, MustParseFilterExpr("#")},
-		{true, spec, MustParseFilterExpr("+/tennis/#")},
+		{true, spec, MustParseTopicFilter("sport/tennis/player1/#")},
+		{true, spec, MustParseTopicFilter("sport/#")},
+		{true, spec, MustParseTopicFilter("#")},
+		{true, spec, MustParseTopicFilter("+/tennis/#")},
 
-		{false, spec, MustParseFilterExpr("+")},
-		{false, spec, MustParseFilterExpr("tennis/player1/#")},
-		{false, spec, MustParseFilterExpr("sport/tennis#")},
+		{false, spec, MustParseTopicFilter("+")},
+		{false, spec, MustParseTopicFilter("tennis/player1/#")},
+		{false, spec, MustParseTopicFilter("sport/tennis#")},
 	}
 
 	for _, c := range cases {
 		for _, name := range c.names {
-			words, match := c.FilterExpr.Match(name)
+			words, match := c.TopicFilter.Match(name)
 
 			if match != c.expMatch {
 				t.Errorf("%s %s exp:%v got:%v %q",
-					name, c.FilterExpr.Filter(), c.expMatch, match, words,
+					name, c.TopicFilter.Filter(), c.expMatch, match, words,
 				)
 			}
 
-			if v := c.FilterExpr.Filter(); v == "" {
+			if v := c.TopicFilter.Filter(); v == "" {
 				t.Error("no subscription")
 			}
 		}
 	}
 
 	// check String
-	if v := MustParseFilterExpr("sport/#").Filter(); v != "sport/#" {
+	if v := MustParseTopicFilter("sport/#").Filter(); v != "sport/#" {
 		t.Error("Route.String missing filter", v)
 	}
 }
 
-func TestMustParseFilterExpr_panics(t *testing.T) {
+func TestMustParseTopicFilter_panics(t *testing.T) {
 	defer catchPanic(t)
-	MustParseFilterExpr("sport/(.")
+	MustParseTopicFilter("sport/(.")
 }
 
 func catchPanic(t *testing.T) {

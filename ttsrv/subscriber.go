@@ -38,7 +38,7 @@ func (s *Subscriber) In(next tt.Handler) tt.Handler {
 			a := mq.NewSubAck()
 			a.SetPacketID(p.PacketID())
 			for _, f := range p.Filters() {
-				tf, err := tt.ParseFilterExpr(f.Filter())
+				tf, err := tt.ParseTopicFilter(f.Filter())
 				if err != nil {
 					// todo should probably disconnect here
 					log.Println(err)

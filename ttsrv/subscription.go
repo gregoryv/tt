@@ -4,23 +4,23 @@ import "github.com/gregoryv/tt"
 
 // MustNewSubscription panics on bad filter
 func MustNewSubscription(filter string, handlers ...PubHandler) *Subscription {
-	tf, err := tt.ParseFilterExpr(filter)
+	tf, err := tt.ParseTopicFilter(filter)
 	if err != nil {
 		panic(err.Error())
 	}
 	return NewSubscription(tf, handlers...)
 }
 
-func NewSubscription(filter *tt.FilterExpr, handlers ...PubHandler) *Subscription {
+func NewSubscription(filter *tt.TopicFilter, handlers ...PubHandler) *Subscription {
 	r := &Subscription{
-		FilterExpr: filter,
-		handlers:   handlers,
+		TopicFilter: filter,
+		handlers:    handlers,
 	}
 	return r
 }
 
 type Subscription struct {
-	*tt.FilterExpr
+	*tt.TopicFilter
 
 	handlers []PubHandler
 }
