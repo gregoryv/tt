@@ -3,11 +3,11 @@ package ttsrv
 import (
 	"testing"
 
-	"github.com/gregoryv/tt"
+	"github.com/gregoryv/tt/ttx"
 )
 
 func TestSubscription_String(t *testing.T) {
-	sub := MustNewSubscription("all/gophers/#", tt.NoopPub)
+	sub := MustNewSubscription("all/gophers/#", ttx.NoopPub)
 	if v := sub.String(); v != "all/gophers/#" {
 		t.Errorf("unexpected subscription string %q", sub)
 	}

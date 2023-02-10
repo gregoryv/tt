@@ -3,16 +3,9 @@ package tt
 import (
 	"context"
 	"fmt"
-	"testing"
 
 	"github.com/gregoryv/mq"
 )
-
-func Test_NoopPub(t *testing.T) {
-	if err := NoopPub(nil, nil); err != nil {
-		t.Fatal(err)
-	}
-}
 
 func Example_CombineIn() {
 	end := &num{0}

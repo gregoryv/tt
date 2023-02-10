@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/tt"
+	"github.com/gregoryv/tt/ttx"
 )
 
 func TestRouter(t *testing.T) {
@@ -19,7 +19,7 @@ func TestRouter(t *testing.T) {
 	}
 	subs := []*Subscription{
 		MustNewSubscription("gopher/pink", handle),
-		MustNewSubscription("gopher/blue", tt.NoopPub),
+		MustNewSubscription("gopher/blue", ttx.NoopPub),
 		MustNewSubscription("#", handle),
 		MustNewSubscription("#", func(_ context.Context, _ *mq.Publish) error {
 			return fmt.Errorf("failed")
@@ -44,7 +44,7 @@ func TestRouter(t *testing.T) {
 func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 	subs := make([]*Subscription, 10)
 	for i, _ := range subs {
-		subs[i] = MustNewSubscription("gopher/+", tt.NoopPub)
+		subs[i] = MustNewSubscription("gopher/+", ttx.NoopPub)
 	}
 	r := NewRouter(subs...)
 
@@ -59,7 +59,7 @@ func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 	subs := make([]*Subscription, 10)
 	for i, _ := range subs {
-		subs[i] = MustNewSubscription(fmt.Sprintf("gopher/%v", i), tt.NoopPub)
+		subs[i] = MustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub)
 	}
 	r := NewRouter(subs...)
 
@@ -74,7 +74,7 @@ func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 func BenchmarkRouter_10routesEndMatch(b *testing.B) {
 	subs := make([]*Subscription, 10)
 	for i, _ := range subs {
-		subs[i] = MustNewSubscription(fmt.Sprintf("gopher/%v", i), tt.NoopPub)
+		subs[i] = MustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub)
 	}
 	r := NewRouter(subs...)
 

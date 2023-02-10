@@ -23,7 +23,6 @@ type Outer interface {
 type Handler func(context.Context, mq.Packet) error
 
 func NoopHandler(_ context.Context, _ mq.Packet) error { return nil }
-func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }
 
 // ----------------------------------------
 
