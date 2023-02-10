@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt/ttx"
 )
 
 func ExampleLogger_In() {
@@ -16,8 +17,8 @@ func ExampleLogger_In() {
 	l.SetOutput(os.Stdout)
 	l.SetRemote("1.2.3.4:0001")
 
-	l.In(NoopHandler)(nil, mq.Pub(0, "a/b", "gopher"))
-	l.In(NoopHandler)(nil, mq.NewConnect())
+	l.In(ttx.NoopHandler)(nil, mq.Pub(0, "a/b", "gopher"))
+	l.In(ttx.NoopHandler)(nil, mq.NewConnect())
 
 	// output:
 	// in  PUBLISH ---- p0 a/b 14 bytes
@@ -29,7 +30,7 @@ func ExampleLogger_Out() {
 	l.SetOutput(os.Stdout)
 
 	p := mq.Pub(0, "a/b", "gopher")
-	l.Out(NoopHandler)(nil, p)
+	l.Out(ttx.NoopHandler)(nil, p)
 
 	// output:
 	// out PUBLISH ---- p0 a/b 14 bytes
@@ -41,7 +42,7 @@ func ExampleLogger_DumpPacket() {
 	l.SetDebug(true)
 
 	p := mq.Pub(0, "a/b", "gopher")
-	l.In(NoopHandler)(nil, p)
+	l.In(ttx.NoopHandler)(nil, p)
 
 	// output:
 	// in  PUBLISH ---- p0 a/b 14 bytes
@@ -56,12 +57,12 @@ func ExampleLogger_SetMaxIDLen() {
 	{
 		p := mq.NewConnect()
 		p.SetClientID("short")
-		l.Out(NoopHandler)(nil, p)
+		l.Out(ttx.NoopHandler)(nil, p)
 	}
 	{
 		p := mq.NewConnAck()
 		p.SetAssignedClientID("1bbde752-5161-11ed-a94b-675e009b6f46")
-		l.In(NoopHandler)(nil, p)
+		l.In(ttx.NoopHandler)(nil, p)
 	}
 	// output:
 	// short out CONNECT ---- -------- MQTT5 short 0s 20 bytes
@@ -92,14 +93,14 @@ func BenchmarkLogger_Out(b *testing.B) {
 	ctx := context.Background()
 
 	b.Run("Out", func(b *testing.B) {
-		out := l.Out(NoopHandler)
+		out := l.Out(ttx.NoopHandler)
 		for i := 0; i < b.N; i++ {
 			out(ctx, p)
 		}
 	})
 
 	b.Run("In", func(b *testing.B) {
-		in := l.In(NoopHandler)
+		in := l.In(ttx.NoopHandler)
 		for i := 0; i < b.N; i++ {
 			in(ctx, p)
 		}
@@ -115,13 +116,13 @@ func TestLogger(t *testing.T) {
 	p.SetClientID(cid)
 
 	// trimmed client id
-	l.Out(NoopHandler)(nil, p)
+	l.Out(ttx.NoopHandler)(nil, p)
 	if v := buf.String(); !strings.HasPrefix(v, "~75e009b6f46") {
 		t.Error(v)
 	}
 
 	// subsequent
-	l.Out(NoopHandler)(nil, p)
+	l.Out(ttx.NoopHandler)(nil, p)
 	if v := buf.String(); !strings.HasPrefix(v, "~75e009b6f46") {
 		t.Error(v)
 	}
@@ -132,7 +133,7 @@ func TestLogger(t *testing.T) {
 	l.SetDebug(true)
 
 	buf.Reset()
-	l.Out(NoopHandler)(nil, p)
+	l.Out(ttx.NoopHandler)(nil, p)
 	if v := buf.String(); !strings.Contains(v, "|f46|") {
 		t.Error(v)
 	}

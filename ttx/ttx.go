@@ -6,4 +6,5 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-func NoopPub(_ context.Context, _ *mq.Publish) error { return nil }
+func NoopHandler(_ context.Context, _ mq.Packet) error { return nil }
+func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }

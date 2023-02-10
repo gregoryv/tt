@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/tt"
+	"github.com/gregoryv/tt/ttx"
 )
 
 func Test_IDPool(t *testing.T) {
@@ -13,11 +13,11 @@ func Test_IDPool(t *testing.T) {
 	ctx := context.Background()
 
 	p := mq.Pub(1, "a/b", "gopher")
-	if err := pool.In(tt.NoopHandler)(ctx, p); err != nil {
+	if err := pool.In(ttx.NoopHandler)(ctx, p); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := pool.Out(tt.NoopHandler)(ctx, p); err != nil {
+	if err := pool.Out(ttx.NoopHandler)(ctx, p); err != nil {
 		t.Fatal(err)
 	}
 }

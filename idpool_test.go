@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt/ttx"
 )
 
 func Test_IDPool(t *testing.T) {
@@ -48,7 +49,7 @@ func Test_IDPool(t *testing.T) {
 	}
 
 	for _, p := range packets {
-		if err := pool.Out(NoopHandler)(ctx, p); err != nil {
+		if err := pool.Out(ttx.NoopHandler)(ctx, p); err != nil {
 			t.Error(err)
 		}
 		if p, ok := p.(mq.HasPacketID); ok {
@@ -56,7 +57,7 @@ func Test_IDPool(t *testing.T) {
 				t.Error(p)
 			}
 		}
-		if err := pool.In(NoopHandler)(ctx, p); err != nil {
+		if err := pool.In(ttx.NoopHandler)(ctx, p); err != nil {
 			t.Error(err)
 		}
 	}

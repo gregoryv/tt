@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/tt"
 	"github.com/gregoryv/tt/ttx"
 )
 
@@ -17,7 +16,7 @@ func TestSubscriber(t *testing.T) {
 	{
 		p := mq.NewSubscribe()
 		p.AddFilters(mq.NewTopicFilter("a/b", mq.OptQoS1))
-		s.In(tt.NoopHandler)(context.Background(), p)
+		s.In(ttx.NoopHandler)(context.Background(), p)
 	}
 
 	{

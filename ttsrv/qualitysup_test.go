@@ -16,7 +16,7 @@ func TestQualitySupport(t *testing.T) {
 
 	{ // ok pub
 		p := mq.Pub(0, "a/b", "hi")
-		if err := f.In(tt.NoopHandler)(ctx, p); err != nil {
+		if err := f.In(ttx.NoopHandler)(ctx, p); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -34,7 +34,7 @@ func TestQualitySupport(t *testing.T) {
 	}
 	{ // outgoing ack
 		p := mq.NewConnAck()
-		if err := f.Out(tt.NoopHandler)(ctx, p); err != nil {
+		if err := f.Out(ttx.NoopHandler)(ctx, p); err != nil {
 			t.Fatal(err)
 		}
 		if v := p.MaxQoS(); v != 0 {

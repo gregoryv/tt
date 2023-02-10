@@ -22,8 +22,6 @@ type Outer interface {
 // Handler handles a mqtt control packet
 type Handler func(context.Context, mq.Packet) error
 
-func NoopHandler(_ context.Context, _ mq.Packet) error { return nil }
-
 // ----------------------------------------
 
 func CombineIn(h Handler, v ...Inner) Handler {

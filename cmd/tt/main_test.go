@@ -135,7 +135,7 @@ func TestIntegration(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	r := tt.NewReceiver(&ttx.ClosedConn{}, tt.NoopHandler)
+	r := tt.NewReceiver(&ttx.ClosedConn{}, ttx.NoopHandler)
 	_, done := Start(context.Background(), r)
 	select {
 	case err := <-done:

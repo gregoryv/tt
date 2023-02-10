@@ -17,7 +17,7 @@ func ExampleNewReceiver() {
 	var (
 		pool = NewIDPool(10)
 		log  = NewLogger()
-		in   = CombineIn(NoopHandler, pool, log)
+		in   = CombineIn(ttx.NoopHandler, pool, log)
 	)
 	_ = NewReceiver(os.Stdin, in)
 	// output:
@@ -51,7 +51,7 @@ func TestReceiver(t *testing.T) {
 		}
 		defer conn.Close()
 
-		receiver := NewReceiver(conn, NoopHandler)
+		receiver := NewReceiver(conn, ttx.NoopHandler)
 		receiver.readTimeout = time.Microsecond // speedup
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -62,7 +62,7 @@ func TestReceiver(t *testing.T) {
 	}
 
 	{ // Run is stopped on closed connection
-		receiver := NewReceiver(&ttx.ClosedConn{}, NoopHandler)
+		receiver := NewReceiver(&ttx.ClosedConn{}, ttx.NoopHandler)
 		if err := receiver.Run(context.Background()); err == nil {
 			t.Errorf("receiver should fail once connection is closed")
 		}
