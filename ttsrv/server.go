@@ -17,9 +17,9 @@ import (
 // NewServer returns a server that binds to a random port.
 func NewServer() *Server {
 	s := &Server{
-		router:   NewRouter(),
-		log:      log.New(os.Stdout, "ttsrv ", log.Flags()),
-		stat:     NewServerStats(),
+		router: NewRouter(),
+		log:    log.New(os.Stdout, "ttsrv ", log.Flags()),
+		stat:   NewServerStats(),
 	}
 	s.SetConnectTimeout(0)
 	s.SetPoolSize(100)
@@ -82,9 +82,10 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 
 	pool := NewIDPool(s.poolSize)
 	disco := NewDisconnector(conn)
-	subtransmit := tt.CombineOut(tt.Send(conn), logger, disco)
+	sender := tt.Send(conn)
+	subtransmit := tt.CombineOut(sender, logger, disco)
 	quality := NewQualitySupport(subtransmit)
-	transmit = tt.CombineOut(tt.Send(conn), logger, disco, quality, pool)
+	transmit = tt.CombineOut(sender, logger, disco, quality, pool)
 
 	clientIDmaker := NewClientIDMaker(subtransmit)
 	checker := NewFormChecker(subtransmit)
