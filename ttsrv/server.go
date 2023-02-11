@@ -80,20 +80,56 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 	logger.SetRemote(conn.RemoteAddr().String())
 	logger.SetPrefix("ttsrv ")
 
+	// This design is hard to reason about as each middleware
+	// may or may not stop the processing and you cannot see that
+	// from here.
+
+	// Try using a simpler form with one handler and perhaps a nexus
+	
 	pool := NewIDPool(s.poolSize)
 	disco := NewDisconnector(conn)
 	sender := tt.Send(conn)
+	// subtransmit is used for features sending acks
 	subtransmit := tt.CombineOut(sender, logger, disco)
+	
 	quality := NewQualitySupport(subtransmit)
-	transmit = tt.CombineOut(sender, logger, disco, quality, pool)
+	transmit = tt.CombineOut(
+		sender,
+		// note! there is no check for malformed packets here for now
+		// so the server could send them.
 
-	clientIDmaker := NewClientIDMaker(subtransmit)
-	checker := NewFormChecker(subtransmit)
-	subscriber := NewSubscriber(s.router, transmit)
+		// log just before sending the packet		
+		logger,
+
+		// close connection after Disconnect is send
+		disco,
+
+		// todo do we have to check outgoing if incoming are already checked?
+		quality,
+
+		// handle number of packets in flight
+		pool,
+	)
 
 	in = tt.CombineIn(
 		s.router.Handle,
-		disco, clientIDmaker, quality, subscriber, pool, checker, logger,
+		disco,
+		NewClientIDMaker(subtransmit),
+
+		// make sure only supported QoS packets
+		quality,
+
+		// handle subscriptions in the router
+		NewSubscriber(s.router, transmit),
+
+		// handle packet ids correctly
+		pool,
+
+		// handle malformed packets early
+		NewFormChecker(subtransmit),
+
+		// log incoming packets first as they might change
+		logger,
 	)
 	return
 }

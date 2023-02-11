@@ -19,6 +19,7 @@ type QualitySupport struct {
 	transmit tt.Handler
 }
 
+
 func (s *QualitySupport) In(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
