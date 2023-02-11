@@ -63,15 +63,15 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		transmit = tt.CombineOut(tt.Send(conn), log, pool)
 	)
 
-	done := make(chan struct{}, 0)
 	msg := mq.Pub(c.qos, c.topic, c.payload)
 	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:
+			err := transmit(ctx, msg)
 			if c.qos == 0 {
-				defer close(done)
+				return tt.StopReceiver
 			}
-			return transmit(ctx, msg)
+			return err
 
 		case *mq.PubRec:
 			rel := mq.NewPubRel()
@@ -79,10 +79,10 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			return transmit(ctx, rel)
 
 		case *mq.PubAck:
-			close(done)
+			return tt.StopReceiver
 
 		case *mq.PubComp:
-			close(done)
+			return tt.StopReceiver
 
 		case *mq.Disconnect:
 
@@ -117,7 +117,6 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	case <-ctx.Done():
 		return ctx.Err()
 
-	case <-done:
 	}
 	_ = transmit(ctx, mq.NewDisconnect())
 	return nil
