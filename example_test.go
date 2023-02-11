@@ -18,7 +18,6 @@ func Example_client() {
 	// transmit handler for synced packet writes
 	transmit := tt.Send(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
 	receiver := tt.NewReceiver(conn,
 		func(ctx context.Context, p mq.Packet) error {
 			switch p := p.(type) {
@@ -32,8 +31,8 @@ func Example_client() {
 						log.Print(err)
 					}
 					// disconnect
-					defer cancel()
-					return transmit(ctx, mq.NewDisconnect())
+					_ = transmit(ctx, mq.NewDisconnect())
+					return tt.StopReceiver
 				}
 			}
 			return nil
@@ -41,6 +40,8 @@ func Example_client() {
 	)
 
 	// initiate connect sequence
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
 	if err := transmit(ctx, mq.NewConnect()); err != nil {
 		log.Fatal(err)
 	}

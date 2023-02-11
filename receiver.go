@@ -3,6 +3,7 @@ package tt
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -45,8 +46,15 @@ loop:
 			}
 			return err
 		}
-		// ignore error here, it's up to the user to configure a queue
-		// where the first middleware handles any errors, eg. Logger
-		_ = r.handle(ctx, p)
+		// ignore most errors here, it's up to the user to configure a
+		// queue where the first middleware handles any errors,
+		// eg. Logger
+		if err := r.handle(ctx, p); err != nil && errors.Is(err, StopReceiver) {
+			return nil
+		}
 	}
 }
+
+// StopReceiver error can be returned by handlers to stop Receiver.Run
+// from handling further packets.
+var StopReceiver = fmt.Errorf("receiver stop")
