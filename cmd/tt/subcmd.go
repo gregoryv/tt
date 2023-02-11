@@ -62,7 +62,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			if p.PacketID() > 0 {
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
-				return transmit(ctx, ack)
+				_ = transmit(ctx, ack)
 			}
 			fmt.Fprintln(subWriter, "PAYLOAD", string(p.Payload()))
 		default:
@@ -74,13 +74,11 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	// start handling packet flow
 	in := tt.CombineIn(handler, pool, log)
 	receive := tt.NewReceiver(conn, in)
-	_, done := Start(context.Background(), receive)
 
 	// kick off with a connect
 	p := mq.NewConnect()
 	p.SetClientID("ttsub")
 	_ = transmit(ctx, p)
 
-	<-done
-	return nil
+	return receive.Run(ctx)
 }

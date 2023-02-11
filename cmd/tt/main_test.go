@@ -13,9 +13,7 @@ import (
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/cmdline/clitest"
-	"github.com/gregoryv/tt"
 	"github.com/gregoryv/tt/ttsrv"
-	"github.com/gregoryv/tt/ttx"
 )
 
 func Test_main_help(t *testing.T) {
@@ -71,7 +69,6 @@ func Test_subFailsOnBadHost(t *testing.T) {
 		t.Error("expected sub to fail on bad host")
 	}
 }
-
 
 func Test_main_sub(t *testing.T) {
 	srv := ttsrv.NewServer()
@@ -129,16 +126,5 @@ func Test_main_fails(t *testing.T) {
 	main()
 	if sh.ExitCode != 1 {
 		t.Fatal("pub should fail when bad server provided")
-	}
-}
-
-func TestStart(t *testing.T) {
-	r := tt.NewReceiver(&ttx.ClosedConn{}, ttx.NoopHandler)
-	_, done := Start(context.Background(), r)
-	select {
-	case err := <-done:
-		if err == nil {
-			t.Fail()
-		}
 	}
 }
