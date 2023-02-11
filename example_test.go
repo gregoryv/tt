@@ -33,6 +33,7 @@ func Example_client() {
 					// disconnect
 					_ = transmit(ctx, mq.NewDisconnect())
 					return tt.StopReceiver
+					
 				}
 			}
 			return nil
@@ -40,8 +41,7 @@ func Example_client() {
 	)
 
 	// initiate connect sequence
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
-	defer cancel()
+	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
 	if err := transmit(ctx, mq.NewConnect()); err != nil {
 		log.Fatal(err)
 	}
