@@ -19,21 +19,23 @@ func Example_client() {
 	transmit := tt.Send(conn)
 
 	receiver := tt.NewReceiver(conn,
+
+		// handler for received packets
 		func(ctx context.Context, p mq.Packet) error {
 			switch p := p.(type) {
 			case *mq.ConnAck:
 
 				switch p.ReasonCode() {
+					
 				case mq.Success: // we've connected successfully
 					// publish a message
-					m := mq.Pub(0, "gopher/happy", "yes")
-					if err := transmit(ctx, m); err != nil {
+					p := mq.Pub(0, "gopher/happy", "yes")
+					if err := transmit(ctx, p); err != nil {
 						log.Print(err)
 					}
 					// disconnect
 					_ = transmit(ctx, mq.NewDisconnect())
 					return tt.StopReceiver
-
 				}
 			}
 			return nil

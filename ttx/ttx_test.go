@@ -18,7 +18,7 @@ func TestCalled(t *testing.T) {
 	c := NewCalled()
 
 	go c.Handler(nil, nil)
-	<- c.Done()
+	<-c.Done()
 }
 
 func TestClosedConn(t *testing.T) {
@@ -29,5 +29,5 @@ func TestClosedConn(t *testing.T) {
 	}
 	if _, err := c.Write(buf); err == nil {
 		t.Fatal("Read should faild")
-	}	
+	}
 }
