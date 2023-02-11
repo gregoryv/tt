@@ -85,20 +85,20 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 	// from here.
 
 	// Try using a simpler form with one handler and perhaps a nexus
-	
+
 	pool := NewIDPool(s.poolSize)
 	disco := NewDisconnector(conn)
 	sender := tt.Send(conn)
 	// subtransmit is used for features sending acks
 	subtransmit := tt.CombineOut(sender, logger, disco)
-	
+
 	quality := NewQualitySupport(subtransmit)
 	transmit = tt.CombineOut(
 		sender,
 		// note! there is no check for malformed packets here for now
 		// so the server could send them.
 
-		// log just before sending the packet		
+		// log just before sending the packet
 		logger,
 
 		// close connection after Disconnect is send
