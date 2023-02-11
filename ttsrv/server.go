@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"net"
 	"os"
 	"time"
 
@@ -56,7 +57,7 @@ func (s *Server) Stat() ServerStats {
 
 // AddConnection handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.
-func (s *Server) AddConnection(ctx context.Context, conn tt.Remote) {
+func (s *Server) AddConnection(ctx context.Context, conn Remote) {
 	// the server tracks active connections
 	a := conn.RemoteAddr()
 	s.log.Printf("new conn %s://%s", a.Network(), a)
@@ -71,7 +72,7 @@ func (s *Server) AddConnection(ctx context.Context, conn tt.Remote) {
 }
 
 // createHandlers returns in and out handlers for packets.
-func (s *Server) createHandlers(conn tt.Remote) (in, transmit tt.Handler) {
+func (s *Server) createHandlers(conn Remote) (in, transmit tt.Handler) {
 	logger := tt.NewLogger()
 	logger.SetOutput(s.log.Writer())
 	logger.SetRemote(conn.RemoteAddr().String())
@@ -176,3 +177,8 @@ func (f *FormChecker) In(next tt.Handler) tt.Handler {
 }
 
 type PubHandler func(context.Context, *mq.Publish) error
+
+type Remote interface {
+	io.ReadWriteCloser
+	RemoteAddr() net.Addr
+}

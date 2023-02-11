@@ -15,7 +15,7 @@ func NewDesignDiagram() *design.ClassDiagram {
 		listener = d.Struct(ttsrv.Listener{})
 
 		receiver = d.Struct(tt.Receiver{})
-		remote   = d.Interface((*tt.Remote)(nil))
+		remote   = d.Interface((*ttsrv.Remote)(nil))
 
 		server = d.Struct(ttsrv.Server{})
 

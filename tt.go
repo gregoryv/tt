@@ -3,8 +3,6 @@ package tt
 
 import (
 	"context"
-	"io"
-	"net"
 
 	"github.com/gregoryv/mq"
 )
@@ -38,9 +36,4 @@ func CombineOut(h Handler, v ...Outer) Handler {
 	}
 	n := len(v) - 1
 	return v[n].Out(CombineOut(h, v[:n]...))
-}
-
-type Remote interface {
-	io.ReadWriteCloser
-	RemoteAddr() net.Addr
 }
