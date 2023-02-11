@@ -47,7 +47,6 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	log.SetOutput(os.Stdout)
 	log.SetLogPrefix(c.clientID)
 	log.SetDebug(c.debug)
-
 	// create network connection
 	log.Print("dial ", "tcp://", c.server.String())
 	conn, err := net.Dial("tcp", c.server.String())
@@ -78,13 +77,8 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			rel.SetPacketID(p.PacketID())
 			return transmit(ctx, rel)
 
-		case *mq.PubAck:
+		case *mq.PubAck, *mq.PubComp, *mq.Disconnect:
 			return tt.StopReceiver
-
-		case *mq.PubComp:
-			return tt.StopReceiver
-
-		case *mq.Disconnect:
 
 		default:
 			fmt.Println("unexpected:", p)
@@ -92,32 +86,24 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		return nil
 	}
 	in := tt.CombineIn(handler, pool, log)
-	receive := tt.NewReceiver(conn, in)
+	receiver := tt.NewReceiver(conn, in)
 
-	// kick off with a connect
-	p := mq.NewConnect()
-	p.SetClientID(c.clientID)
-	if c.username != "" {
-		p.SetUsername(c.username)
-		p.SetPassword([]byte(c.password))
-	}
-	_ = transmit(ctx, p)
-
-	// start handling packet flow
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-	_, running := Start(ctx, receive)
-
-	select {
-	case err := <-running:
-		if errors.Is(err, io.EOF) {
-			return fmt.Errorf("FAIL")
+	{ // initiate connect sequence
+		p := mq.NewConnect()
+		p.SetClientID(c.clientID)
+		if c.username != "" {
+			p.SetUsername(c.username)
+			p.SetPassword([]byte(c.password))
 		}
-
-	case <-ctx.Done():
-		return ctx.Err()
-
+		_ = transmit(ctx, p)
 	}
+
+	// start receiving packets
+	ctx, _ = context.WithTimeout(ctx, c.timeout)
+	if err := receiver.Run(ctx); errors.Is(err, io.EOF) {
+		return fmt.Errorf("FAIL")
+	}
+
 	_ = transmit(ctx, mq.NewDisconnect())
 	return nil
 }

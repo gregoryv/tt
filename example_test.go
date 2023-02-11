@@ -33,7 +33,7 @@ func Example_client() {
 					// disconnect
 					_ = transmit(ctx, mq.NewDisconnect())
 					return tt.StopReceiver
-					
+
 				}
 			}
 			return nil
