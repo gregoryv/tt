@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/url"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -110,28 +109,6 @@ func Test_main_fails(t *testing.T) {
 	if sh.ExitCode != 1 {
 		t.Fatal("pub should fail when bad server provided")
 	}
-}
-
-func TestIntegration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("integration tests take time, remove -short flag")
-	}
-	os.Chdir(os.Getenv("PWD"))
-	// Run compatibility tests towards mosquitto broker.
-	cmd := exec.Command("docker-compose", "up", "--remove-orphans", "-d")
-
-	if err := cmd.Run(); err != nil {
-		t.Skip("docker-compose up failed")
-	}
-
-	// tear down
-	defer func() {
-		exec.Command("docker-compose", "down").Run()
-	}()
-
-	t.Log(
-		"todo implement server integration tests",
-	)
 }
 
 func TestStart(t *testing.T) {
