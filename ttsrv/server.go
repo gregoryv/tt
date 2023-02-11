@@ -140,15 +140,17 @@ type ClientIDMaker struct {
 	transmit tt.Handler
 }
 
+// In sends acs for incoming Connect packets.
 func (c *ClientIDMaker) In(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.Connect:
+			// todo should the ack be sent here?
 			a := mq.NewConnAck()
 			if id := p.ClientID(); id == "" {
 				a.SetAssignedClientID(uuid.NewString())
 			}
-			return c.transmit(ctx, a)
+			_ = c.transmit(ctx, a)
 		}
 		return next(ctx, p)
 	}
