@@ -3,15 +3,14 @@ package ttx
 
 import (
 	"context"
-	"github.com/gregoryv/mq"
 	"fmt"
 	"net"
+
+	"github.com/gregoryv/mq"
 )
 
 func NoopHandler(_ context.Context, _ mq.Packet) error { return nil }
 func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }
-
-
 
 func NewCalled() *Called {
 	return &Called{
@@ -35,7 +34,6 @@ func (c *Called) Handler(_ context.Context, _ mq.ControlPacket) error {
 func (c *Called) Done() <-chan struct{} {
 	return c.c
 }
-
 
 type ClosedConn struct{}
 

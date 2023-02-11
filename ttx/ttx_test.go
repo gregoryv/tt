@@ -7,3 +7,10 @@ func Test_NoopPub(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCalled(t *testing.T) {
+	c := NewCalled()
+
+	go c.Handler(nil, nil)
+	<- c.Done()
+}
