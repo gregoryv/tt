@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// NewListener returns a listener for tcp connections on a random
+// port. Each new connection is by handled in a go routine.
 func NewListener() *Listener {
 	return &Listener{
 		Bind:          "tcp://:", // random
@@ -36,10 +38,14 @@ type Listener struct {
 
 	// AddConnection handles new remote connections
 	AddConnection func(context.Context, Connection)
+	
 	*log.Logger
 }
 
-func (s *Listener) SetServer(v *Server) {
+// SetServer sets the server to which new connections should be added.
+func (s *Listener) SetServer(v interface {
+	AddConnection(context.Context, Connection)
+}) {
 	s.AddConnection = v.AddConnection
 }
 
