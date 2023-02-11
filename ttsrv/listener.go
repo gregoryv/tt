@@ -38,7 +38,7 @@ type Listener struct {
 
 	// AddConnection handles new remote connections
 	AddConnection func(context.Context, Connection)
-	
+
 	*log.Logger
 }
 

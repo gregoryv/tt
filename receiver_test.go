@@ -1,6 +1,7 @@
 package tt
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"net"
@@ -65,6 +66,18 @@ func TestReceiver(t *testing.T) {
 		receiver := NewReceiver(&ttx.ClosedConn{}, ttx.NoopHandler)
 		if err := receiver.Run(context.Background()); err == nil {
 			t.Errorf("receiver should fail once connection is closed")
+		}
+	}
+
+	{ // Run is stopped on StopReceiverclosed connection
+		var buf bytes.Buffer
+		mq.Pub(0, "a/b", "hello").WriteTo(&buf)
+		receiver := NewReceiver(&buf, func(_ context.Context, _ mq.Packet) error {
+			return StopReceiver
+		})
+
+		if err := receiver.Run(context.Background()); err != nil {
+			t.Error("receiver should stop without error on StopReceiver", err)
 		}
 	}
 }
