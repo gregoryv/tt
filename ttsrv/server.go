@@ -16,12 +16,14 @@ import (
 
 // NewServer returns a server that binds to a random port.
 func NewServer() *Server {
-	return &Server{
-		poolSize: 100,
+	s := &Server{
 		router:   NewRouter(),
 		log:      log.New(os.Stdout, "ttsrv ", log.Flags()),
 		stat:     NewServerStats(),
 	}
+	s.SetConnectTimeout(0)
+	s.SetPoolSize(100)
+	return s
 }
 
 type Server struct {
