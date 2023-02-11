@@ -8,6 +8,12 @@ func Test_NoopPub(t *testing.T) {
 	}
 }
 
+func Test_NoopHandler(t *testing.T) {
+	if err := NoopHandler(nil, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCalled(t *testing.T) {
 	c := NewCalled()
 
