@@ -24,6 +24,17 @@ func Test_main_help(t *testing.T) {
 	main()
 }
 
+func Test_main_srv(t *testing.T) {
+	sh := clitest.NewShellT("test", "srv", "-b", "tcp://localhost:2883")
+	cmdline.DefaultShell = sh
+	sh.ExitCode = -1
+	go main()
+	<-time.After(10 * time.Millisecond)
+	if v := sh.ExitCode; v != -1 {
+		t.Error("srv command exited with", v)
+	}
+}
+
 func Test_main_pub(t *testing.T) {
 	srv := ttsrv.NewServer()
 	ln := ttsrv.NewListener()
