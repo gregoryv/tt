@@ -101,10 +101,12 @@ func NewDisconnector(conn io.Closer) *Disconnector {
 	return &Disconnector{conn: conn}
 }
 
+// Disconnector handles Disconnect packets
 type Disconnector struct {
 	conn io.Closer
 }
 
+// In closes the connection and then calls the next handler
 func (d *Disconnector) In(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p.(type) {
@@ -115,6 +117,8 @@ func (d *Disconnector) In(next tt.Handler) tt.Handler {
 	}
 }
 
+// Out calls the next handler first, so the packet is actually send
+// followed by a closing of the connection.
 func (d *Disconnector) Out(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		err := next(ctx, p) // send it first
