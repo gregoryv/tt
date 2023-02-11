@@ -47,6 +47,8 @@ func (s *Subscriber) In(next tt.Handler) tt.Handler {
 
 				r := NewSubscription(tf, s.PubHandler)
 				s.Router.AddRoute(r)
+				// todo Subscribe.WellFormed fails if for any reason, though
+				// here we want to set a reason code for each filter.
 				// 3.9.3 SUBACK Payload
 				a.AddReasonCode(mq.Success)
 			}
