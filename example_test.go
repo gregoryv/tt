@@ -18,6 +18,13 @@ func Example_client() {
 	// transmit handler for synced packet writes
 	transmit := tt.Send(conn)
 
+	// initiate connect sequence
+	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
+	if err := transmit(ctx, mq.NewConnect()); err != nil {
+		log.Fatal(err)
+	}
+
+	// define how to handle incoming packets using a receiver
 	receiver := tt.NewReceiver(conn,
 		// handler for received packets
 		func(ctx context.Context, p mq.Packet) error {
@@ -39,12 +46,6 @@ func Example_client() {
 			return nil
 		},
 	)
-
-	// initiate connect sequence
-	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
-	if err := transmit(ctx, mq.NewConnect()); err != nil {
-		log.Fatal(err)
-	}
 
 	// start receiving packets
 	if err := receiver.Run(ctx); err != nil {
