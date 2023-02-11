@@ -19,14 +19,12 @@ func Example_client() {
 	transmit := tt.Send(conn)
 
 	receiver := tt.NewReceiver(conn,
-
 		// handler for received packets
 		func(ctx context.Context, p mq.Packet) error {
 			switch p := p.(type) {
 			case *mq.ConnAck:
 
 				switch p.ReasonCode() {
-					
 				case mq.Success: // we've connected successfully
 					// publish a message
 					p := mq.Pub(0, "gopher/happy", "yes")
