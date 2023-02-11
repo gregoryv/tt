@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Rename type ttsrv.Remote -> Connection
 - Move type Remote to ttsrv
 - Rename type FilterExpr -> TopicFilter
 - Move type ClosedConn to ttx
