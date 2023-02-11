@@ -10,6 +10,28 @@ import (
 	"github.com/gregoryv/testnet"
 )
 
+func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
+	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
+	s := NewServer()
+	go s.AddConnection(context.Background(), srvconn)
+
+	// initiate connect sequence
+	mq.NewConnect().WriteTo(conn)
+	_, _ = mq.ReadPacket(conn) // ignore ack
+
+	{ // subscribe using malformed topic filter
+		p := mq.NewSubscribe()
+		p.SetPacketID(1)
+		p.SetSubscriptionID(1)
+		p.AddFilters(mq.NewTopicFilter("a/#/c", mq.OptQoS1))
+		p.WriteTo(conn)
+	}
+	p, _ := mq.ReadPacket(conn)
+	if p, ok := p.(*mq.Disconnect); !ok {
+		t.Error("expected Disconnect got", p)
+	}
+}
+
 // Server keeps statistics of active and total connections
 func TestServer_AddConnection(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")

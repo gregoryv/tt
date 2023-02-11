@@ -2,7 +2,6 @@ package ttsrv
 
 import (
 	"context"
-	"log"
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
@@ -40,8 +39,9 @@ func (s *Subscriber) In(next tt.Handler) tt.Handler {
 			for _, f := range p.Filters() {
 				tf, err := tt.ParseTopicFilter(f.Filter())
 				if err != nil {
-					// todo should probably disconnect here
-					log.Println(err)
+					p := mq.NewDisconnect()
+					p.SetReasonCode(mq.MalformedPacket)
+					s.transmit(ctx, p)
 					return err
 				}
 
