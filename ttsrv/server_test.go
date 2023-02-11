@@ -16,7 +16,7 @@ func TestServer_AddConnection(t *testing.T) {
 	s := NewServer()
 
 	// server increases number of connections
-	go s.AddConnection(context.Background(), srvconn)	
+	go s.AddConnection(context.Background(), srvconn)
 	<-time.After(5 * time.Millisecond)
 	before := s.Stat()
 
@@ -43,6 +43,27 @@ func TestServer_AssignsID(t *testing.T) {
 	p, _ := mq.ReadPacket(conn)
 	if p := p.(*mq.ConnAck); p.AssignedClientID() == "" {
 		t.Error("missing assigned client id")
+	}
+}
+
+// If a client sends Disconnect, the server should close the network
+// connection.
+func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
+	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
+	s := NewServer()
+	go s.AddConnection(context.Background(), srvconn)
+
+	{ // initiate connect sequence
+		p := mq.NewConnect()
+		p.WriteTo(conn)
+		_, _ = mq.ReadPacket(conn) // ignore ack
+	}
+	{ // client sends disconnect
+		mq.NewDisconnect().WriteTo(conn)
+	}
+	// verify that the connection is
+	if _, err := mq.NewPublish().WriteTo(conn); err == nil {
+		t.Error("network connection still open")
 	}
 }
 
