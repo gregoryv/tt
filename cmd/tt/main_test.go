@@ -63,6 +63,16 @@ func Test_main_pub(t *testing.T) {
 	}
 }
 
+func Test_subFailsOnBadHost(t *testing.T) {
+	sh := clitest.NewShellT("test", "sub", "-s", "__")
+	cmdline.DefaultShell = sh
+	main()
+	if sh.ExitCode == 0 {
+		t.Error("expected sub to fail on bad host")
+	}
+}
+
+
 func Test_main_sub(t *testing.T) {
 	srv := ttsrv.NewServer()
 	ln := ttsrv.NewListener()
