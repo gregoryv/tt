@@ -27,41 +27,41 @@ type IDPool struct {
 // returned to the pool before next handler is called.
 func (o *IDPool) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
-		case *mq.PubAck:
-			o.reuse(p.PacketID())
-
-		case *mq.PubComp:
+		if p, ok := p.(mq.HasPacketID); ok {
 			o.reuse(p.PacketID())
 		}
 		return next(ctx, p)
 	}
 }
 
-// reuse returns the given value to the pool
-func (o *IDPool) reuse(v uint16) {
+// reuse returns the given value to the pool, returns the reused value
+// or 0 if ignored
+func (o *IDPool) reuse(v uint16) uint16 {
 	if v == 0 || v > o.max {
-		return
+		return 0
 	}
 	o.values <- v
+	return v
 }
 
 // Out on outgoing packets, refs MQTT-2.2.1-3
 func (o *IDPool) Out(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
-		case *mq.Publish:
-			// Don't set packet id if already set, this is used in
-			// eg. PubRel packets
-			if p.QoS() > 0 && p.PacketID() == 0 {
+		if p, ok := p.(mq.HasPacketID); ok {
+			switch p := p.(type) {
+			case *mq.Publish:
+				// Don't set packet id if already set, this is used in
+				// eg. PubRel packets
+				if p.QoS() > 0 && p.PacketID() == 0 {
+					p.SetPacketID(o.next(ctx))
+				}
+
+			case *mq.Subscribe:
+				p.SetPacketID(o.next(ctx))
+
+			case *mq.Unsubscribe:
 				p.SetPacketID(o.next(ctx))
 			}
-
-		case *mq.Subscribe:
-			p.SetPacketID(o.next(ctx))
-
-		case *mq.Unsubscribe:
-			p.SetPacketID(o.next(ctx))
 		}
 
 		// todo handle dropped acks as that packet is lost.

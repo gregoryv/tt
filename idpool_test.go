@@ -9,61 +9,52 @@ import (
 	"github.com/gregoryv/tt/ttx"
 )
 
-func Test_IDPool(t *testing.T) {
-	max := uint16(5)
-	pool := NewIDPool(max) // 1 .. 5
-
-	// check that ids are reusable
-	used := make(chan uint16, max)
-	drain := func() {
-		for v := range used {
-			pool.reuse(v)
-		}
-	}
+func TestIDPool(t *testing.T) {
+	pool := NewIDPool(5) // 1 .. 5
+	In := pool.In(ttx.NoopHandler)
+	Out := pool.Out(ttx.NoopHandler)
 	ctx := context.Background()
-	for i := uint16(0); i < 2*max; i++ {
-		v := pool.next(ctx)
-		used <- v
-		if i == max-1 {
-			// start returning midway
-			go drain()
-		}
-	}
-	go drain()
 
-	// check all packets that require id
-	packets := []mq.Packet{
-		mq.Pub(1, "a/b", "gopher"),
-		mq.NewSubscribe(),
-		mq.NewUnsubscribe(),
-		func() mq.Packet {
-			p := mq.NewPubAck()
-			p.SetPacketID(1)
-			return p
-		}(),
-		func() mq.Packet {
-			p := mq.NewPubComp()
-			p.SetPacketID(1)
-			return p
-		}(),
+	// publish with QoS == 0
+	p := mq.Pub(0, "a/b", "gopher")
+	Out(ctx, p)
+	if v := p.PacketID(); v != 0 {
+		t.Error(p)
 	}
 
-	for _, p := range packets {
-		if err := pool.Out(ttx.NoopHandler)(ctx, p); err != nil {
-			t.Error(err)
-		}
-		if p, ok := p.(mq.HasPacketID); ok {
-			if p.PacketID() == 0 {
-				t.Error(p)
-			}
-		}
-		if err := pool.In(ttx.NoopHandler)(ctx, p); err != nil {
-			t.Error(err)
-		}
+	// packets which should get id set
+	p1 := mq.Pub(1, "a/b", "gopher")
+	Out(ctx, p1)
+
+	p2 := mq.NewSubscribe()
+	Out(ctx, p2)
+
+	p3 := mq.NewUnsubscribe()
+	Out(ctx, p3)
+
+	// check that id's are different
+	if p1.PacketID() == p2.PacketID() || p2.PacketID() == p3.PacketID() {
+		t.Error("same id was reassigned though not reused")
 	}
 
-	// not return 0 value
-	pool.reuse(0) // noop
+	// reuse IDs from these packets
+	a1 := mq.NewPubAck()
+	a1.SetPacketID(p1.PacketID())
+	In(ctx, a1)
+
+	a2 := mq.NewSubAck()
+	a2.SetPacketID(p2.PacketID())
+	In(ctx, a2)
+
+	a3 := mq.NewUnsubAck()
+	a3.SetPacketID(p3.PacketID())
+	In(ctx, a3)
+
+	// check the internal state here, this is highly dependent on the
+	// steps above
+	if len(pool.values) != cap(pool.values) {
+		t.Error("not all ids where reused")
+	}
 }
 
 func TestIDPool_nextTimeout(t *testing.T) {
@@ -72,5 +63,12 @@ func TestIDPool_nextTimeout(t *testing.T) {
 	pool.next(ctx)
 	if v := pool.next(ctx); v != 0 {
 		t.Error("expect 0 id when pool is cancelled", v)
+	}
+}
+
+func TestIDPool_reuse(t *testing.T) {
+	pool := NewIDPool(1) // 1 .. 5
+	if v := pool.reuse(99); v != 0 {
+		t.Error("pool.reuse accepted value > max")
 	}
 }
