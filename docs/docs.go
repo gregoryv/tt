@@ -1,4 +1,4 @@
-package docs
+package main
 
 import (
 	"github.com/gregoryv/draw/design"
