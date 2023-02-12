@@ -75,7 +75,8 @@ func (s *Server) AddConnection(ctx context.Context, conn Connection) {
 
 // createHandlers returns in and out handlers for packets.
 func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
-	logger := tt.NewLogger()
+	// Note! ttsrv.Logger
+	logger := NewLogger()
 	logger.SetOutput(s.log.Writer())
 	logger.SetRemote(conn.RemoteAddr().String())
 	logger.SetPrefix("ttsrv ")

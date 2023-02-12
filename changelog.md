@@ -3,6 +3,10 @@
 This project adheres to semantic versioning and all notable
 changes will be documented in this file.
 
+## [unreleased]
+
+- Add type ttsrv.Logger with network and clientID in log lines
+
 ## [0.8.0] 2023-02-11
 
 - Reciver.Run can is stopped by StopReceiver

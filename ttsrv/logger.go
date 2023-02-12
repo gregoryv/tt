@@ -1,4 +1,4 @@
-package tt
+package ttsrv
 
 import (
 	"bytes"
@@ -9,13 +9,14 @@ import (
 	"log"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt"
 )
 
 func init() {
 	log.SetFlags(0) // quiet by default
 }
 
-// NewLogger returns a client side logger with max id len 11.
+// NewLogger returns a logger with max id len 11
 func NewLogger() *Logger {
 	l := &Logger{
 		Logger: log.New(ioutil.Discard, "", log.Flags()),
@@ -28,12 +29,14 @@ type Logger struct {
 	*log.Logger
 	debug bool
 	// client ids
-	maxLen uint
-	remote string
+	maxLen   uint
+	remote   string
+	clientID string
 }
 
-func (l *Logger) SetDebug(v bool)    { l.debug = v }
-func (l *Logger) SetRemote(v string) { l.remote = v }
+func (l *Logger) SetDebug(v bool)      { l.debug = v }
+func (l *Logger) SetRemote(v string)   { l.remote = v }
+func (l *Logger) SetClientID(v string) { l.remote = v }
 
 // SetMaxIDLen configures the logger to trim the client id to number of
 // characters. Use 0 to not trim.
@@ -41,20 +44,14 @@ func (l *Logger) SetMaxIDLen(max uint) {
 	l.maxLen = max
 }
 
-// In logs incoming packets. Log prefix is based on
-// mq.ConnAck.AssignedClientID.
-func (f *Logger) In(next Handler) Handler {
+// In logs incoming packets.
+func (f *Logger) In(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
-		var msg string
-		switch p := p.(type) {
-		case *mq.ConnAck:
-			if v := p.AssignedClientID(); v != "" {
-				f.SetLogPrefix(v)
-			}
+		if p, ok := p.(*mq.Connect); ok {
+			f.clientID = newPrefix(p.ClientID(), f.maxLen)
 		}
-		if msg == "" {
-			msg = fmt.Sprint("in  ", p)
-		}
+		msg := fmt.Sprintf("in  %v <- %s:%s", p, f.remote, f.clientID)
+
 		// double spaces to align in/out. Usually this is not advised
 		// but in here it really does aid when scanning for patterns
 		// of packets.
@@ -74,15 +71,15 @@ func (f *Logger) In(next Handler) Handler {
 
 // Out logs outgoing packets. Log prefix is based on
 // mq.Connect.ClientID.
-func (f *Logger) Out(next Handler) Handler {
+func (f *Logger) Out(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
-		if p, ok := p.(*mq.Connect); ok {
-			f.SetLogPrefix(p.ClientID())
+		if p, ok := p.(*mq.ConnAck); ok {
+			f.clientID = newPrefix(p.AssignedClientID(), f.maxLen)
 		}
 		if f.debug {
 			f.Print("out ", p, "\n", dumpPacket(p))
 		} else {
-			f.Print("out ", p)
+			f.Printf("out %v -> %s:%s", p, f.remote, f.clientID)
 		}
 		err := next(ctx, p)
 		if err != nil {
