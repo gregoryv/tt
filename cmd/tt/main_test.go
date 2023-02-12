@@ -59,6 +59,24 @@ func Test_main_pub(t *testing.T) {
 			t.Fatalf("unexpected exit code %v", code)
 		}
 	}
+
+	{ // pub 1
+		sh := clitest.NewShellT("test", "pub", "-q", "1", "-s", host)
+		cmdline.DefaultShell = sh
+		main()
+		if code := sh.ExitCode; code != 0 {
+			t.Fatalf("unexpected exit code %v", code)
+		}
+	}
+
+	{ // pub 2
+		sh := clitest.NewShellT("test", "pub", "-q", "2", "-s", host)
+		cmdline.DefaultShell = sh
+		main()
+		if code := sh.ExitCode; code != 0 {
+			t.Fatalf("unexpected exit code %v", code)
+		}
+	}
 }
 
 func Test_subFailsOnBadHost(t *testing.T) {

@@ -78,11 +78,15 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			rel.SetPacketID(p.PacketID())
 			return transmit(ctx, rel)
 
-		case *mq.PubAck, *mq.PubComp, *mq.Disconnect:
+		case *mq.PubAck:
+			return tt.StopReceiver
+		case *mq.PubComp:
+			return tt.StopReceiver
+		case *mq.Disconnect:
 			return tt.StopReceiver
 
 		default:
-			fmt.Println("unexpected:", p)
+			return fmt.Errorf("got unexpected packet: %v", p)
 		}
 		return nil
 	}
