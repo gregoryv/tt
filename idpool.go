@@ -2,6 +2,7 @@ package tt
 
 import (
 	"context"
+	"time"
 
 	"github.com/gregoryv/mq"
 )
@@ -10,6 +11,7 @@ import (
 func NewIDPool(max uint16) *IDPool {
 	o := IDPool{
 		max:    max,
+		used:   make([]time.Time, max+1),
 		values: make(chan uint16, max),
 	}
 	for i := uint16(1); i <= max; i++ {
@@ -20,6 +22,7 @@ func NewIDPool(max uint16) *IDPool {
 
 type IDPool struct {
 	max    uint16
+	used   []time.Time // flags id that has been used in Out handler
 	values chan uint16
 }
 
@@ -40,7 +43,11 @@ func (o *IDPool) reuse(v uint16) uint16 {
 	if v == 0 || v > o.max {
 		return 0
 	}
+	if o.used[v].IsZero() {
+		return 0
+	}
 	o.values <- v
+	o.used[v] = zero
 	return v
 }
 
@@ -79,7 +86,10 @@ func (o *IDPool) next(ctx context.Context) uint16 {
 	select {
 	case <-ctx.Done():
 	case v := <-o.values:
+		o.used[v] = time.Now()
 		return v
 	}
 	return 0
 }
+
+var zero = time.Time{}

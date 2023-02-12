@@ -67,8 +67,11 @@ func TestIDPool_nextTimeout(t *testing.T) {
 }
 
 func TestIDPool_reuse(t *testing.T) {
-	pool := NewIDPool(1) // 1 .. 5
+	pool := NewIDPool(3)
 	if v := pool.reuse(99); v != 0 {
 		t.Error("pool.reuse accepted value > max")
+	}
+	if v := pool.reuse(2); v != 0 {
+		t.Error("pool.reuse accepted value that hasn't been used")
 	}
 }
