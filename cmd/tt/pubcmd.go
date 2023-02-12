@@ -43,10 +43,12 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *PubCmd) Run(ctx context.Context) error {
+	// create logger
 	log := tt.NewLogger()
 	log.SetOutput(os.Stdout)
 	log.SetLogPrefix(c.clientID)
 	log.SetDebug(c.debug)
+
 	// create network connection
 	log.Print("dial ", "tcp://", c.server.String())
 	conn, err := net.Dial("tcp", c.server.String())
@@ -54,18 +56,17 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		return err
 	}
 
-	// use middlewares and build your in/out queues with desired
-	// features
-	var (
-		pool = tt.NewIDPool(100)
+	// limit number of concurrent packets
+	pool := tt.NewIDPool(10)
 
-		transmit = tt.CombineOut(tt.Send(conn), log, pool)
-	)
+	// transmit is used for every outgoing packet
+	transmit := tt.CombineOut(tt.Send(conn), log, pool)
 
-	msg := mq.Pub(c.qos, c.topic, c.payload)
 	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:
+			// once connected send publish
+			msg := mq.Pub(c.qos, c.topic, c.payload)
 			err := transmit(ctx, msg)
 			if c.qos == 0 {
 				return tt.StopReceiver
