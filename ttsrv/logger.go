@@ -48,7 +48,7 @@ func (l *Logger) SetMaxIDLen(max uint) {
 func (f *Logger) In(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if p, ok := p.(*mq.Connect); ok {
-			f.clientID = newPrefix(p.ClientID(), f.maxLen)
+			f.clientID = trimID(p.ClientID(), f.maxLen)
 		}
 		msg := fmt.Sprintf("in  %v <- %s:%s", p, f.remote, f.clientID)
 
@@ -74,7 +74,7 @@ func (f *Logger) In(next tt.Handler) tt.Handler {
 func (f *Logger) Out(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if p, ok := p.(*mq.ConnAck); ok {
-			f.clientID = newPrefix(p.AssignedClientID(), f.maxLen)
+			f.clientID = trimID(p.AssignedClientID(), f.maxLen)
 		}
 		if f.debug {
 			f.Print("out ", p, "\n", dumpPacket(p))
@@ -90,7 +90,7 @@ func (f *Logger) Out(next tt.Handler) tt.Handler {
 }
 
 func (f *Logger) SetLogPrefix(v string) {
-	v = newPrefix(v, f.maxLen)
+	v = trimID(v, f.maxLen)
 	f.SetPrefix(v + " ")
 }
 
@@ -100,9 +100,7 @@ func dumpPacket(p mq.Packet) string {
 	return hex.Dump(buf.Bytes())
 }
 
-// ----------------------------------------
-
-func newPrefix(s string, width uint) string {
+func trimID(s string, width uint) string {
 	if v := uint(len(s)); v > width {
 		return prefixStr + s[v-width:]
 	}

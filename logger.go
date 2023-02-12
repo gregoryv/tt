@@ -93,7 +93,7 @@ func (f *Logger) Out(next Handler) Handler {
 }
 
 func (f *Logger) SetLogPrefix(v string) {
-	v = newPrefix(v, f.maxLen)
+	v = trimID(v, f.maxLen)
 	f.SetPrefix(v + " ")
 }
 
@@ -103,9 +103,7 @@ func dumpPacket(p mq.Packet) string {
 	return hex.Dump(buf.Bytes())
 }
 
-// ----------------------------------------
-
-func newPrefix(s string, width uint) string {
+func trimID(s string, width uint) string {
 	if v := uint(len(s)); v > width {
 		return prefixStr + s[v-width:]
 	}
