@@ -74,7 +74,9 @@ func (f *Logger) In(next tt.Handler) tt.Handler {
 func (f *Logger) Out(next tt.Handler) tt.Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if p, ok := p.(*mq.ConnAck); ok {
-			f.clientID = trimID(p.AssignedClientID(), f.maxLen)
+			if v := p.AssignedClientID(); v != "" {
+				f.clientID = trimID(v, f.maxLen)
+			}
 		}
 		if f.debug {
 			f.Print("out ", p, "\n", dumpPacket(p))
