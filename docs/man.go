@@ -6,7 +6,6 @@ package main
 
 import (
 	"log"
-	"os"
 	"os/exec"
 
 	. "github.com/gregoryv/web"
@@ -31,11 +30,11 @@ func main() {
 	)
 
 	// compose manual page
-	NewPage(
+	NewFile("man.html",
 		Html(
 			Body(doc),
 		),
-	).WriteTo(os.Stdout)
+	).SaveTo(".")
 }
 
 func must(cmd *exec.Cmd) string {
