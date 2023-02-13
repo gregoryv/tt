@@ -9,7 +9,10 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"time"
 
+	"github.com/gregoryv/draw/design"
+	"github.com/gregoryv/mq"
 	"github.com/gregoryv/web"
 	. "github.com/gregoryv/web"
 	"github.com/gregoryv/web/theme"
@@ -23,6 +26,8 @@ func main() {
 
 	doc := Article(
 		H1("tt - manual"),
+		time.Now(),
+		Br(),
 		nav,
 
 		H2("Options"),
@@ -38,7 +43,28 @@ func main() {
 
 		H4("Publish QoS 0"),
 
-		NewConnectCleanStart().Inline(),
+		// diagram showing package flow, maybe just dump the output
+		func() *design.SequenceDiagram {
+			var (
+				d = design.NewSequenceDiagram()
+				c = d.Add("client")
+				s = d.Add("server")
+			)
+			d.ColWidth = 300
+			{
+				p := mq.NewConnect()
+				p.SetCleanStart(true)
+				d.Link(c, s, p.String())
+			}
+
+			d.Link(s, c, mq.NewConnAck().String())
+			d.Link(c, s, mq.Pub(0, "gopher/pink", "hug").String())
+
+			d.SetCaption("Client connects with clean start flag set to true")
+			return d
+		}().Inline(),
+
+		Pre(must(exec.Command("tt", "pub", "--debug"))),
 
 		H3("sub"),
 
