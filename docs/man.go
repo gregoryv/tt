@@ -56,15 +56,19 @@ func main() {
 				p.SetCleanStart(true)
 				d.Link(c, s, p.String())
 			}
-
-			d.Link(s, c, mq.NewConnAck().String())
+			{
+				p := mq.NewConnAck()
+				p.SetTopicAliasMax(10) // default in mosquitto
+				d.Link(s, c, p.String())
+			}
 			d.Link(c, s, mq.Pub(0, "gopher/pink", "hug").String())
+			d.Link(c, s, mq.NewDisconnect().String())
 
 			d.SetCaption("Client connects with clean start flag set to true")
 			return d
 		}().Inline(),
 
-		Pre(must(exec.Command("tt", "pub", "--debug"))),
+		Pre(must(exec.Command("tt"))),
 
 		H3("sub"),
 
