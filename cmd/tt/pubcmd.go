@@ -66,8 +66,8 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:
 			// once connected send publish
-			msg := mq.Pub(c.qos, c.topic, c.payload)
-			err := transmit(ctx, msg)
+			m := mq.Pub(c.qos, c.topic, c.payload)
+			err := transmit(ctx, m)
 			if c.qos == 0 {
 				return tt.StopReceiver
 			}
@@ -96,6 +96,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	{ // initiate connect sequence
 		p := mq.NewConnect()
 		p.SetClientID(c.clientID)
+		p.SetCleanStart(true)
 		if c.username != "" {
 			p.SetUsername(c.username)
 			p.SetPassword([]byte(c.password))
