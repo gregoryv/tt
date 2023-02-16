@@ -47,11 +47,13 @@ func Manual() *Element {
 		Article(
 			H1("Telemetry Transfer (tt) - manual"),
 
-			Br(),
+			P(`The tt command provides a mqtt-v5 server and pub/sub
+			clients for general use. Project source is found at
+			gregoryv/tt.`),
+
 			nav,
 
 			H2("Options"),
-
 			H3("-h, --help"),
 			Pre(
 				must(exec.Command("tt", "-h")),
@@ -60,9 +62,7 @@ func Manual() *Element {
 			H2("Commands"),
 
 			H3("pub"),
-
 			H4("Publish QoS 0"),
-
 			// diagram showing package flow, maybe just dump the output
 			func() *design.SequenceDiagram {
 				var (
@@ -93,13 +93,22 @@ func Manual() *Element {
 			H3("sub"),
 
 			H3("srv"),
-		))
+		),
+	)
+	links := map[string]string{
+		"gregoryv/tt": "https://github.com/gregoryv/tt",
+	}
+	LinkAll(doc, links)
 	toc.MakeTOC(nav, doc, "h2", "h3", "h4")
 	return doc
 }
 
 func manTheme() *web.CSS {
 	css := web.NewCSS()
+	css.Style("body",
+		"max-width: 19cm",
+		"margin: auto auto",
+	)
 	css.Style("header",
 		"text-align: right",
 	)
