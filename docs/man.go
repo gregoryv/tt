@@ -5,10 +5,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/gregoryv/draw/design"
@@ -38,65 +40,103 @@ func main() {
 }
 
 func Manual() *Element {
-	nav := Nav("Table of contents")
+	nav := Nav(A(Name("toc")), A(Href("#toc"), B("Table of contents")))
 	doc := Wrap(
 		Header(
 			time.Now().Format("2006-01-02 15:04:05"),
 		),
 
 		Article(
-			H1("Telemetry Transfer (tt) - manual"),
+			H1(A(Href("man.html"), "Telemetry Transfer (tt) - manual")),
 
 			P(`The tt command provides a mqtt-v5 server and pub/sub
 			clients for general use. Project source is found at
-			gregoryv/tt.`),
+			gregoryv/tt. The intention of this manual is two fold,
+			describe the features of each command and verify that the
+			features conform to the specification where possible.`),
 
 			nav,
 
 			H2("Options"),
-			H3("-h, --help"),
-			Pre(
-				must(exec.Command("tt", "-h")),
+
+			P(`The options section describes shared options.`),
+
+			Pre(Class("cmd"),
+				must(exec.Command("tt", "--help")),
 			),
 
 			H2("Commands"),
 
+			// ----------------------------------------
+			// pub command
 			H3("pub"),
+
+			P(`Client for publishing application messages to a mqtt-v5 server.`),
+
 			H4("Publish QoS 0"),
-			// diagram showing package flow, maybe just dump the output
-			func() *design.SequenceDiagram {
-				var (
-					d = design.NewSequenceDiagram()
-					c = d.Add("client")
-					s = d.Add("server")
-				)
-				d.ColWidth = 300
-				{
-					p := mq.NewConnect()
-					p.SetCleanStart(true)
-					d.Link(c, s, p.String())
-				}
-				{
-					p := mq.NewConnAck()
-					p.SetTopicAliasMax(10) // default in mosquitto
-					d.Link(s, c, p.String())
-				}
-				d.Link(c, s, mq.Pub(0, "gopher/pink", "hug").String())
-				d.Link(c, s, mq.NewDisconnect().String())
 
-				d.SetCaption("Client connects with clean start flag set to true")
-				return d
-			}().Inline(),
+			P(`Default command publishes a predefined message to a
+			local server.`),
 
-			Pre(must(exec.Command("tt"))),
+			Div(Class("figure"),
+				// diagram showing package flow, maybe just dump the output
+				func() *design.SequenceDiagram {
+					var (
+						d = design.NewSequenceDiagram()
+						c = d.Add("client")
+						s = d.Add("server")
+					)
+					d.ColWidth = 300
+					{
+						p := mq.NewConnect()
+						p.SetCleanStart(true)
+						d.Link(c, s, p.String())
+					}
+					{
+						p := mq.NewConnAck()
+						p.SetTopicAliasMax(10) // default in mosquitto
+						d.Link(s, c, p.String())
+					}
+					d.Link(c, s, mq.Pub(0, "gopher/pink", "hug").String())
+					d.Link(c, s, mq.NewDisconnect().String())
 
+					d.SetCaption("Client connects with clean start flag set to true")
+					return d
+				}().Inline(),
+			),
+
+			Pre(Class("cmd"), must(exec.Command("tt"))),
+
+			// ----------------------------------------
+			// sub command
 			H3("sub"),
 
+			Em(`TODO handle SIGQUIT and others so we can interrupt
+			commands gracefully. SIGKILL results in undesired exit
+			code when testing here. See `,
+				A(Href("https://www.linuxfordevices.com/tutorials/linux/signal-interrupts-in-linux"),
+					"signals"),
+			),
+
+			H4("Subscribe to all topics"),
+
+			P(`Default sub command subscribes to all topics and blocks
+			until a message arrives.`),
+
+			Pre(Class("cmd"), must(exec.Command("tt", "sub"))),
+
+			// ----------------------------------------
+			// srv command
 			H3("srv"),
+
+			H4("Serve clients on tcp://"),
+
+			Pre(Class("cmd"), must(exec.Command("tt", "srv", "-c", "tcp://localhost:9983"))),
 		),
 	)
 	links := map[string]string{
 		"gregoryv/tt": "https://github.com/gregoryv/tt",
+		"mqtt-v5":     "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html",
 	}
 	LinkAll(doc, links)
 	toc.MakeTOC(nav, doc, "h2", "h3", "h4")
@@ -108,23 +148,49 @@ func manTheme() *web.CSS {
 	css.Style("body",
 		"max-width: 19cm",
 		"margin: auto auto",
+		"font-family: sans-serif",
+	)
+	css.Style("h1,h2,h3,h4,h5",
+		"font-family: serif",
 	)
 	css.Style("header",
 		"text-align: right",
 	)
+
 	css.Style("nav ul",
 		"list-style-type: none",
 	)
+	css.Style("div.figure",
+		"width: 100%",
+		"text-align: center",
+	)
 	css.Style("li.h3", "margin-left: 2em")
 	css.Style("li.h4", "margin-left: 4em")
+	css.Style("pre.cmd",
+		"border-left: 7px #727272 solid",
+		"padding: .6em 1.6em .6em 1.6em",
+		"background-color: #eaeaea",
+	)
+	css.Style(".fail", "color: red")
 	return css
 }
 
-func must(cmd *exec.Cmd) string {
-	out, err := cmd.CombinedOutput()
-	if err != nil {
+func must(cmd *exec.Cmd) interface{} {
+	var buf bytes.Buffer
+	c := strings.Replace(cmd.String(), os.Getenv("GOBIN")+"/", "", 1)
+	buf.WriteString(fmt.Sprintf("$ %s\n", c))
+
+	cmd.Stdout = &buf
+	cmd.Stderr = &buf
+
+	if err := cmd.Start(); err != nil {
 		log.Output(2, fmt.Sprint(cmd, err))
-		os.Exit(1)
 	}
-	return string(out)
+	go time.AfterFunc(time.Second, func() { cmd.Process.Kill() })
+	state, err := cmd.Process.Wait()
+	if !state.Success() || err != nil {
+		return Span(Class("fail"), buf.String(), state.String())
+	}
+
+	return buf.String()
 }
