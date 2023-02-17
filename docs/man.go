@@ -127,6 +127,56 @@ func Manual() *Element {
 			H4("Serve clients on tcp://"),
 
 			Pre(Class("cmd"), must(exec.Command("tt", "srv", "-b", "tcp://localhost:9983"))),
+
+			H2("Full features"),
+			H3("pub-sub sequence"),
+
+			P(`Two clients connect to the same server. Client A
+            subscribes to topic filter gopher/+, and client B
+            publishes a message to topic name gopher/pink.`),
+
+			Pre(Class("cmd"), func() interface{} {
+				var buf, a, b bytes.Buffer
+				server := "localhost:9983"
+				{ // start server
+					cmd := exec.Command("tt", "srv", "-b", "tcp://"+server)
+					cmd.Stdout = &buf
+					cmd.Stderr = &buf
+					tidyGobin(&buf, cmd)
+					if err := cmd.Start(); err != nil {
+						log.Println(cmd, err)
+					}
+					defer cmd.Process.Signal(os.Interrupt)
+				}
+				{ // start sub client
+					<-time.After(3 * time.Millisecond)
+					cmd := exec.Command("tt", "sub", "-c", "A", "-s", server)
+					cmd.Stdout = &a
+					cmd.Stderr = &a
+					tidyGobin(&buf, cmd)
+					if err := cmd.Start(); err != nil {
+						log.Println(cmd, err)
+					}
+					defer cmd.Process.Signal(os.Interrupt)
+				}
+				{ // publish message with client B
+					<-time.After(3 * time.Millisecond)
+					cmd := exec.Command("tt", "pub", "-c", "B", "-s", server)
+					cmd.Stdout = &b
+					cmd.Stderr = &b
+					tidyGobin(&buf, cmd)
+					if err := cmd.Run(); err != nil {
+						log.Println(cmd, err)
+					}
+				}
+
+				return strings.Join([]string{
+					buf.String(),
+					a.String(),
+					b.String(),
+				}, "\n")
+			}()),
+			//
 		),
 	)
 	links := map[string]string{
@@ -136,6 +186,11 @@ func Manual() *Element {
 	LinkAll(doc, links)
 	toc.MakeTOC(nav, doc, "h2", "h3", "h4")
 	return doc
+}
+
+func tidyGobin(buf *bytes.Buffer, cmd *exec.Cmd) {
+	c := strings.Replace(cmd.String(), os.Getenv("GOBIN")+"/", "", 1)
+	buf.WriteString(fmt.Sprintf("$ %s\n", c))
 }
 
 func manTheme() *web.CSS {

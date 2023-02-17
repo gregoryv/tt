@@ -11,6 +11,7 @@ import (
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
+	"github.com/gregoryv/tt/ttsrv"
 )
 
 var subWriter io.Writer = os.Stdout
@@ -47,7 +48,9 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	var (
 		pool     = tt.NewIDPool(100)
 		transmit = tt.CombineOut(tt.Send(conn), log, pool)
-		handler  tt.Handler
+		// FormChecker disconnects on malformed packets
+		checkForm = ttsrv.NewFormChecker(transmit)
+		handler   tt.Handler
 	)
 
 	// kick off with a connect
@@ -67,7 +70,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			return transmit(ctx, sub)
 
 		case *mq.Publish:
-			if p.PacketID() > 0 {
+			if p.QoS() == 1 {
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
 				_ = transmit(ctx, ack)
@@ -80,7 +83,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	}
 
 	// start handling packet flow
-	in := tt.CombineIn(handler, pool, log)
+	in := tt.CombineIn(handler, pool, checkForm, log)
 	receive := tt.NewReceiver(conn, in)
 
 	return receive.Run(ctx)
