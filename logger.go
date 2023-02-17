@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"io/ioutil"
 	"log"
 
@@ -59,7 +60,7 @@ func (f *Logger) In(next Handler) Handler {
 			f.Print("in  ", p)
 		}
 		err := next(ctx, p)
-		if err != nil {
+		if err != nil && !errors.Is(err, StopReceiver) {
 			f.Print(err)
 		}
 		// return error just incase this middleware is not the first
@@ -80,7 +81,7 @@ func (f *Logger) Out(next Handler) Handler {
 			f.Print("out ", p)
 		}
 		err := next(ctx, p)
-		if err != nil {
+		if err != nil && !errors.Is(err, StopReceiver) {
 			f.Print(err)
 		}
 		return err
