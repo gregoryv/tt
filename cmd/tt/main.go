@@ -22,7 +22,7 @@ func main() {
 
 		_ = commands.New("pub", &PubCmd{debug: debug})
 		_ = commands.New("sub", &SubCmd{debug: debug})
-		_ = commands.New("srv", &SrvCmd{})
+		_ = commands.New("srv", &SrvCmd{debug: debug})
 
 		cmd = commands.Selected()
 	)

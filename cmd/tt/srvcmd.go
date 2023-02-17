@@ -9,6 +9,8 @@ import (
 
 type SrvCmd struct {
 	*ttsrv.Listener
+
+	debug bool
 }
 
 func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
@@ -18,8 +20,9 @@ func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 
 	b := ttsrv.NewListener()
 	b.Bind = cli.Option("-b, --bind-tcp, $TT_BIND_TCP").String("tcp://localhost:1883")
-	b.AcceptTimeout = cli.Option("-a, --accept-timeout").Duration("1ms")
+	b.AcceptTimeout = cli.Option("-a, --accept-timeout").Duration("1s")
 	b.AddConnection = s.AddConnection
+	b.SetDebug(c.debug)
 
 	c.Listener = b
 }

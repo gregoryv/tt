@@ -40,7 +40,11 @@ type Listener struct {
 	AddConnection func(context.Context, Connection)
 
 	*log.Logger
+
+	debug bool
 }
+
+func (l *Listener) SetDebug(v bool) { l.debug = v }
 
 // SetServer sets the server to which new connections should be added.
 func (s *Listener) SetServer(v interface {
