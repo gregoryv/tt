@@ -35,7 +35,7 @@ func Test_main_srv(t *testing.T) {
 
 func Test_main_pub(t *testing.T) {
 	srv := ttsrv.NewServer()
-	ln := ttsrv.NewListener()
+	ln := ttsrv.NewConnFeed()
 	ln.SetServer(srv)
 	go ln.Run(context.Background())
 
@@ -90,7 +90,7 @@ func Test_subFailsOnBadHost(t *testing.T) {
 
 func Test_main_sub(t *testing.T) {
 	srv := ttsrv.NewServer()
-	ln := ttsrv.NewListener()
+	ln := ttsrv.NewConnFeed()
 	ln.SetServer(srv)
 	go ln.Run(context.Background())
 

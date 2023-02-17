@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func TestListener(t *testing.T) {
+func TestConnFeed(t *testing.T) {
 	{ // fails to run on bad bind
-		s := NewListener()
+		s := NewConnFeed()
 		binds := []string{
 			"tcp://:-1883",
 			"jibberish",
@@ -25,7 +25,7 @@ func TestListener(t *testing.T) {
 	{ // accepts connections
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
-		ln := NewListener()
+		ln := NewConnFeed()
 		go ln.Run(ctx)
 		<-ln.Up
 
@@ -37,14 +37,14 @@ func TestListener(t *testing.T) {
 	}
 	{ // accept respects deadline
 		ctx, cancel := context.WithCancel(context.Background())
-		ln := NewListener()
+		ln := NewConnFeed()
 		time.AfterFunc(2*ln.AcceptTimeout, cancel)
 		if err := ln.Run(ctx); !errors.Is(err, context.Canceled) {
 			t.Error(err)
 		}
 	}
 	{ // ends on listener close
-		ln := NewListener()
+		ln := NewConnFeed()
 		time.AfterFunc(time.Millisecond, func() { ln.Close() })
 		err := ln.Run(context.Background())
 		if !errors.Is(err, net.ErrClosed) {
@@ -52,7 +52,7 @@ func TestListener(t *testing.T) {
 		}
 	}
 	{ // accepts default server
-		ln := NewListener()
+		ln := NewConnFeed()
 		ln.SetServer(NewServer())
 	}
 }

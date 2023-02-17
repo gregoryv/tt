@@ -11,7 +11,7 @@ import (
 // Example shows how to run the provided server.
 func Example_server() {
 	srv := ttsrv.NewServer()
-	ln := ttsrv.NewListener()
+	ln := ttsrv.NewConnFeed()
 	ln.SetServer(srv)
 	go ln.Run(context.Background())
 

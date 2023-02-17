@@ -12,8 +12,8 @@ import (
 
 // NewListener returns a listener for tcp connections on a random
 // port. Each new connection is by handled in a go routine.
-func NewListener() *Listener {
-	return &Listener{
+func NewConnFeed() *ConnFeed {
+	return &ConnFeed{
 		Bind:          "tcp://:", // random
 		Up:            make(chan struct{}, 0),
 		AcceptTimeout: 100 * time.Millisecond,
@@ -22,7 +22,7 @@ func NewListener() *Listener {
 	}
 }
 
-type Listener struct {
+type ConnFeed struct {
 	// Scheme://[hostname]:port
 	Bind string
 
@@ -44,10 +44,10 @@ type Listener struct {
 	debug bool
 }
 
-func (l *Listener) SetDebug(v bool) { l.debug = v }
+func (l *ConnFeed) SetDebug(v bool) { l.debug = v }
 
 // SetServer sets the server to which new connections should be added.
-func (s *Listener) SetServer(v interface {
+func (s *ConnFeed) SetServer(v interface {
 	AddConnection(context.Context, Connection)
 }) {
 	s.AddConnection = v.AddConnection
@@ -56,8 +56,7 @@ func (s *Listener) SetServer(v interface {
 // Run enables listener. Blocks until context is cancelled or
 // accepting a connection fails. Accepting new connection can only be
 // interrupted if listener has SetDeadline method.
-func (s *Listener) Run(ctx context.Context) error {
-	l := s.Listener
+func (s *ConnFeed) Run(ctx context.Context) error {
 	if s.Listener == nil {
 		s.Println("listen", s.Bind)
 		u, err := url.Parse(s.Bind)
@@ -69,11 +68,12 @@ func (s *Listener) Run(ctx context.Context) error {
 			return err
 		}
 		s.Listener = ln
-		l = ln
 	}
-
 	close(s.Up)
+	return s.run(ctx, s.Listener)
+}
 
+func (s *ConnFeed) run(ctx context.Context, l net.Listener) error {
 loop:
 	for {
 		if err := ctx.Err(); err != nil {
