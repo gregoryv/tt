@@ -18,7 +18,7 @@ import (
 func NewServer() *Server {
 	s := &Server{
 		router: NewRouter(),
-		log:    log.New(os.Stdout, "ttsrv ", log.Flags()),
+		log:    log.New(os.Stderr, "ttsrv ", log.Flags()),
 		stat:   NewServerStats(),
 	}
 	s.SetConnectTimeout(0)

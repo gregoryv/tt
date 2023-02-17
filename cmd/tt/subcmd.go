@@ -37,16 +37,16 @@ func (c *SubCmd) Run(ctx context.Context) error {
 
 	// use middlewares and build your in/out queues with desired
 	// features
-	var (
-		pool = tt.NewIDPool(100)
-		log  = tt.NewLogger()
+	log := tt.NewLogger()
+	log.SetOutput(os.Stderr)
+	log.SetLogPrefix(c.clientID)
+	log.SetDebug(c.debug)
 
+	var (
+		pool     = tt.NewIDPool(100)
 		transmit = tt.CombineOut(tt.Send(conn), log, pool)
 		handler  tt.Handler
 	)
-	log.SetOutput(os.Stdout)
-	log.SetLogPrefix(c.clientID)
-	log.SetDebug(c.debug)
 
 	handler = func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {

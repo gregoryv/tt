@@ -17,7 +17,7 @@ func NewConnFeed() *ConnFeed {
 		Bind:          "tcp://:", // random
 		Up:            make(chan struct{}, 0),
 		AcceptTimeout: 100 * time.Millisecond,
-		Logger:        log.New(os.Stdout, "tcp ", log.Flags()),
+		Logger:        log.New(os.Stderr, "tcp ", log.Flags()),
 		AddConnection: func(context.Context, Connection) { /*noop*/ },
 	}
 }

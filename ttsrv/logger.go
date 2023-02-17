@@ -53,7 +53,7 @@ func (f *Logger) In(next tt.Handler) tt.Handler {
 		// double spaces to align in/out. Usually this is not advised
 		// but in here it really does aid when scanning for patterns
 		// of packets.
-		msg := fmt.Sprintf("in  %v <- %s:%s", p, f.remote, f.clientID)		
+		msg := fmt.Sprintf("in  %v <- %s:%s", p, f.remote, f.clientID)
 		if f.debug {
 			f.Print(msg, "\n", dumpPacket(p))
 		} else {

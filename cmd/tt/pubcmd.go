@@ -44,7 +44,7 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 func (c *PubCmd) Run(ctx context.Context) error {
 	// create logger
 	log := tt.NewLogger()
-	log.SetOutput(os.Stdout)
+	log.SetOutput(os.Stderr)
 	log.SetLogPrefix(c.clientID)
 	log.SetDebug(c.debug)
 
