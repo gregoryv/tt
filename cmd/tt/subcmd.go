@@ -30,11 +30,6 @@ func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {
-	conn, err := net.Dial("tcp", c.server.String())
-	if err != nil {
-		return err
-	}
-
 	// use middlewares and build your in/out queues with desired
 	// features
 	log := tt.NewLogger()
@@ -42,11 +37,25 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	log.SetLogPrefix(c.clientID)
 	log.SetDebug(c.debug)
 
+	// open
+	log.Print("dial tcp://", c.server.String())
+	conn, err := net.Dial("tcp", c.server.String())
+	if err != nil {
+		return err
+	}
+
 	var (
 		pool     = tt.NewIDPool(100)
 		transmit = tt.CombineOut(tt.Send(conn), log, pool)
 		handler  tt.Handler
 	)
+
+	// kick off with a connect
+	p := mq.NewConnect()
+	p.SetClientID(c.clientID)
+	if err := transmit(ctx, p); err != nil {
+		return err
+	}
 
 	handler = func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
@@ -73,11 +82,6 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	// start handling packet flow
 	in := tt.CombineIn(handler, pool, log)
 	receive := tt.NewReceiver(conn, in)
-
-	// kick off with a connect
-	p := mq.NewConnect()
-	p.SetClientID("ttsub")
-	_ = transmit(ctx, p)
 
 	return receive.Run(ctx)
 }
