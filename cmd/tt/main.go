@@ -49,8 +49,10 @@ func runCommand(command any) (err error) {
 		return fmt.Errorf("%T is missing Run(context.Context) error", command)
 	}
 
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Kill, os.Interrupt)
+	intsig := make(chan os.Signal, 1)
+	killsig := make(chan os.Signal, 1)
+	signal.Notify(intsig, os.Interrupt)
+	signal.Notify(killsig, os.Kill)
 
 	// closed when command execution returns
 	done := make(chan struct{})
@@ -72,8 +74,11 @@ func runCommand(command any) (err error) {
 	case <-done:
 		cancel()
 
-	case <-interrupt:
-		fmt.Println("interrupted")
+	case <-killsig:
+		return fmt.Errorf("killed")
+
+	case <-intsig:
+		// this is ok
 		cancel()
 		<-time.After(time.Millisecond)
 	}

@@ -111,14 +111,9 @@ func Manual() *Element {
 			// sub command
 			H3("sub"),
 
-			Em(`TODO handle SIGQUIT and others so we can interrupt
-			commands gracefully. SIGKILL results in undesired exit
-			code when testing here. See `,
-				A(Href("https://www.linuxfordevices.com/tutorials/linux/signal-interrupts-in-linux"),
-					"signals"),
-			),
+			P(`Client subscribing to topic patterns.`),
 
-			H4("Subscribe to all topics"),
+			H4("Subscribe all topics"),
 
 			P(`Default sub command subscribes to all topics and blocks
 			until a message arrives.`),
@@ -131,7 +126,7 @@ func Manual() *Element {
 
 			H4("Serve clients on tcp://"),
 
-			Pre(Class("cmd"), must(exec.Command("tt", "srv", "-c", "tcp://localhost:9983"))),
+			Pre(Class("cmd"), must(exec.Command("tt", "srv", "-b", "tcp://localhost:9983"))),
 		),
 	)
 	links := map[string]string{
@@ -186,7 +181,7 @@ func must(cmd *exec.Cmd) interface{} {
 	if err := cmd.Start(); err != nil {
 		log.Output(2, fmt.Sprint(cmd, err))
 	}
-	go time.AfterFunc(time.Second, func() { cmd.Process.Kill() })
+	go time.AfterFunc(time.Second, func() { cmd.Process.Signal(os.Interrupt) })
 	state, err := cmd.Process.Wait()
 	if !state.Success() || err != nil {
 		return Span(Class("fail"), buf.String(), state.String())
