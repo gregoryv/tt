@@ -5,6 +5,9 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Rename options to use one letter short variant or only long
+- Option --debug is shared
+- Log to stderr by default
 - Add type ttsrv.Logger with network and clientID in log lines
 
 ## [0.8.0] 2023-02-11
