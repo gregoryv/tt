@@ -116,7 +116,7 @@ func Manual() *Element {
 			H4("Subscribe all topics"),
 
 			P(`Default sub command subscribes to all topics and blocks
-			until a message arrives.`),
+			until interrupted.`),
 
 			Pre(Class("cmd"), must(exec.Command("tt", "sub"))),
 
@@ -188,6 +188,9 @@ func Manual() *Element {
 	return doc
 }
 
+// tidyGobin removes the first occurence of GOBIN path in cmd and
+// writes the result to the given buffer. The suffix can be used to
+// e.g. add a "&" to indicate it's been executed in the background.
 func tidyGobin(buf *bytes.Buffer, cmd *exec.Cmd, suffix string) {
 	c := strings.Replace(cmd.String(), os.Getenv("GOBIN")+"/", "", 1)
 	buf.WriteString(fmt.Sprintf("$ %s%s\n", c, suffix))
