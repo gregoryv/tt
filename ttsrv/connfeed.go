@@ -85,14 +85,11 @@ loop:
 			l.SetDeadline(time.Now().Add(s.AcceptTimeout))
 		}
 		conn, err := l.Accept()
+
 		if errors.Is(err, os.ErrDeadlineExceeded) {
 			continue loop
 		}
-
 		if err != nil {
-			// todo check what causes Accept to fail other than
-			// timeout, guess not all errors should result in
-			// server run to stop
 			return err
 		}
 
