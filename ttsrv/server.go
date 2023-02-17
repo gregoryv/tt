@@ -3,10 +3,12 @@ package ttsrv
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,6 +42,17 @@ type Server struct {
 
 	// statistics
 	stat *ServerStats
+
+	debug bool
+}
+
+func (s *Server) SetDebug(v bool) {
+	s.debug = v
+	if v {
+		s.log.SetFlags(s.log.Flags() | log.Lshortfile)
+	} else {
+		s.log.SetFlags(log.Flags()) // default
+	}
 }
 
 // SetConnectTimeout is the duration within which a client must send a
@@ -61,11 +74,13 @@ func (s *Server) Stat() ServerStats {
 // receiver is done. Usually called in go routine.
 func (s *Server) AddConnection(ctx context.Context, conn Connection) {
 	// the server tracks active connections
-	a := conn.RemoteAddr()
-	s.log.Printf("new conn %s://%s", a.Network(), a)
+	addr := conn.RemoteAddr()
+	a := includePort(addr.String(), s.debug)
+	connstr := fmt.Sprintf("conn %s://%s", addr.Network(), a)
+	s.log.Println("new", connstr)
 	s.stat.AddConn()
 	defer func() {
-		s.log.Printf("del conn %s://%s", a.Network(), a)
+		s.log.Println("del", connstr)
 		s.stat.RemoveConn()
 	}()
 	in, _ := s.createHandlers(conn)
@@ -78,7 +93,9 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 	// Note! ttsrv.Logger
 	logger := NewLogger()
 	logger.SetOutput(s.log.Writer())
-	logger.SetRemote(conn.RemoteAddr().String())
+	logger.SetRemote(
+		includePort(conn.RemoteAddr().String(), s.debug),
+	)
 	logger.SetPrefix("ttsrv ")
 
 	// This design is hard to reason about as each middleware
@@ -133,6 +150,16 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 		logger,
 	)
 	return
+}
+
+func includePort(addr string, yes bool) string {
+	if yes {
+		return addr
+	}
+	if i := strings.Index(addr, ":"); i > 0 {
+		return addr[:i]
+	}
+	return addr
 }
 
 func NewDisconnector(conn io.Closer) *Disconnector {
