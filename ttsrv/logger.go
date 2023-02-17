@@ -50,11 +50,10 @@ func (f *Logger) In(next tt.Handler) tt.Handler {
 		if p, ok := p.(*mq.Connect); ok {
 			f.clientID = trimID(p.ClientID(), f.maxLen)
 		}
-		msg := fmt.Sprintf("in  %v <- %s:%s", p, f.remote, f.clientID)
-
 		// double spaces to align in/out. Usually this is not advised
 		// but in here it really does aid when scanning for patterns
 		// of packets.
+		msg := fmt.Sprintf("in  %v <- %s:%s", p, f.remote, f.clientID)		
 		if f.debug {
 			f.Print(msg, "\n", dumpPacket(p))
 		} else {
@@ -64,7 +63,6 @@ func (f *Logger) In(next tt.Handler) tt.Handler {
 		if err != nil {
 			f.Print(err)
 		}
-		// return error just incase this middleware is not the first
 		return err
 	}
 }

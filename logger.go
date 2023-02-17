@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"fmt"
 	"io/ioutil"
 	"log"
 
@@ -45,23 +44,19 @@ func (l *Logger) SetMaxIDLen(max uint) {
 // mq.ConnAck.AssignedClientID.
 func (f *Logger) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
-		var msg string
 		switch p := p.(type) {
 		case *mq.ConnAck:
 			if v := p.AssignedClientID(); v != "" {
 				f.SetLogPrefix(v)
 			}
 		}
-		if msg == "" {
-			msg = fmt.Sprint("in  ", p)
-		}
 		// double spaces to align in/out. Usually this is not advised
 		// but in here it really does aid when scanning for patterns
 		// of packets.
 		if f.debug {
-			f.Print(msg, "\n", dumpPacket(p))
+			f.Print("in  ", p, "\n", dumpPacket(p))
 		} else {
-			f.Print(msg)
+			f.Print("in  ", p)
 		}
 		err := next(ctx, p)
 		if err != nil {
