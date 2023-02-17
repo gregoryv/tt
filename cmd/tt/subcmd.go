@@ -25,8 +25,8 @@ type SubCmd struct {
 
 func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.server = cli.Option("-s, --server").Url("localhost:1883")
-	c.topicFilter = cli.Option("-f, --topic-filter").String("#")
-	c.clientID = cli.Option("-cid, --client-id").String("ttsub")
+	c.clientID = cli.Option("-c, --client-id").String("ttsub")
+	c.topicFilter = cli.Option("-t, --topic-filter").String("#")
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {

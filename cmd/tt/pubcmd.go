@@ -32,11 +32,11 @@ type PubCmd struct {
 
 func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.server = cli.Option("-s, --server").Url("localhost:1883")
-	c.topic = cli.Option("-t, --topic").String("gopher/pink")
+	c.clientID = cli.Option("-c, --client-id").String("ttpub")
+	c.topic = cli.Option("-t, --topic-name").String("gopher/pink")
 	c.payload = cli.Option("-p, --payload").String("hug")
 	c.qos = cli.Option("-q, --qos").Uint8(0)
-	c.timeout = cli.Option("--timeout").Duration("1s")
-	c.clientID = cli.Option("-cid, --client-id").String("ttpub")
+	c.timeout = cli.Option("    --timeout").Duration("1s")
 	c.username = cli.Option("-u, --username").String("")
 	c.password = cli.Option("-p, --password").String("")
 }
