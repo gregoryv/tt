@@ -86,5 +86,6 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	in := tt.CombineIn(handler, pool, checkForm, log)
 	receive := tt.NewReceiver(conn, in)
 
+	// todo unsubscribe on context cancel and send a disconnect
 	return receive.Run(ctx)
 }
