@@ -39,7 +39,6 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.clientID = cli.Option("-cid, --client-id").String("ttpub")
 	c.username = cli.Option("-u, --username").String("")
 	c.password = cli.Option("-p, --password").String("")
-	c.debug = cli.Flag("--debug")
 }
 
 func (c *PubCmd) Run(ctx context.Context) error {

@@ -16,12 +16,12 @@ func main() {
 	var (
 		cli = cmdline.NewBasicParser()
 		// shared options
+		debug = cli.Flag("--debug")
 
-		// SubCmd commands
 		commands = cli.Group("Commands", "COMMAND")
 
-		_ = commands.New("pub", &PubCmd{})
-		_ = commands.New("sub", &SubCmd{})
+		_ = commands.New("pub", &PubCmd{debug: debug})
+		_ = commands.New("sub", &SubCmd{debug: debug})
 		_ = commands.New("srv", &SrvCmd{})
 
 		cmd = commands.Selected()
