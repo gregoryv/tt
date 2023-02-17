@@ -131,9 +131,9 @@ func Manual() *Element {
 			H2("Full features"),
 			H3("pub-sub sequence"),
 
-			P(`Two clients connect to the same server. Client A
-            subscribes to topic filter gopher/+, and client B
-            publishes a message to topic name gopher/pink.`),
+			P(`Clients connect to the same server. First client
+            subscribes to topic filter gopher/+, and second publishes
+            a message to topic name gopher/pink.`),
 
 			Pre(Class("cmd"), func() interface{} {
 				var buf, a, b bytes.Buffer
@@ -142,7 +142,7 @@ func Manual() *Element {
 					cmd := exec.Command("tt", "srv", "-b", "tcp://"+server)
 					cmd.Stdout = &buf
 					cmd.Stderr = &buf
-					tidyGobin(&buf, cmd)
+					tidyGobin(&buf, cmd, "&")
 					if err := cmd.Start(); err != nil {
 						log.Println(cmd, err)
 					}
@@ -150,10 +150,10 @@ func Manual() *Element {
 				}
 				{ // start sub client
 					<-time.After(3 * time.Millisecond)
-					cmd := exec.Command("tt", "sub", "-c", "A", "-s", server)
+					cmd := exec.Command("tt", "sub", "-s", server)
 					cmd.Stdout = &a
 					cmd.Stderr = &a
-					tidyGobin(&buf, cmd)
+					tidyGobin(&a, cmd, "&")
 					if err := cmd.Start(); err != nil {
 						log.Println(cmd, err)
 					}
@@ -161,10 +161,10 @@ func Manual() *Element {
 				}
 				{ // publish message with client B
 					<-time.After(3 * time.Millisecond)
-					cmd := exec.Command("tt", "pub", "-c", "B", "-s", server)
+					cmd := exec.Command("tt", "pub", "-s", server)
 					cmd.Stdout = &b
 					cmd.Stderr = &b
-					tidyGobin(&buf, cmd)
+					tidyGobin(&b, cmd, "")
 					if err := cmd.Run(); err != nil {
 						log.Println(cmd, err)
 					}
@@ -188,9 +188,9 @@ func Manual() *Element {
 	return doc
 }
 
-func tidyGobin(buf *bytes.Buffer, cmd *exec.Cmd) {
+func tidyGobin(buf *bytes.Buffer, cmd *exec.Cmd, suffix string) {
 	c := strings.Replace(cmd.String(), os.Getenv("GOBIN")+"/", "", 1)
-	buf.WriteString(fmt.Sprintf("$ %s\n", c))
+	buf.WriteString(fmt.Sprintf("$ %s%s\n", c, suffix))
 }
 
 func manTheme() *web.CSS {
