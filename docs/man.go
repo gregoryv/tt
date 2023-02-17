@@ -179,11 +179,28 @@ func Manual() *Element {
 			//
 		),
 	)
+	// must link these first as the words are part in secondary links
+	LinkAll(doc, map[string]string{
+		"mqtt-v5": "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html",
+	})
 	links := map[string]string{
 		"gregoryv/tt": "https://github.com/gregoryv/tt",
-		"mqtt-v5":     "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html",
+		"CONNECT":     "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901033",
+		"CONNACK":     "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901074",
+		"SUBSCRIBE":   "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901161",
+		"SUBACK":      "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901171",
+		"PUBLISH":     "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901100",
+		"PUBACK":      "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901121",
+		"PUBREC":      "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901131",
+		"PUBREL":      "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901141",
+		"UNSUBSCRIBE": "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901179",
+		"UNSUBACK":    "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901187",
+		"PINGREQ":     "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901195",
+		"PINGRESP":    "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901200",
+		"DISCONNECT":  "https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901205",
 	}
 	LinkAll(doc, links)
+
 	toc.MakeTOC(nav, doc, "h2", "h3", "h4")
 	return doc
 }
