@@ -12,6 +12,7 @@ import (
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
 	"github.com/gregoryv/tt/ttsrv"
+	"github.com/gregoryv/tt/ttx"
 )
 
 var subWriter io.Writer = os.Stdout
@@ -51,42 +52,61 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		transmit = tt.CombineOut(tt.Send(conn), log, pool)
 		// FormChecker disconnects on malformed packets
 		checkForm = ttsrv.NewFormChecker(transmit)
-		handler   tt.Handler
+
+		in      = tt.CombineIn(ttx.NoopHandler, pool, checkForm, log)
+		receive = tt.NewReceiver(conn, in)
 	)
 
-	// kick off with a connect
-	p := mq.NewConnect()
-	p.SetClientID(c.clientID)
-	if err := transmit(ctx, p); err != nil {
-		return err
+	{ // kick off with a connect
+		p := mq.NewConnect()
+		p.SetClientID(c.clientID)
+		if err := transmit(ctx, p); err != nil {
+			return err
+		}
 	}
-
-	handler = func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
-		case *mq.ConnAck:
-			sub := mq.NewSubscribe()
-			sub.SetSubscriptionID(1)
-			f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
-			sub.AddFilters(f)
-			return transmit(ctx, sub)
-
-		case *mq.Publish:
+	{ // wait for connack
+		p, err := receive.Next(ctx)
+		if err != nil {
+			return err
+		}
+		if _, ok := p.(*mq.ConnAck); !ok {
+			return fmt.Errorf("expected ConnAck got: %v", p)
+		}
+	}
+	{ // subscribe
+		p := mq.NewSubscribe()
+		p.SetSubscriptionID(1)
+		f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
+		p.AddFilters(f)
+		if err := transmit(ctx, p); err != nil {
+			return err
+		}
+	}
+	{ // wait for suback
+		p, err := receive.Next(ctx)
+		if err != nil {
+			return err
+		}
+		if _, ok := p.(*mq.SubAck); !ok {
+			return fmt.Errorf("expected SubAck got: %v", p)
+		}
+	}
+	for {
+		p, err := receive.Next(ctx)
+		if err != nil {
+			return err
+		}
+		if p, ok := p.(*mq.Publish); !ok {
+			return err
+		} else {
 			if p.QoS() == 1 {
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
-				_ = transmit(ctx, ack)
+				if err := transmit(ctx, ack); err != nil {
+					return err
+				}
 			}
 			fmt.Fprintln(subWriter, "PAYLOAD", string(p.Payload()))
-		default:
-
 		}
-		return nil
 	}
-
-	// start handling packet flow
-	in := tt.CombineIn(handler, pool, checkForm, log)
-	receive := tt.NewReceiver(conn, in)
-
-	// todo unsubscribe on context cancel and send a disconnect
-	return receive.Run(ctx)
 }
