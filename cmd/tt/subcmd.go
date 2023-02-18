@@ -41,9 +41,17 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		return err
 	}
 
+	// wip https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Keep_Alive_1
+	// wip if no pingresp is received client should disconnect
+	
 	// pool of packet ids for reuse
 	pool := tt.NewIDPool(10)
+
+	// wip whenever a packet is transmitted the keep alive timer
+	// should start over	
 	transmit := tt.CombineOut(tt.Send(conn), log, pool)
+
+	
 	// FormChecker disconnects on malformed packets
 	checkForm := ttsrv.NewFormChecker(transmit)
 
@@ -82,6 +90,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 
 	// connect
 	p := mq.NewConnect()
+	// wip p.SetKeepAlive
 	p.SetClientID(c.clientID)
 	p.SetReceiveMax(1) // until we have support for QoS 2
 	if err := transmit(ctx, p); err != nil {
