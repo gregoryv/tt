@@ -11,7 +11,6 @@ import (
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
 	"github.com/gregoryv/tt/ttsrv"
-	"github.com/gregoryv/tt/ttx"
 )
 
 type SubCmd struct {
@@ -42,32 +41,14 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		return err
 	}
 
-	var (
-		// pool of packet ids for reuse
-		pool     = tt.NewIDPool(10)
-		transmit = tt.CombineOut(tt.Send(conn), log, pool)
-		// FormChecker disconnects on malformed packets
-		checkForm = ttsrv.NewFormChecker(transmit)
+	// pool of packet ids for reuse
+	pool := tt.NewIDPool(10)
+	transmit := tt.CombineOut(tt.Send(conn), log, pool)
+	// FormChecker disconnects on malformed packets
+	checkForm := ttsrv.NewFormChecker(transmit)
 
-		receive = tt.NewReceiver(
-			tt.CombineIn(ttx.NoopHandler, pool, checkForm, log),
-			conn,
-		)
-	)
-
-	{ // connect
-		p := mq.NewConnect()
-		p.SetClientID(c.clientID)
-		if err := transmit(ctx, p); err != nil {
-			return err
-		}
-	}
-
-	for {
-		p, err := receive.Next(ctx)
-		if err != nil {
-			return err
-		}
+	// final handler when receiving packets
+	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:
 			// subscribe
@@ -75,9 +56,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			s.SetSubscriptionID(1)
 			f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
 			s.AddFilters(f)
-			if err := transmit(ctx, s); err != nil {
-				return err
-			}
+			return transmit(ctx, s)
 
 		case *mq.Publish:
 			switch p.QoS() {
@@ -93,5 +72,21 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			}
 			fmt.Fprintln(c.output, "PAYLOAD", string(p.Payload()))
 		}
+		return nil
 	}
+
+	receive := tt.NewReceiver(
+		tt.CombineIn(handler, pool, checkForm, log),
+		conn,
+	)
+
+	// connect
+	p := mq.NewConnect()
+	p.SetClientID(c.clientID)
+	p.SetReceiveMax(1) // until we have support for QoS 2
+	if err := transmit(ctx, p); err != nil {
+		return err
+	}
+
+	return receive.Run(ctx)
 }
