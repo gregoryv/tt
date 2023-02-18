@@ -58,17 +58,24 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	// FormChecker disconnects on malformed packets
 	checkForm := ttsrv.NewFormChecker(transmit)
 
+	onConnAck := func(next tt.Handler) tt.Handler {
+		return func(ctx context.Context, p mq.Packet) error {
+			switch p.(type) {
+			case *mq.ConnAck:
+				// subscribe
+				s := mq.NewSubscribe()
+				s.SetSubscriptionID(1)
+				f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
+				s.AddFilters(f)
+				return transmit(ctx, s)
+			}
+			return next(ctx, p)
+		}
+	}
+
 	// final handler when receiving packets
 	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
-		case *mq.ConnAck:
-			// subscribe
-			s := mq.NewSubscribe()
-			s.SetSubscriptionID(1)
-			f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
-			s.AddFilters(f)
-			return transmit(ctx, s)
-
 		case *mq.Publish:
 			switch p.QoS() {
 			case 0: // no ack is needed
@@ -87,7 +94,9 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	}
 
 	receive := tt.NewReceiver(
-		tt.CombineIn(handler, pool, c.keepAlive, checkForm, log),
+		tt.Combine(handler,
+			onConnAck, pool.In, c.keepAlive.In, checkForm.In, log.In,
+		),
 		conn,
 	)
 
