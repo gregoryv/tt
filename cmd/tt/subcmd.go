@@ -15,8 +15,6 @@ import (
 	"github.com/gregoryv/tt/ttx"
 )
 
-var subWriter io.Writer = os.Stdout
-
 type SubCmd struct {
 	server      *url.URL
 	topicFilter string
@@ -65,24 +63,6 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		if err := transmit(ctx, p); err != nil {
 			return err
 		}
-		// wait for connack
-		if _, err := expect[*mq.ConnAck](receive.Next(ctx)); err != nil {
-			return err
-		}
-	}
-
-	{ // subscribe
-		p := mq.NewSubscribe()
-		p.SetSubscriptionID(1)
-		f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
-		p.AddFilters(f)
-		if err := transmit(ctx, p); err != nil {
-			return err
-		}
-		// wait for suback
-		if _, err := expect[*mq.SubAck](receive.Next(ctx)); err != nil {
-			return err
-		}
 	}
 
 	for {
@@ -91,6 +71,16 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			return err
 		}
 		switch p := p.(type) {
+		case *mq.ConnAck:
+			// subscribe
+			s := mq.NewSubscribe()
+			s.SetSubscriptionID(1)
+			f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
+			s.AddFilters(f)
+			if err := transmit(ctx, s); err != nil {
+				return err
+			}
+
 		case *mq.Publish:
 			if p.QoS() == 1 {
 				ack := mq.NewPubAck()
@@ -99,7 +89,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 					return err
 				}
 			}
-			fmt.Fprintln(subWriter, "PAYLOAD", string(p.Payload()))
+			fmt.Fprintln(c.output, "PAYLOAD", string(p.Payload()))
 		}
 	}
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -114,8 +113,6 @@ func Test_main_sub(t *testing.T) {
 		if code := sh.ExitCode; code != 0 {
 			t.Fatalf("unexpected exit code %v", code)
 		}
-		var buf bytes.Buffer
-		subWriter = &buf
 		{ // publish something
 			// let's use the pubcmd directly
 			u, _ := url.Parse(host)
@@ -129,7 +126,7 @@ func Test_main_sub(t *testing.T) {
 			}
 			c.Run(context.Background())
 			<-time.After(2 * time.Millisecond)
-			if v := buf.String(); !strings.Contains(v, "PAYLOAD hug") {
+			if v := sh.Out.String(); !strings.Contains(v, "PAYLOAD hug") {
 				t.Error("missing logged payload", v)
 			}
 		}

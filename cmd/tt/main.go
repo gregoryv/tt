@@ -21,7 +21,10 @@ func main() {
 		commands = cli.Group("Commands", "COMMAND")
 
 		_ = commands.New("pub", &PubCmd{debug: debug})
-		_ = commands.New("sub", &SubCmd{debug: debug})
+		_ = commands.New("sub", &SubCmd{
+			debug:  debug,
+			output: cmdline.DefaultShell.Stdout(),
+		})
 		_ = commands.New("srv", &SrvCmd{debug: debug})
 
 		cmd = commands.Selected()
