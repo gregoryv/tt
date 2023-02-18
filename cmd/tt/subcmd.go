@@ -59,22 +59,18 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		)
 	)
 
-	{ // kick off with a connect
+	{ // connect
 		p := mq.NewConnect()
 		p.SetClientID(c.clientID)
 		if err := transmit(ctx, p); err != nil {
 			return err
 		}
-	}
-	{ // wait for connack
-		p, err := receive.Next(ctx)
-		if err != nil {
+		// wait for connack
+		if _, err := expect[*mq.ConnAck](receive.Next(ctx)); err != nil {
 			return err
 		}
-		if _, ok := p.(*mq.ConnAck); !ok {
-			return fmt.Errorf("expected ConnAck got: %v", p)
-		}
 	}
+
 	{ // subscribe
 		p := mq.NewSubscribe()
 		p.SetSubscriptionID(1)
@@ -83,24 +79,19 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		if err := transmit(ctx, p); err != nil {
 			return err
 		}
-	}
-	{ // wait for suback
-		p, err := receive.Next(ctx)
-		if err != nil {
+		// wait for suback
+		if _, err := expect[*mq.SubAck](receive.Next(ctx)); err != nil {
 			return err
 		}
-		if _, ok := p.(*mq.SubAck); !ok {
-			return fmt.Errorf("expected SubAck got: %v", p)
-		}
 	}
+
 	for {
 		p, err := receive.Next(ctx)
 		if err != nil {
 			return err
 		}
-		if p, ok := p.(*mq.Publish); !ok {
-			return err
-		} else {
+		switch p := p.(type) {
+		case *mq.Publish:
 			if p.QoS() == 1 {
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
@@ -111,4 +102,17 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			fmt.Fprintln(subWriter, "PAYLOAD", string(p.Payload()))
 		}
 	}
+}
+
+func expect[T any](p mq.Packet, e error) (v T, err error) {
+	err = e
+	if err != nil {
+		return
+	}
+	v, ok := p.(T)
+	if !ok {
+		err = fmt.Errorf("expected %T got: %T", v, p)
+		return
+	}
+	return
 }
