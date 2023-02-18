@@ -6,7 +6,6 @@ import (
 	"io"
 	"net"
 	"net/url"
-	"os"
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/mq"
@@ -33,7 +32,6 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	// use middlewares and build your in/out queues with desired
 	// features
 	log := tt.NewLogger()
-	log.SetOutput(os.Stderr)
 	log.SetLogPrefix(c.clientID)
 	log.SetDebug(c.debug)
 

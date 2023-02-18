@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/gregoryv/mq"
 )
@@ -18,7 +18,7 @@ func init() {
 // NewLogger returns a client side logger with max id len 11.
 func NewLogger() *Logger {
 	l := &Logger{
-		Logger: log.New(ioutil.Discard, "", log.Flags()),
+		Logger: log.New(os.Stderr, "", log.Flags()),
 	}
 	l.SetMaxIDLen(11)
 	return l
