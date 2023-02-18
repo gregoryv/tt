@@ -53,8 +53,10 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		// FormChecker disconnects on malformed packets
 		checkForm = ttsrv.NewFormChecker(transmit)
 
-		in      = tt.CombineIn(ttx.NoopHandler, pool, checkForm, log)
-		receive = tt.NewReceiver(conn, in)
+		receive = tt.NewReceiver(
+			tt.CombineIn(ttx.NoopHandler, pool, checkForm, log),
+			conn,
+		)
 	)
 
 	{ // kick off with a connect

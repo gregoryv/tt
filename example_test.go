@@ -26,7 +26,7 @@ func Example_client() {
 	}
 
 	// define how to handle incoming packets using a receiver
-	receiver := tt.NewReceiver(conn,
+	receiver := tt.NewReceiver(
 		// handler for received packets
 		func(ctx context.Context, p mq.Packet) error {
 			switch p := p.(type) {
@@ -45,7 +45,7 @@ func Example_client() {
 				}
 			}
 			return nil
-		},
+		}, conn,
 	)
 
 	// start receiving packets

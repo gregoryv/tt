@@ -85,7 +85,7 @@ func (s *Server) AddConnection(ctx context.Context, conn Connection) {
 	}()
 	in, _ := s.createHandlers(conn)
 	// ignore error here, the connection is done
-	_ = tt.NewReceiver(conn, in).Run(ctx)
+	_ = tt.NewReceiver(in, conn).Run(ctx)
 }
 
 // createHandlers returns in and out handlers for packets.

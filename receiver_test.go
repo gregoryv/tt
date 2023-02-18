@@ -20,7 +20,7 @@ func ExampleNewReceiver() {
 		log  = NewLogger()
 		in   = CombineIn(ttx.NoopHandler, pool, log)
 	)
-	_ = NewReceiver(os.Stdin, in)
+	_ = NewReceiver(in, os.Stdin)
 	// output:
 }
 
@@ -28,7 +28,7 @@ func TestReceiver(t *testing.T) {
 	{ // handler is called on packet from server
 		conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 		called := ttx.NewCalled()
-		receiver := NewReceiver(srvconn, called.Handler)
+		receiver := NewReceiver(called.Handler, srvconn)
 
 		go receiver.Run(context.Background())
 		p := mq.NewPublish()
@@ -52,7 +52,7 @@ func TestReceiver(t *testing.T) {
 		}
 		defer conn.Close()
 
-		receiver := NewReceiver(conn, ttx.NoopHandler)
+		receiver := NewReceiver(nil, conn)
 		receiver.readTimeout = time.Microsecond // speedup
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -63,7 +63,7 @@ func TestReceiver(t *testing.T) {
 	}
 
 	{ // Run is stopped on closed connection
-		receiver := NewReceiver(&ttx.ClosedConn{}, ttx.NoopHandler)
+		receiver := NewReceiver(nil, &ttx.ClosedConn{})
 		if err := receiver.Run(context.Background()); err == nil {
 			t.Errorf("receiver should fail once connection is closed")
 		}
@@ -72,9 +72,10 @@ func TestReceiver(t *testing.T) {
 	{ // Run is stopped on StopReceiverclosed connection
 		var buf bytes.Buffer
 		mq.Pub(0, "a/b", "hello").WriteTo(&buf)
-		receiver := NewReceiver(&buf, func(_ context.Context, _ mq.Packet) error {
+		stop := func(_ context.Context, _ mq.Packet) error {
 			return StopReceiver
-		})
+		}
+		receiver := NewReceiver(stop, &buf)
 
 		if err := receiver.Run(context.Background()); err != nil {
 			t.Error("receiver should stop without error on StopReceiver", err)

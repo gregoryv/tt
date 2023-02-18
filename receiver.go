@@ -14,7 +14,7 @@ import (
 
 // NewReceiver returns a receiver that reads packets from the reader
 // and calls the handler. Handler can be nil.
-func NewReceiver(r io.Reader, h Handler) *Receiver {
+func NewReceiver(h Handler, r io.Reader) *Receiver {
 	return &Receiver{
 		wire:        r,
 		handle:      h,
