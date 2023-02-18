@@ -89,7 +89,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		}
 		return nil
 	}
-	in := tt.CombineIn(handler, pool, log)
+	in := tt.Combine(handler, pool.In, log.In)
 	receiver := tt.NewReceiver(in, conn)
 
 	{ // initiate connect sequence

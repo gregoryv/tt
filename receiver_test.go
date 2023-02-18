@@ -18,7 +18,7 @@ func ExampleNewReceiver() {
 	var (
 		pool = NewIDPool(10)
 		log  = NewLogger()
-		in   = CombineIn(ttx.NoopHandler, pool, log)
+		in   = Combine(ttx.NoopHandler, pool.In, log.In)
 	)
 	_ = NewReceiver(in, os.Stdin)
 	// output:

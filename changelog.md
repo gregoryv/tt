@@ -5,6 +5,8 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Remove interfaces Inner and Outer
+- Replace CombineIn and CombineOut with func Combine
 - Add type tt.KeepAlive
 - Rename options to use one letter short variant or only long
 - Option --debug is shared

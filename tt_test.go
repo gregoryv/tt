@@ -7,16 +7,6 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-func Example_CombineIn() {
-	end := &num{0}
-	in := CombineIn(end.Handle, &num{1}, &num{2})
-	in(context.Background(), mq.NewPublish())
-	//output:
-	// 2
-	// 1
-	// 0
-}
-
 func Example_Combine() {
 	end := &num{0}
 	one := &num{1}

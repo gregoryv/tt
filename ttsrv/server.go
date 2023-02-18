@@ -129,25 +129,25 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 		pool.Out,
 	)
 
-	in = tt.CombineIn(
+	in = tt.Combine(
 		s.router.Handle,
-		disco,
-		NewClientIDMaker(subtransmit),
+		disco.In,
+		NewClientIDMaker(subtransmit).In,
 
 		// make sure only supported QoS packets
-		quality,
+		quality.In,
 
 		// handle subscriptions in the router
-		NewSubscriber(s.router, transmit),
+		NewSubscriber(s.router, transmit).In,
 
 		// handle packet ids correctly
-		pool,
+		pool.In,
 
 		// handle malformed packets early
-		NewFormChecker(subtransmit),
+		NewFormChecker(subtransmit).In,
 
 		// log incoming packets first as they might change
-		logger,
+		logger.In,
 	)
 	return
 }
