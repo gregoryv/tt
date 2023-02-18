@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Add type tt.KeepAlive
 - Rename options to use one letter short variant or only long
 - Option --debug is shared
 - Log to stderr by default

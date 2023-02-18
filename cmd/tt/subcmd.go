@@ -19,12 +19,17 @@ type SubCmd struct {
 	clientID    string
 	debug       bool
 	output      io.Writer
+
+	keepAlive *tt.KeepAlive
 }
 
 func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.server = cli.Option("-s, --server").Url("localhost:1883")
 	c.clientID = cli.Option("-c, --client-id").String("ttsub")
 	c.topicFilter = cli.Option("-t, --topic-filter").String("#")
+	c.keepAlive = tt.NewKeepAlive(
+		cli.Option("    --keep-alive").Duration("10s"),
+	)
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {
@@ -41,17 +46,15 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		return err
 	}
 
-	// wip https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Keep_Alive_1
-	// wip if no pingresp is received client should disconnect
-	
 	// pool of packet ids for reuse
 	pool := tt.NewIDPool(10)
 
-	// wip whenever a packet is transmitted the keep alive timer
-	// should start over	
-	transmit := tt.CombineOut(tt.Send(conn), log, pool)
+	transmit := tt.CombineOut(tt.Send(conn), log, c.keepAlive, pool)
 
-	
+	// set transmitter after as the middleware should be part of the
+	// transmitter
+	c.keepAlive.SetTransmitter(transmit)
+
 	// FormChecker disconnects on malformed packets
 	checkForm := ttsrv.NewFormChecker(transmit)
 
@@ -84,13 +87,12 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	}
 
 	receive := tt.NewReceiver(
-		tt.CombineIn(handler, pool, checkForm, log),
+		tt.CombineIn(handler, pool, c.keepAlive, checkForm, log),
 		conn,
 	)
 
 	// connect
 	p := mq.NewConnect()
-	// wip p.SetKeepAlive
 	p.SetClientID(c.clientID)
 	p.SetReceiveMax(1) // until we have support for QoS 2
 	if err := transmit(ctx, p); err != nil {

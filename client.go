@@ -4,6 +4,4 @@ func NewClient() *Client {
 	return &Client{}
 }
 
-type Client struct {}
-
-
+type Client struct{}
