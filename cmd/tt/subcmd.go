@@ -46,7 +46,8 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	}
 
 	var (
-		pool     = tt.NewIDPool(100)
+		// pool of packet ids for reuse
+		pool     = tt.NewIDPool(10)
 		transmit = tt.CombineOut(tt.Send(conn), log, pool)
 		// FormChecker disconnects on malformed packets
 		checkForm = ttsrv.NewFormChecker(transmit)
