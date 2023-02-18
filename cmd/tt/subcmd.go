@@ -95,16 +95,3 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		}
 	}
 }
-
-func expect[T any](p mq.Packet, e error) (v T, err error) {
-	err = e
-	if err != nil {
-		return
-	}
-	v, ok := p.(T)
-	if !ok {
-		err = fmt.Errorf("expected %T got: %T", v, p)
-		return
-	}
-	return
-}
