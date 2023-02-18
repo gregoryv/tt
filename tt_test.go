@@ -17,9 +17,11 @@ func Example_CombineIn() {
 	// 0
 }
 
-func Example_CombineOut() {
+func Example_Combine() {
 	end := &num{0}
-	out := CombineOut(end.Handle, &num{1}, &num{2})
+	one := &num{1}
+	two := &num{2}
+	out := Combine(end.Handle, one.Out, two.Out)
 	out(context.Background(), mq.NewPublish())
 	//output:
 	// 2

@@ -39,11 +39,3 @@ func CombineIn(h Handler, v ...Inner) Handler {
 	n := len(v) - 1
 	return v[n].In(CombineIn(h, v[:n]...))
 }
-
-func CombineOut(h Handler, v ...Outer) Handler {
-	if len(v) == 0 {
-		return h
-	}
-	n := len(v) - 1
-	return v[n].Out(CombineOut(h, v[:n]...))
-}

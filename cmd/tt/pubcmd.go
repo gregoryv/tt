@@ -59,7 +59,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	pool := tt.NewIDPool(10)
 
 	// transmit is used for every outgoing packet
-	transmit := tt.CombineOut(tt.Send(conn), log, pool)
+	transmit := tt.Combine(tt.Send(conn), log.Out, pool.Out)
 
 	handler := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {

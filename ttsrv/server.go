@@ -108,25 +108,25 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 	disco := NewDisconnector(conn)
 	sender := tt.Send(conn)
 	// subtransmit is used for features sending acks
-	subtransmit := tt.CombineOut(sender, logger, disco)
+	subtransmit := tt.Combine(sender, logger.Out, disco.Out)
 
 	quality := NewQualitySupport(subtransmit)
-	transmit = tt.CombineOut(
+	transmit = tt.Combine(
 		sender,
 		// note! there is no check for malformed packets here for now
 		// so the server could send them.
 
 		// log just before sending the packet
-		logger,
+		logger.Out,
 
 		// close connection after Disconnect is send
-		disco,
+		disco.Out,
 
 		// todo do we have to check outgoing if incoming are already checked?
-		quality,
+		quality.Out,
 
 		// handle number of packets in flight
-		pool,
+		pool.Out,
 	)
 
 	in = tt.CombineIn(
