@@ -13,7 +13,7 @@ import (
 )
 
 // NewReceiver returns a receiver that reads packets from the reader
-// and calls the handler made of number of middlewares and a final handler.
+// and calls the handler. Handler can be nil.
 func NewReceiver(r io.Reader, h Handler) *Receiver {
 	return &Receiver{
 		wire:        r,
@@ -64,7 +64,9 @@ loop:
 		// ignore most errors here, it's up to the user to configure a
 		// queue where the first middleware handles any errors,
 		// eg. Logger
-		err = r.handle(ctx, p)
+		if r.handle != nil {
+			err = r.handle(ctx, p)
+		}
 		return p, err
 	}
 }
