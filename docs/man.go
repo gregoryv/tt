@@ -28,6 +28,7 @@ func main() {
 	NewFile("man.html",
 		Html(
 			Head(
+				Title("tt - manual"),
 				Style(
 					theme.GoldenSpace(),
 					theme.GoishColors(),
@@ -150,7 +151,7 @@ func Manual() *Element {
 				}
 				{ // start sub client
 					<-time.After(3 * time.Millisecond)
-					cmd := exec.Command("tt", "sub", "-s", server)
+					cmd := exec.Command("tt", "sub", "-t", "gopher/+", "-s", server)
 					cmd.Stdout = &a
 					cmd.Stderr = &a
 					tidyGobin(&a, cmd, "&")
