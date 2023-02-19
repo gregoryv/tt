@@ -19,7 +19,7 @@ func NewConnFeed() *ConnFeed {
 		Up:            make(chan struct{}, 0),
 		AcceptTimeout: 100 * time.Millisecond,
 		Logger:        log.New(os.Stderr, "tcp ", log.Flags()),
-		AddConnection: func(context.Context, Connection) { /*noop*/ },
+		ServeConn:     func(context.Context, Connection) { /*noop*/ },
 	}
 }
 
@@ -38,7 +38,7 @@ type ConnFeed struct {
 	AcceptTimeout time.Duration
 
 	// AddConnection handles new remote connections
-	AddConnection func(context.Context, Connection)
+	ServeConn func(context.Context, Connection)
 
 	*log.Logger
 
@@ -49,9 +49,9 @@ func (f *ConnFeed) SetDebug(v bool) { f.debug = v }
 
 // SetServer sets the server to which new connections should be added.
 func (f *ConnFeed) SetServer(v interface {
-	AddConnection(context.Context, Connection)
+	ServeConn(context.Context, Connection)
 }) {
-	f.AddConnection = v.AddConnection
+	f.ServeConn = v.ServeConn
 }
 
 // Run enables listener. Blocks until context is cancelled or
@@ -94,6 +94,6 @@ loop:
 			return err
 		}
 
-		go f.AddConnection(ctx, conn)
+		go f.ServeConn(ctx, conn)
 	}
 }

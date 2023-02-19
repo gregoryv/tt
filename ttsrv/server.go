@@ -55,7 +55,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 	f := NewConnFeed()
 	f.Bind = s.binds[0].String()
-	f.AddConnection = s.AddConnection
+	f.ServeConn = s.ServeConn
 	f.SetDebug(s.debug)
 
 	return f.Run(ctx)
@@ -89,9 +89,9 @@ func (s *Server) Stat() ServerStats {
 	return *s.stat
 }
 
-// AddConnection handles the given remote connection. Blocks until
+// ServeConn handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.
-func (s *Server) AddConnection(ctx context.Context, conn Connection) {
+func (s *Server) ServeConn(ctx context.Context, conn Connection) {
 	// the server tracks active connections
 	addr := conn.RemoteAddr()
 	a := includePort(addr.String(), s.debug)
