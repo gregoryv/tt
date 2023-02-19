@@ -1,18 +1,16 @@
 package main
 
 import (
-	"context"
-	"fmt"
+	"bytes"
 	"log"
-	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/cmdline/clitest"
-	"github.com/gregoryv/tt/ttsrv"
 )
 
 func Test_main_help(t *testing.T) {
@@ -33,46 +31,35 @@ func Test_main_srv(t *testing.T) {
 }
 
 func Test_main_pub(t *testing.T) {
-	srv := ttsrv.NewServer()
-	ln := ttsrv.NewConnFeed()
-	ln.SetServer(srv)
-	go ln.Run(context.Background())
-
-	<-time.After(2 * time.Millisecond) // let it start
-	defer ln.Close()
-
-	// then use
-	u, err := url.Parse(fmt.Sprintf("%s://%s", ln.Addr().Network(), ln.Addr().String()))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	host := fmt.Sprintf("localhost:%v", u.Port())
+	host := "localhost:3881"
 	log.Print(host)
 
+	srv := exec.Command("tt", "srv", "-b", "tcp://"+host)
+	startCmd(t, srv)
+	defer srv.Process.Kill()
+
+	<-time.After(2 * time.Millisecond) // let it start
+
 	{ // pub
-		sh := clitest.NewShellT("test", "pub", "-s", host)
-		cmdline.DefaultShell = sh
-		main()
-		if code := sh.ExitCode; code != 0 {
+		pub := exec.Command("tt", "pub", "-s", host)
+		_ = pub.Run()
+		if code := pub.ProcessState.ExitCode(); code != 0 {
 			t.Fatalf("unexpected exit code %v", code)
 		}
 	}
 
 	{ // pub 1
-		sh := clitest.NewShellT("test", "pub", "-q", "1", "-s", host)
-		cmdline.DefaultShell = sh
-		main()
-		if code := sh.ExitCode; code != 0 {
+		pub := exec.Command("tt", "pub", "-q", "1", "-s", host)
+		_ = pub.Run()
+		if code := pub.ProcessState.ExitCode(); code != 0 {
 			t.Fatalf("unexpected exit code %v", code)
 		}
 	}
 
 	{ // pub 2
-		sh := clitest.NewShellT("test", "pub", "-q", "2", "-s", host)
-		cmdline.DefaultShell = sh
-		main()
-		if code := sh.ExitCode; code != 0 {
+		pub := exec.Command("tt", "pub", "-q", "2", "-s", host)
+		_ = pub.Run()
+		if code := pub.ProcessState.ExitCode(); code != 0 {
 			t.Fatalf("unexpected exit code %v", code)
 		}
 	}
@@ -88,47 +75,34 @@ func Test_subFailsOnBadHost(t *testing.T) {
 }
 
 func Test_main_sub(t *testing.T) {
-	srv := ttsrv.NewServer()
-	ln := ttsrv.NewConnFeed()
-	ln.SetServer(srv)
-	go ln.Run(context.Background())
-
-	<-time.After(2 * time.Millisecond) // let it start
-	defer ln.Close()
-
-	// then use
-	u, err := url.Parse(fmt.Sprintf("%s://%s", ln.Addr().Network(), ln.Addr().String()))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	host := fmt.Sprintf("localhost:%v", u.Port())
+	host := "localhost:3881"
 	log.Print(host)
 
+	srv := exec.Command("tt", "srv", "-b", "tcp://"+host)
+	startCmd(t, srv)
+	defer srv.Process.Kill()
+
+	<-time.After(2 * time.Millisecond) // let it start
+
 	{ // sub
-		sh := clitest.NewShellT("test", "sub", "-s", host)
-		cmdline.DefaultShell = sh
-		go main()
+		sub := exec.Command("tt", "sub", "-s", host)
+		var buf bytes.Buffer
+		sub.Stdout = &buf
+		sub.Start()
+
 		<-time.After(2 * time.Millisecond) // let it start
-		if code := sh.ExitCode; code != 0 {
-			t.Fatalf("unexpected exit code %v", code)
-		}
+
 		{ // publish something
-			// let's use the pubcmd directly
-			u, _ := url.Parse(host)
-			c := &PubCmd{
-				server:  u,
-				topic:   "gopher/pink",
-				payload: "hug",
-				timeout: time.Second,
-				//debug:    true,
-				clientID: "test ",
+			pub := exec.Command("tt", "pub", "-s", host)
+			_ = pub.Run()
+			if code := pub.ProcessState.ExitCode(); code != 0 {
+				t.Fatalf("unexpected exit code %v", code)
 			}
-			c.Run(context.Background())
-			<-time.After(2 * time.Millisecond)
-			if v := sh.Out.String(); !strings.Contains(v, "PAYLOAD hug") {
-				t.Error("missing logged payload", v)
-			}
+		}
+
+		<-time.After(2 * time.Millisecond)
+		if v := buf.String(); !strings.Contains(v, "PAYLOAD hug") {
+			t.Error("missing logged payload", v)
 		}
 	}
 }
@@ -141,5 +115,12 @@ func Test_main_fails(t *testing.T) {
 	main()
 	if sh.ExitCode != 1 {
 		t.Fatal("pub should fail when bad server provided")
+	}
+}
+
+func startCmd(t *testing.T, cmd *exec.Cmd) {
+	t.Helper()
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
 	}
 }
