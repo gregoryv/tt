@@ -18,7 +18,7 @@ func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 	b.Debug = c.debug
 
 	s := ttsrv.NewServer()
-	s.AddBindConf(&b)
+	s.Binds = append(s.Binds, &b)
 
 	// indent only long option variation for alignement in help output
 	s.SetConnectTimeout(cli.Option("    --connect-timeout").Duration("20ms"))

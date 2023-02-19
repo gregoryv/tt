@@ -11,11 +11,11 @@ import (
 
 // Example shows how to run the provided server.
 func Example_server() {
-	srv := ttsrv.NewServer()
+	s := ttsrv.NewServer()
 	b, _ := ttsrv.NewBindConf("tcp://:", "20s")
-	srv.AddBindConf(b)
+	s.Binds = append(s.Binds, b)
 
-	go srv.Run(context.Background())
+	go s.Run(context.Background())
 
 	<-time.After(time.Millisecond)
 	conn, err := net.Dial(b.URL.Scheme, b.URL.Host)

@@ -29,7 +29,7 @@ func NewServer() *Server {
 }
 
 type Server struct {
-	binds []*BindConf
+	Binds []*BindConf
 
 	// client has to send the initial connect packet
 	connectTimeout time.Duration
@@ -53,7 +53,7 @@ type Server struct {
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(ctx context.Context) error {
 
-	b := s.binds[0]
+	b := s.Binds[0]
 	f := NewConnFeed()
 	f.ServeConn = s.ServeConn
 	f.SetDebug(s.debug)
@@ -66,9 +66,6 @@ func (s *Server) Run(ctx context.Context) error {
 
 	return f.Run(ctx, ln)
 }
-
-func (s *Server) AddBindConf(v *BindConf) { s.binds = append(s.binds, v) }
-func (s *Server) Binds() []*BindConf      { return s.binds }
 
 func (s *Server) SetDebug(v bool) {
 	s.debug = v
