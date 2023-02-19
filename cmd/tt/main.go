@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gregoryv/cmdline"
+	"github.com/gregoryv/tt/ttsrv"
 )
 
 func main() {
@@ -25,7 +26,10 @@ func main() {
 			debug:  debug,
 			output: cmdline.DefaultShell.Stdout(),
 		})
-		_ = commands.New("srv", &SrvCmd{debug: debug})
+		_ = commands.New("srv", &SrvCmd{
+			debug:  debug,
+			Server: ttsrv.NewServer(),
+		})
 
 		cmd = commands.Selected()
 	)

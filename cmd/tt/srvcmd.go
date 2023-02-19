@@ -12,16 +12,13 @@ type SrvCmd struct {
 }
 
 func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
-	var b ttsrv.BindConf
-	b.URL = cli.Option("-b, --bind-tcp, $TT_BIND_TCP").Url("tcp://localhost:1883")
-	b.AcceptTimeout = cli.Option("-a, --accept-timeout").Duration("1s")
+	b := c.Binds[0] // assuming there is one bind at least
+	b.URL = cli.Option("-b, --bind-tcp, $TT_BIND_TCP").Url(b.URL.String())
+	b.AcceptTimeout = cli.Option("-a, --accept-timeout").Duration(b.AcceptTimeout.String())
 	b.Debug = c.debug
 
-	s := ttsrv.NewServer()
-	s.Binds[0] = &b // replace default
-
+	// Server settings
 	// indent only long option variation for alignement in help output
-	s.ConnectTimeout = cli.Option("    --connect-timeout").Duration("200ms")
-	s.PoolSize = cli.Option("-p, --pool-size").Uint16(200)
-	c.Server = s
+	c.ConnectTimeout = cli.Option("    --connect-timeout").Duration("200ms")
+	c.PoolSize = cli.Option("-p, --pool-size").Uint16(200)
 }
