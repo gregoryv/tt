@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"time"
 
 	"github.com/gregoryv/tt/ttsrv"
 )
@@ -11,17 +12,16 @@ import (
 // Example shows how to run the provided server.
 func Example_server() {
 	srv := ttsrv.NewServer()
-	ln := ttsrv.NewConnFeed()
-	ln.SetServer(srv)
-	go ln.Run(context.Background())
+	b, _ := ttsrv.NewBindConf("tcp://:", "20s")
+	srv.AddBindConf(b)
 
-	<-ln.Up
-	// then use
-	a := ln.Addr()
-	conn, err := net.Dial(a.Network(), a.String())
+	go srv.Run(context.Background())
+
+	<-time.After(time.Millisecond)
+	conn, err := net.Dial(b.URL.Scheme, b.URL.Host)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
-	_ = conn // use it in your client
+	// use it in your client
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"net"
-	"net/url"
 	"os"
 	"time"
 )
@@ -16,8 +15,8 @@ import (
 func NewConnFeed() *ConnFeed {
 	return &ConnFeed{
 		Bind:          "tcp://:", // random
-		Up:            make(chan struct{}, 0),
 		AcceptTimeout: 100 * time.Millisecond,
+		Up:            make(chan struct{}, 0),
 		Logger:        log.New(os.Stderr, "tcp ", log.Flags()),
 		ServeConn:     func(context.Context, Connection) { /*noop*/ },
 	}
@@ -57,21 +56,9 @@ func (f *ConnFeed) SetServer(v interface {
 // Run enables listener. Blocks until context is cancelled or
 // accepting a connection fails. Accepting new connection can only be
 // interrupted if listener has SetDeadline method.
-func (f *ConnFeed) Run(ctx context.Context) error {
-	if f.Listener == nil {
-		f.Println("listen", f.Bind)
-		u, err := url.Parse(f.Bind)
-		if err != nil {
-			return err
-		}
-		ln, err := net.Listen(u.Scheme, u.Host)
-		if err != nil {
-			return err
-		}
-		f.Listener = ln
-	}
+func (f *ConnFeed) Run(ctx context.Context, ln net.Listener) error {
 	close(f.Up)
-	return f.run(ctx, f.Listener)
+	return f.run(ctx, ln)
 }
 
 func (f *ConnFeed) run(ctx context.Context, l net.Listener) error {

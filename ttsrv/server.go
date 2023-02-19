@@ -53,17 +53,22 @@ type Server struct {
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(ctx context.Context) error {
 
+	b := s.binds[0]
 	f := NewConnFeed()
-	f.Bind = s.binds[0].String()
 	f.ServeConn = s.ServeConn
 	f.SetDebug(s.debug)
 
-	return f.Run(ctx)
+	s.log.Println("listen", f.Bind)
+	ln, err := net.Listen(b.URL.Scheme, b.URL.Host)
+	if err != nil {
+		return err
+	}
+
+	return f.Run(ctx, ln)
 }
 
-func (s *Server) AddBindConf(v *BindConf) {
-	s.binds = append(s.binds, v)
-}
+func (s *Server) AddBindConf(v *BindConf) { s.binds = append(s.binds, v) }
+func (s *Server) Binds() []*BindConf      { return s.binds }
 
 func (s *Server) SetDebug(v bool) {
 	s.debug = v
