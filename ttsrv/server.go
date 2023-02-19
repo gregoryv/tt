@@ -23,9 +23,10 @@ func NewServer() *Server {
 		Binds:          []*BindConf{tcpRandom},
 		ConnectTimeout: 200 * time.Millisecond,
 		PoolSize:       100,
-		router:         NewRouter(),
-		log:            log.New(os.Stderr, "ttsrv ", log.Flags()),
-		stat:           NewServerStats(),
+
+		router: NewRouter(),
+		Log:    log.New(os.Stderr, "ttsrv ", log.Flags()),
+		stat:   NewServerStats(),
 	}
 	return s
 }
@@ -39,11 +40,11 @@ type Server struct {
 	// Max packet id for each connection, ids range from 1..PoolSize
 	PoolSize uint16
 
+	Log *log.Logger
+
 	// router is used to route incoming publish packets to subscribing
 	// clients
 	router *Router
-
-	log *log.Logger
 
 	// statistics
 	stat *ServerStats
@@ -55,7 +56,6 @@ type Server struct {
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(ctx context.Context) error {
-
 	b := s.Binds[0]
 	f := NewConnFeed()
 	f.ServeConn = s.ServeConn
@@ -65,16 +65,16 @@ func (s *Server) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	s.log.Println("listen", ln.Addr())
+	s.Log.Println("listen", ln.Addr())
 	return f.Run(ctx, ln)
 }
 
 func (s *Server) SetDebug(v bool) {
 	s.debug = v
 	if v {
-		s.log.SetFlags(s.log.Flags() | log.Lshortfile)
+		s.Log.SetFlags(s.Log.Flags() | log.Lshortfile)
 	} else {
-		s.log.SetFlags(log.Flags()) // default
+		s.Log.SetFlags(log.Flags()) // default
 	}
 }
 
@@ -89,10 +89,10 @@ func (s *Server) ServeConn(ctx context.Context, conn Connection) {
 	addr := conn.RemoteAddr()
 	a := includePort(addr.String(), s.debug)
 	connstr := fmt.Sprintf("conn %s://%s", addr.Network(), a)
-	s.log.Println("new", connstr)
+	s.Log.Println("new", connstr)
 	s.stat.AddConn()
 	defer func() {
-		s.log.Println("del", connstr)
+		s.Log.Println("del", connstr)
 		s.stat.RemoveConn()
 	}()
 	in, _ := s.createHandlers(conn)
@@ -104,7 +104,7 @@ func (s *Server) ServeConn(ctx context.Context, conn Connection) {
 func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 	// Note! ttsrv.Logger
 	logger := NewLogger()
-	logger.SetOutput(s.log.Writer())
+	logger.SetOutput(s.Log.Writer())
 	logger.SetRemote(
 		includePort(conn.RemoteAddr().String(), s.debug),
 	)
