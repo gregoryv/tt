@@ -22,11 +22,11 @@ func NewServer() *Server {
 	s := &Server{
 		Binds:          []*BindConf{tcpRandom},
 		ConnectTimeout: 200 * time.Millisecond,
+		PoolSize:       100,
 		router:         NewRouter(),
 		log:            log.New(os.Stderr, "ttsrv ", log.Flags()),
 		stat:           NewServerStats(),
 	}
-	s.SetPoolSize(100)
 	return s
 }
 
@@ -36,8 +36,8 @@ type Server struct {
 	// client has to send the initial connect packet
 	ConnectTimeout time.Duration
 
-	// poolSize is the max packet id for each connection
-	poolSize uint16
+	// Max packet id for each connection, ids range from 1..PoolSize
+	PoolSize uint16
 
 	// router is used to route incoming publish packets to subscribing
 	// clients
@@ -79,13 +79,6 @@ func (s *Server) SetDebug(v bool) {
 	}
 }
 
-// SetPoolSize sets the total number of packets in transit for one
-// connection. If e.g. set to 10, packets will be numbered 1 .. 10
-func (s *Server) SetPoolSize(v uint16) {
-	// +1 because 0 is not a valid packet ID
-	s.poolSize = v + 1
-}
-
 func (s *Server) Stat() ServerStats {
 	return *s.stat
 }
@@ -124,7 +117,7 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 
 	// Try using a simpler form with one handler and perhaps a nexus
 
-	pool := NewIDPool(s.poolSize)
+	pool := NewIDPool(s.PoolSize)
 	disco := NewDisconnector(conn)
 	sender := tt.Send(conn)
 	// subtransmit is used for features sending acks

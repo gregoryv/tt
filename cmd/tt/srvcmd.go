@@ -22,6 +22,6 @@ func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 
 	// indent only long option variation for alignement in help output
 	s.ConnectTimeout = cli.Option("    --connect-timeout").Duration("200ms")
-	s.SetPoolSize(cli.Option("-p, --pool-size").Uint16(200))
+	s.PoolSize = cli.Option("-p, --pool-size").Uint16(200)
 	c.Server = s
 }
