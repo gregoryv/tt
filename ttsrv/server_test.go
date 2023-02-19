@@ -2,6 +2,7 @@ package ttsrv
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -9,6 +10,14 @@ import (
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/testnet"
 )
+
+func TestServer_Run(t *testing.T) {
+	s := NewServer()
+	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
+	if err := s.Run(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) {
+		t.Error(err)
+	}
+}
 
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
