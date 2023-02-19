@@ -10,8 +10,9 @@ import (
 	"time"
 )
 
-// NewListener returns a listener for tcp connections on a random
+// NewConnFeed returns a listener for tcp connections on a random
 // port. Each new connection is by handled in a go routine.
+// wip decouple listener from connection feeding
 func NewConnFeed() *ConnFeed {
 	return &ConnFeed{
 		Bind:          "tcp://:", // random
