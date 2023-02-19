@@ -20,12 +20,11 @@ import (
 func NewServer() *Server {
 	tcpRandom, _ := NewBindConf("tcp://:", "500ms")
 	s := &Server{
-		Binds: []*BindConf{tcpRandom},
+		Binds:  []*BindConf{tcpRandom},
 		router: NewRouter(),
 		log:    log.New(os.Stderr, "ttsrv ", log.Flags()),
 		stat:   NewServerStats(),
 	}
-	s.SetConnectTimeout(0)
 	s.SetPoolSize(100)
 	return s
 }
@@ -34,7 +33,8 @@ type Server struct {
 	Binds []*BindConf
 
 	// client has to send the initial connect packet
-	connectTimeout time.Duration
+	ConnectTimeout time.Duration
+
 	// poolSize is the max packet id for each connection
 	poolSize uint16
 
@@ -77,10 +77,6 @@ func (s *Server) SetDebug(v bool) {
 		s.log.SetFlags(log.Flags()) // default
 	}
 }
-
-// SetConnectTimeout is the duration within which a client must send a
-// mq.Connect packet or once a connection is opened.
-func (s *Server) SetConnectTimeout(v time.Duration) { s.connectTimeout = v }
 
 // SetPoolSize sets the total number of packets in transit for one
 // connection. If e.g. set to 10, packets will be numbered 1 .. 10

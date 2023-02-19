@@ -18,10 +18,10 @@ func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 	b.Debug = c.debug
 
 	s := ttsrv.NewServer()
-	s.Binds = append(s.Binds, &b)
+	s.Binds[0] = &b // replace default
 
 	// indent only long option variation for alignement in help output
-	s.SetConnectTimeout(cli.Option("    --connect-timeout").Duration("20ms"))
+	s.ConnectTimeout = cli.Option("    --connect-timeout").Duration("20ms")
 	s.SetPoolSize(cli.Option("-p, --pool-size").Uint16(200))
 	c.Server = s
 }
