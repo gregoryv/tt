@@ -14,27 +14,18 @@ import (
 // wip decouple listener from connection feeding
 func NewConnFeed() *ConnFeed {
 	return &ConnFeed{
-		Bind:          "tcp://:", // random
-		AcceptTimeout: 100 * time.Millisecond,
-		Up:            make(chan struct{}, 0),
-		Logger:        log.New(os.Stderr, "tcp ", log.Flags()),
-		ServeConn:     func(context.Context, Connection) { /*noop*/ },
+		Up:        make(chan struct{}, 0),
+		Logger:    log.New(os.Stderr, "tcp ", log.Flags()),
+		ServeConn: func(context.Context, Connection) { /*noop*/ },
 	}
 }
 
 type ConnFeed struct {
-	// Scheme://[hostname]:port
-	Bind string
-
 	// Up is closed when listener is running
 	Up chan struct{}
 
 	// Listener is set once run
 	net.Listener
-
-	// AcceptTimeout is used as deadline for new connections before
-	// checking if context has been cancelled.
-	AcceptTimeout time.Duration
 
 	// AddConnection handles new remote connections
 	ServeConn func(context.Context, Connection)
@@ -56,12 +47,7 @@ func (f *ConnFeed) SetServer(v interface {
 // Run enables listener. Blocks until context is cancelled or
 // accepting a connection fails. Accepting new connection can only be
 // interrupted if listener has SetDeadline method.
-func (f *ConnFeed) Run(ctx context.Context, ln net.Listener) error {
-	close(f.Up)
-	return f.run(ctx, ln)
-}
-
-func (f *ConnFeed) run(ctx context.Context, l net.Listener) error {
+func (f *ConnFeed) Run(ctx context.Context, l net.Listener, acceptTimeout time.Duration) error {
 loop:
 	for {
 		if err := ctx.Err(); err != nil {
@@ -70,7 +56,7 @@ loop:
 
 		// timeout Accept call so we don't block the loop
 		if l, ok := l.(interface{ SetDeadline(time.Time) error }); ok {
-			l.SetDeadline(time.Now().Add(f.AcceptTimeout))
+			l.SetDeadline(time.Now().Add(acceptTimeout))
 		}
 		conn, err := l.Accept()
 
