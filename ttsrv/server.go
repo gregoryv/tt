@@ -29,6 +29,8 @@ func NewServer() *Server {
 }
 
 type Server struct {
+	binds []*BindConf
+
 	// client has to send the initial connect packet
 	connectTimeout time.Duration
 	// poolSize is the max packet id for each connection
@@ -44,6 +46,23 @@ type Server struct {
 	stat *ServerStats
 
 	debug bool
+}
+
+// Run listens for tcp connections. Blocks until context is cancelled
+// or accepting a connection fails. Accepting new connection can only
+// be interrupted if listener has SetDeadline method.
+func (s *Server) Run(ctx context.Context) error {
+
+	f := NewConnFeed()
+	f.Bind = s.binds[0].String()
+	f.AddConnection = s.AddConnection
+	f.SetDebug(s.debug)
+
+	return f.Run(ctx)
+}
+
+func (s *Server) AddBindConf(v *BindConf) {
+	s.binds = append(s.binds, v)
 }
 
 func (s *Server) SetDebug(v bool) {
