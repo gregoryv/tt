@@ -45,22 +45,22 @@ type ConnFeed struct {
 	debug bool
 }
 
-func (l *ConnFeed) SetDebug(v bool) { l.debug = v }
+func (f *ConnFeed) SetDebug(v bool) { f.debug = v }
 
 // SetServer sets the server to which new connections should be added.
-func (s *ConnFeed) SetServer(v interface {
+func (f *ConnFeed) SetServer(v interface {
 	AddConnection(context.Context, Connection)
 }) {
-	s.AddConnection = v.AddConnection
+	f.AddConnection = v.AddConnection
 }
 
 // Run enables listener. Blocks until context is cancelled or
 // accepting a connection fails. Accepting new connection can only be
 // interrupted if listener has SetDeadline method.
-func (s *ConnFeed) Run(ctx context.Context) error {
-	if s.Listener == nil {
-		s.Println("listen", s.Bind)
-		u, err := url.Parse(s.Bind)
+func (f *ConnFeed) Run(ctx context.Context) error {
+	if f.Listener == nil {
+		f.Println("listen", f.Bind)
+		u, err := url.Parse(f.Bind)
 		if err != nil {
 			return err
 		}
@@ -68,13 +68,13 @@ func (s *ConnFeed) Run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		s.Listener = ln
+		f.Listener = ln
 	}
-	close(s.Up)
-	return s.run(ctx, s.Listener)
+	close(f.Up)
+	return f.run(ctx, f.Listener)
 }
 
-func (s *ConnFeed) run(ctx context.Context, l net.Listener) error {
+func (f *ConnFeed) run(ctx context.Context, l net.Listener) error {
 loop:
 	for {
 		if err := ctx.Err(); err != nil {
@@ -83,7 +83,7 @@ loop:
 
 		// timeout Accept call so we don't block the loop
 		if l, ok := l.(interface{ SetDeadline(time.Time) error }); ok {
-			l.SetDeadline(time.Now().Add(s.AcceptTimeout))
+			l.SetDeadline(time.Now().Add(f.AcceptTimeout))
 		}
 		conn, err := l.Accept()
 
@@ -94,6 +94,6 @@ loop:
 			return err
 		}
 
-		go s.AddConnection(ctx, conn)
+		go f.AddConnection(ctx, conn)
 	}
 }
