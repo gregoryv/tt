@@ -18,7 +18,9 @@ import (
 
 // NewServer returns a server that binds to a random port.
 func NewServer() *Server {
+	tcpRandom, _ := NewBindConf("tcp://:", "500ms")
 	s := &Server{
+		Binds: []*BindConf{tcpRandom},
 		router: NewRouter(),
 		log:    log.New(os.Stderr, "ttsrv ", log.Flags()),
 		stat:   NewServerStats(),
