@@ -42,20 +42,27 @@ type Server struct {
 
 	Log *log.Logger
 
+	// Set to true for additional log information
+	Debug bool
+
 	// router is used to route incoming publish packets to subscribing
 	// clients
 	router *Router
 
 	// statistics
 	stat *ServerStats
-
-	debug bool
 }
 
 // Run listens for tcp connections. Blocks until context is cancelled
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(ctx context.Context) error {
+	if s.Debug {
+		s.Log.SetFlags(s.Log.Flags() | log.Lshortfile)
+	} else {
+		s.Log.SetFlags(log.Flags()) // default
+	}
+
 	b := s.Binds[0]
 	ln, err := net.Listen(b.URL.Scheme, b.URL.Host)
 	if err != nil {
@@ -65,17 +72,8 @@ func (s *Server) Run(ctx context.Context) error {
 
 	f := NewConnFeed()
 	f.ServeConn = s.ServeConn
-	f.SetDebug(s.debug)
+	f.SetDebug(s.Debug)
 	return f.Run(ctx, ln, b.AcceptTimeout)
-}
-
-func (s *Server) SetDebug(v bool) {
-	s.debug = v
-	if v {
-		s.Log.SetFlags(s.Log.Flags() | log.Lshortfile)
-	} else {
-		s.Log.SetFlags(log.Flags()) // default
-	}
 }
 
 func (s *Server) Stat() ServerStats {
@@ -87,7 +85,7 @@ func (s *Server) Stat() ServerStats {
 func (s *Server) ServeConn(ctx context.Context, conn Connection) {
 	// the server tracks active connections
 	addr := conn.RemoteAddr()
-	a := includePort(addr.String(), s.debug)
+	a := includePort(addr.String(), s.Debug)
 	connstr := fmt.Sprintf("conn %s://%s", addr.Network(), a)
 	s.Log.Println("new", connstr)
 	s.stat.AddConn()
@@ -106,7 +104,7 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 	logger := NewLogger()
 	logger.SetOutput(s.Log.Writer())
 	logger.SetRemote(
-		includePort(conn.RemoteAddr().String(), s.debug),
+		includePort(conn.RemoteAddr().String(), s.Debug),
 	)
 	logger.SetPrefix("ttsrv ")
 
