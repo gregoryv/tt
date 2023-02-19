@@ -20,10 +20,11 @@ import (
 func NewServer() *Server {
 	tcpRandom, _ := NewBindConf("tcp://:", "500ms")
 	s := &Server{
-		Binds:  []*BindConf{tcpRandom},
-		router: NewRouter(),
-		log:    log.New(os.Stderr, "ttsrv ", log.Flags()),
-		stat:   NewServerStats(),
+		Binds:          []*BindConf{tcpRandom},
+		ConnectTimeout: 200 * time.Millisecond,
+		router:         NewRouter(),
+		log:            log.New(os.Stderr, "ttsrv ", log.Flags()),
+		stat:           NewServerStats(),
 	}
 	s.SetPoolSize(100)
 	return s
