@@ -18,7 +18,7 @@ import (
 
 // NewServer returns a server that binds to a random port.
 func NewServer() *Server {
-	tcpRandom, _ := NewBindConf("tcp://:", "500ms")
+	tcpRandom, _ := NewBindConf("tcp://localhost:", "500ms")
 	s := &Server{
 		Binds:          []*BindConf{tcpRandom},
 		ConnectTimeout: 200 * time.Millisecond,
@@ -61,12 +61,11 @@ func (s *Server) Run(ctx context.Context) error {
 	f.ServeConn = s.ServeConn
 	f.SetDebug(s.debug)
 
-	s.log.Println("listen", f.Bind)
 	ln, err := net.Listen(b.URL.Scheme, b.URL.Host)
 	if err != nil {
 		return err
 	}
-
+	s.log.Println("listen", ln.Addr())
 	return f.Run(ctx, ln)
 }
 
