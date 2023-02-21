@@ -102,30 +102,25 @@ func (s *Server) ServeConn(ctx context.Context, conn Connection) {
 
 // createHandlers returns in and out handlers for packets.
 func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
-	// Note! ttsrv.Logger
-	logger := NewLogger()
-	logger.SetOutput(s.Log.Writer())
-	logger.SetRemote(
-		includePort(conn.RemoteAddr().String(), s.Debug),
-	)
-	logger.SetPrefix("ttsrv ")
-
 	var m sync.Mutex
 	var maxQoS uint8 = 0 // todo support QoS 1 and 2
+	var maxIDLen uint = 11
+	var (
+		clientID string
+		shortID  string
+		remote   = includePort(conn.RemoteAddr().String(), s.Debug)
+	)
 
 	transmit = func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:
 			p.SetMaxQoS(maxQoS)
-			if v := p.AssignedClientID(); v != "" {
-				logger.clientID = trimID(v, logger.maxLen)
-			}
 		}
 
 		if s.Debug {
-			logger.Print("out ", p, "\n", dumpPacket(p))
+			s.Log.Print("out ", p, "\n", dumpPacket(p))
 		} else {
-			logger.Printf("out %v -> %s:%s", p, logger.remote, logger.clientID)
+			s.Log.Printf("out %v -> %s:%s", p, remote, shortID)
 		}
 
 		m.Lock()
@@ -143,11 +138,20 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 	}
 
 	in = func(ctx context.Context, p mq.Packet) error {
+		switch p := p.(type) {
+		case *mq.Connect:
+			// generate a client id before any logging
+			clientID = p.ClientID()
+			if clientID == "" {
+				clientID = uuid.NewString()
+			}
+			shortID = trimID(clientID, maxIDLen)
+		}
 
 		if s.Debug {
-			logger.Print("out ", p, "\n", dumpPacket(p))
+			s.Log.Print("out ", p, "\n", dumpPacket(p))
 		} else {
-			logger.Printf("out %v -> %s:%s", p, logger.remote, logger.clientID)
+			s.Log.Printf("out %v -> %s:%s", p, remote, shortID)
 		}
 
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
@@ -162,9 +166,10 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 		case *mq.Connect:
 			// todo should the ack be sent here?
 			a := mq.NewConnAck()
-			if id := p.ClientID(); id == "" {
-				a.SetAssignedClientID(uuid.NewString())
+			if p.ClientID() == "" {
+				a.SetAssignedClientID(clientID)
 			}
+
 			return transmit(ctx, a)
 
 		case *mq.Subscribe:
