@@ -29,11 +29,7 @@ type ConnFeed struct {
 	ServeConn func(context.Context, Connection)
 
 	*log.Logger
-
-	debug bool
 }
-
-func (f *ConnFeed) SetDebug(v bool) { f.debug = v }
 
 // SetServer sets the server to which new connections should be added.
 func (f *ConnFeed) SetServer(v interface {
