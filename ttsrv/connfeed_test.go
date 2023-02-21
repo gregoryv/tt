@@ -22,15 +22,18 @@ func TestConnFeed(t *testing.T) {
 			conn.Close()
 			cancel()
 		})
-
-		f.Run(ctx, ln, time.Millisecond)
+		f.Listener = ln
+		f.AcceptTimeout = time.Millisecond
+		f.Run(ctx)
 	}
 	{ // ends on listener close
 		f := NewConnFeed()
 		ln, _ := net.Listen("tcp", ":")
 		time.AfterFunc(time.Millisecond, func() { ln.Close() })
+		f.Listener = ln
+		f.AcceptTimeout = time.Millisecond
 
-		err := f.Run(context.Background(), ln, time.Millisecond)
+		err := f.Run(context.Background())
 		if !errors.Is(err, net.ErrClosed) {
 			t.Error(err)
 		}

@@ -11,21 +11,19 @@ import (
 
 // NewConnFeed returns a listener for tcp connections on a random
 // port. Each new connection is by handled in a go routine.
-// wip decouple listener from connection feeding
 func NewConnFeed() *ConnFeed {
 	return &ConnFeed{
-		Up:        make(chan struct{}, 0),
-		Logger:    log.New(os.Stderr, "tcp ", log.Flags()),
-		ServeConn: func(context.Context, Connection) { /*noop*/ },
+		AcceptTimeout: 200 * time.Millisecond,
+		Logger:        log.New(os.Stderr, "tcp ", log.Flags()),
+		ServeConn:     func(context.Context, Connection) { /*noop*/ },
 	}
 }
 
 type ConnFeed struct {
-	// Up is closed when listener is running
-	Up chan struct{}
-
-	// Listener is set once run
+	// Listener to watch
 	net.Listener
+
+	AcceptTimeout time.Duration
 
 	// AddConnection handles new remote connections
 	ServeConn func(context.Context, Connection)
@@ -47,16 +45,19 @@ func (f *ConnFeed) SetServer(v interface {
 // Run enables listener. Blocks until context is cancelled or
 // accepting a connection fails. Accepting new connection can only be
 // interrupted if listener has SetDeadline method.
-func (f *ConnFeed) Run(ctx context.Context, l net.Listener, acceptTimeout time.Duration) error {
+func (f *ConnFeed) Run(ctx context.Context) error {
+	l := f.Listener
+
 loop:
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 
-		// timeout Accept call so we don't block the loop
+		// set deadline allows to break the loop early should the
+		// context be done
 		if l, ok := l.(interface{ SetDeadline(time.Time) error }); ok {
-			l.SetDeadline(time.Now().Add(acceptTimeout))
+			l.SetDeadline(time.Now().Add(f.AcceptTimeout))
 		}
 		conn, err := l.Accept()
 

@@ -73,7 +73,9 @@ func (s *Server) Run(ctx context.Context) error {
 	f := NewConnFeed()
 	f.ServeConn = s.ServeConn
 	f.SetDebug(s.Debug)
-	return f.Run(ctx, ln, b.AcceptTimeout)
+	f.Listener = ln
+	f.AcceptTimeout = b.AcceptTimeout
+	return f.Run(ctx)
 }
 
 func (s *Server) Stat() ServerStats {
