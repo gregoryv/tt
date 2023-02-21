@@ -115,7 +115,6 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 
 	// Try using a simpler form with one handler and perhaps a nexus
 
-	pool := NewIDPool(s.PoolSize)
 	disco := NewDisconnector(conn)
 	sender := tt.Send(conn)
 	// subtransmit is used for features sending acks
@@ -135,9 +134,6 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 
 		// todo do we have to check outgoing if incoming are already checked?
 		quality.Out,
-
-		// handle number of packets in flight
-		pool.Out,
 	)
 
 	in = tt.Combine(
@@ -150,9 +146,6 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 
 		// handle subscriptions in the router
 		NewSubscriber(s.router, transmit).In,
-
-		// handle packet ids correctly
-		pool.In,
 
 		// handle malformed packets early
 		NewFormChecker(subtransmit).In,
