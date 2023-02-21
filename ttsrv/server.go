@@ -219,7 +219,9 @@ func (c *ClientIDMaker) In(next tt.Handler) tt.Handler {
 			if id := p.ClientID(); id == "" {
 				a.SetAssignedClientID(uuid.NewString())
 			}
-			_ = c.transmit(ctx, a)
+			if err := c.transmit(ctx, a); err != nil {
+				return err
+			}
 		}
 		return next(ctx, p)
 	}

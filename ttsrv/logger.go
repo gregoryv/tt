@@ -34,9 +34,8 @@ type Logger struct {
 	clientID string
 }
 
-func (l *Logger) SetDebug(v bool)      { l.debug = v }
-func (l *Logger) SetRemote(v string)   { l.remote = v }
-func (l *Logger) SetClientID(v string) { l.remote = v }
+func (l *Logger) SetDebug(v bool)    { l.debug = v }
+func (l *Logger) SetRemote(v string) { l.remote = v }
 
 // SetMaxIDLen configures the logger to trim the client id to number of
 // characters. Use 0 to not trim.
@@ -87,11 +86,6 @@ func (f *Logger) Out(next tt.Handler) tt.Handler {
 		}
 		return err
 	}
-}
-
-func (f *Logger) SetLogPrefix(v string) {
-	v = trimID(v, f.maxLen)
-	f.SetPrefix(v + " ")
 }
 
 func dumpPacket(p mq.Packet) string {
