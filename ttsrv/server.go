@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -109,50 +110,103 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 	)
 	logger.SetPrefix("ttsrv ")
 
-	closeOnDisconnect := NewDisconnector(conn)
-	sender := tt.Send(conn)
-	// subtransmit is used for features sending acks
-	subtransmit := tt.Combine(
-		sender,
-		logger.Out,
-		closeOnDisconnect.Out,
-	)
+	var m sync.Mutex
+	var maxQoS uint8 = 0 // todo support QoS 1 and 2
 
-	quality := NewQualitySupport(subtransmit)
-	transmit = tt.Combine(
-		sender,
-		// note! there is no check for malformed packets here for now
-		// so the server could send them.
+	transmit = func(ctx context.Context, p mq.Packet) error {
+		switch p := p.(type) {
+		case *mq.ConnAck:
+			p.SetMaxQoS(maxQoS)
+			if v := p.AssignedClientID(); v != "" {
+				logger.clientID = trimID(v, logger.maxLen)
+			}
+		}
 
-		// log just before sending the packet
-		logger.Out,
+		if s.Debug {
+			logger.Print("out ", p, "\n", dumpPacket(p))
+		} else {
+			logger.Printf("out %v -> %s:%s", p, logger.remote, logger.clientID)
+		}
 
-		// close connection after Disconnect is send
-		closeOnDisconnect.Out,
+		m.Lock()
+		defer m.Unlock()
+		if _, err := p.WriteTo(conn); err != nil {
+			return err
+		}
 
-		// todo do we have to check outgoing if incoming are already checked?
-		quality.Out,
-	)
+		switch p.(type) {
+		case *mq.Disconnect:
+			// close connection after Disconnect is send
+			conn.Close()
+		}
+		return nil
+	}
 
-	in = tt.Combine(
-		s.router.Handle,
+	in = func(ctx context.Context, p mq.Packet) error {
 
-		closeOnDisconnect.In,
+		if s.Debug {
+			logger.Print("out ", p, "\n", dumpPacket(p))
+		} else {
+			logger.Printf("out %v -> %s:%s", p, logger.remote, logger.clientID)
+		}
 
-		NewClientIDMaker(subtransmit).In,
+		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
+			if err := p.WellFormed(); err != nil {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.MalformedPacket)
+				return transmit(ctx, d)
+			}
+		}
 
-		// make sure only supported QoS packets
-		quality.In,
+		switch p := p.(type) {
+		case *mq.Connect:
+			// todo should the ack be sent here?
+			a := mq.NewConnAck()
+			if id := p.ClientID(); id == "" {
+				a.SetAssignedClientID(uuid.NewString())
+			}
+			return transmit(ctx, a)
 
-		// handle subscriptions in the router
-		NewSubscriber(s.router, transmit).In,
+		case *mq.Subscribe:
+			a := mq.NewSubAck()
+			a.SetPacketID(p.PacketID())
+			for _, f := range p.Filters() {
+				tf, err := tt.ParseTopicFilter(f.Filter())
+				if err != nil {
+					p := mq.NewDisconnect()
+					p.SetReasonCode(mq.MalformedPacket)
+					transmit(ctx, p)
+					return nil
+				}
 
-		// handle malformed packets early
-		NewFormChecker(subtransmit).In,
+				r := NewSubscription(tf, func(ctx context.Context, p *mq.Publish) error {
+					return transmit(ctx, p)
+				})
+				s.router.AddRoute(r)
+				// todo Subscribe.WellFormed fails if for any reason, though
+				// here we want to set a reason code for each filter.
+				// 3.9.3 SUBACK Payload
+				a.AddReasonCode(mq.Success)
+			}
+			if err := transmit(ctx, a); err != nil {
+				return err
+			}
 
-		// log incoming packets first as they might change
-		logger.In,
-	)
+		case *mq.Publish:
+			// Disconnect any attempts to publish exceeding qos.
+			// Specified in section 3.3.1.2 QoS
+			if p.QoS() > maxQoS {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.QoSNotSupported)
+				return transmit(ctx, d)
+			}
+			return s.router.Handle(ctx, p)
+
+		case *mq.Disconnect:
+			return conn.Close()
+		}
+		return nil
+	}
 	return
 }
 
