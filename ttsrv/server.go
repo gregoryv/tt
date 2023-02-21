@@ -109,16 +109,14 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 	)
 	logger.SetPrefix("ttsrv ")
 
-	// This design is hard to reason about as each middleware
-	// may or may not stop the processing and you cannot see that
-	// from here.
-
-	// Try using a simpler form with one handler and perhaps a nexus
-
-	disco := NewDisconnector(conn)
+	closeOnDisconnect := NewDisconnector(conn)
 	sender := tt.Send(conn)
 	// subtransmit is used for features sending acks
-	subtransmit := tt.Combine(sender, logger.Out, disco.Out)
+	subtransmit := tt.Combine(
+		sender,
+		logger.Out,
+		closeOnDisconnect.Out,
+	)
 
 	quality := NewQualitySupport(subtransmit)
 	transmit = tt.Combine(
@@ -130,7 +128,7 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 		logger.Out,
 
 		// close connection after Disconnect is send
-		disco.Out,
+		closeOnDisconnect.Out,
 
 		// todo do we have to check outgoing if incoming are already checked?
 		quality.Out,
@@ -138,7 +136,9 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 
 	in = tt.Combine(
 		s.router.Handle,
-		disco.In,
+
+		closeOnDisconnect.In,
+
 		NewClientIDMaker(subtransmit).In,
 
 		// make sure only supported QoS packets
