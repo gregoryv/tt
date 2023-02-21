@@ -5,13 +5,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -272,3 +275,191 @@ func trimID(s string, width uint) string {
 }
 
 const prefixStr = "~"
+
+// gomerge src: bindconf.go
+
+func NewBindConf(uri, acceptTimeout string) (*BindConf, error) {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return nil, err
+	}
+	d, err := time.ParseDuration(acceptTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	return &BindConf{
+		URL:           u,
+		AcceptTimeout: d,
+	}, nil
+}
+
+type BindConf struct {
+	*url.URL
+	AcceptTimeout time.Duration
+	Debug         bool
+}
+
+// gomerge src: connfeed.go
+
+// NewConnFeed returns a listener for tcp connections on a random
+// port. Each new connection is by handled in a go routine.
+func NewConnFeed() *ConnFeed {
+	return &ConnFeed{
+		AcceptTimeout: 200 * time.Millisecond,
+		Logger:        log.New(os.Stderr, "tcp ", log.Flags()),
+		ServeConn:     func(context.Context, Connection) { /*noop*/ },
+	}
+}
+
+type ConnFeed struct {
+	// Listener to watch
+	net.Listener
+
+	AcceptTimeout time.Duration
+
+	// AddConnection handles new remote connections
+	ServeConn func(context.Context, Connection)
+
+	*log.Logger
+}
+
+// SetServer sets the server to which new connections should be added.
+func (f *ConnFeed) SetServer(v interface {
+	ServeConn(context.Context, Connection)
+}) {
+	f.ServeConn = v.ServeConn
+}
+
+// Run enables listener. Blocks until context is cancelled or
+// accepting a connection fails. Accepting new connection can only be
+// interrupted if listener has SetDeadline method.
+func (f *ConnFeed) Run(ctx context.Context) error {
+	l := f.Listener
+
+loop:
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		// set deadline allows to break the loop early should the
+		// context be done
+		if l, ok := l.(interface{ SetDeadline(time.Time) error }); ok {
+			l.SetDeadline(time.Now().Add(f.AcceptTimeout))
+		}
+		conn, err := l.Accept()
+
+		if errors.Is(err, os.ErrDeadlineExceeded) {
+			continue loop
+		}
+		if err != nil {
+			return err
+		}
+
+		go f.ServeConn(ctx, conn)
+	}
+}
+
+// gomerge src: router.go
+
+// NewRouter returns a router for handling the given subscriptions.
+func NewRouter(v ...*Subscription) *Router {
+	return &Router{
+		subs: v,
+		log:  log.New(log.Writer(), "router ", log.Flags()),
+	}
+}
+
+type Router struct {
+	subs []*Subscription
+
+	log *log.Logger
+}
+
+func (r *Router) String() string {
+	return plural(len(r.subs), "subscription")
+}
+
+func (r *Router) AddRoute(v *Subscription) {
+	r.subs = append(r.subs, v)
+}
+
+// In forwards routes mq.Publish packets by topic name.
+func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
+	switch p := p.(type) {
+	case *mq.Publish:
+		// naive implementation looping over each route, improve at
+		// some point
+		for _, s := range r.subs {
+			if _, ok := s.Match(p.TopicName()); ok {
+				for _, h := range s.handlers {
+					// maybe we'll have to have a different routing mechanism for
+					// client side handling subscriptions compared to server side.
+					// As server may have to adapt packages before sending and
+					// there will be a QoS on each subscription that we need to consider.
+					if err := h(ctx, p); err != nil {
+						r.log.Println("handle", p, err)
+					}
+				}
+			}
+		}
+	}
+	return ctx.Err()
+}
+
+func plural(v int, word string) string {
+	if v > 1 {
+		word = word + "s"
+	}
+	return fmt.Sprintf("%v %s", v, word)
+}
+
+// gomerge src: srvstats.go
+
+func newServerStats() *serverStats {
+	return &serverStats{}
+}
+
+type serverStats struct {
+	ConnCount  int64
+	ConnActive int64
+}
+
+func (s *serverStats) AddConn() {
+	atomic.AddInt64(&s.ConnCount, 1)
+	atomic.AddInt64(&s.ConnActive, 1)
+}
+
+func (s *serverStats) RemoveConn() {
+	atomic.AddInt64(&s.ConnActive, -1)
+}
+
+// gomerge src: subscription.go
+
+// MustNewSubscription panics on bad filter
+func MustNewSubscription(filter string, handlers ...PubHandler) *Subscription {
+	tf, err := tt.ParseTopicFilter(filter)
+	if err != nil {
+		panic(err.Error())
+	}
+	return NewSubscription(tf, handlers...)
+}
+
+func NewSubscription(filter *tt.TopicFilter, handlers ...PubHandler) *Subscription {
+	r := &Subscription{
+		TopicFilter: filter,
+		handlers:    handlers,
+	}
+	return r
+}
+
+type Subscription struct {
+	*tt.TopicFilter
+
+	handlers []PubHandler
+}
+
+func (r *Subscription) String() string {
+	return r.Filter()
+}
