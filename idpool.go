@@ -2,6 +2,7 @@ package tt
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gregoryv/mq"
@@ -10,9 +11,10 @@ import (
 // NewIDPool returns a IDPool of reusable id's from 1..max, 0 is not used
 func NewIDPool(max uint16) *IDPool {
 	o := IDPool{
-		max:    max,
-		used:   make([]time.Time, max+1),
-		values: make(chan uint16, max),
+		nextTimeout: 3 * time.Second,
+		max:         max,
+		used:        make([]time.Time, max+1),
+		values:      make(chan uint16, max),
 	}
 	for i := uint16(1); i <= max; i++ {
 		o.values <- i
@@ -21,9 +23,10 @@ func NewIDPool(max uint16) *IDPool {
 }
 
 type IDPool struct {
-	max    uint16
-	used   []time.Time // flags id that has been used in Out handler
-	values chan uint16
+	nextTimeout time.Duration
+	max         uint16
+	used        []time.Time // flags id that has been used in Out handler
+	values      chan uint16
 }
 
 // In checks if incoming packet has a packet ID, if so it's
@@ -31,7 +34,7 @@ type IDPool struct {
 func (o *IDPool) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if p, ok := p.(mq.HasPacketID); ok {
-			o.reuse(p.PacketID())
+			_ = o.reuse(p.PacketID())
 		}
 		return next(ctx, p)
 	}
@@ -57,23 +60,29 @@ func (o *IDPool) Out(next Handler) Handler {
 		if p, ok := p.(mq.HasPacketID); ok {
 			switch p := p.(type) {
 			case *mq.Publish:
-				// Don't set packet id if already set, this is used in
-				// eg. PubRel packets
 				if p.QoS() > 0 && p.PacketID() == 0 {
-					p.SetPacketID(o.next(ctx))
+					id, err := o.next(ctx)
+					if err != nil {
+						return err
+					}
+					p.SetPacketID(id)
 				}
 
 			case *mq.Subscribe:
-				p.SetPacketID(o.next(ctx))
+				id, err := o.next(ctx)
+				if err != nil {
+					return err
+				}
+				p.SetPacketID(id)
 
 			case *mq.Unsubscribe:
-				p.SetPacketID(o.next(ctx))
+				id, err := o.next(ctx)
+				if err != nil {
+					return err
+				}
+				p.SetPacketID(id)
 			}
 		}
-
-		// todo handle dropped acks as that packet is lost.
-		//
-		// Maybe a timeout for expected acks to arrive?
 
 		return next(ctx, p)
 	}
@@ -82,14 +91,20 @@ func (o *IDPool) Out(next Handler) Handler {
 // next returns the next available ID, blocks until one is available
 // or context is canceled. next is safe for concurrent use by multiple
 // goroutines.
-func (o *IDPool) next(ctx context.Context) uint16 {
+func (o *IDPool) next(ctx context.Context) (uint16, error) {
 	select {
 	case <-ctx.Done():
+		return 0, ctx.Err()
+
+	case <-time.After(o.nextTimeout):
+		return 0, ErrIDPoolEmpty
+
 	case v := <-o.values:
 		o.used[v] = time.Now()
-		return v
+		return v, nil
 	}
-	return 0
 }
+
+var ErrIDPoolEmpty = fmt.Errorf("no available packet ids")
 
 var zero = time.Time{}

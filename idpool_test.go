@@ -61,7 +61,7 @@ func TestIDPool_nextTimeout(t *testing.T) {
 	pool := NewIDPool(1) // 1 .. 5
 	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
 	pool.next(ctx)
-	if v := pool.next(ctx); v != 0 {
+	if v, _ := pool.next(ctx); v != 0 {
 		t.Error("expect 0 id when pool is cancelled", v)
 	}
 }
