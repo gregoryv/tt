@@ -220,67 +220,6 @@ func includePort(addr string, yes bool) string {
 	return addr
 }
 
-func NewDisconnector(conn io.Closer) *Disconnector {
-	return &Disconnector{conn: conn}
-}
-
-// Disconnector handles Disconnect packets
-type Disconnector struct {
-	conn io.Closer
-}
-
-// In closes the connection and then calls the next handler
-func (d *Disconnector) In(next tt.Handler) tt.Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		switch p.(type) {
-		case *mq.Disconnect:
-			d.conn.Close()
-		}
-		return next(ctx, p)
-	}
-}
-
-// Out calls the next handler first, so the packet is actually send
-// followed by a closing of the connection.
-func (d *Disconnector) Out(next tt.Handler) tt.Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		err := next(ctx, p) // send it first
-		switch p.(type) {
-		case *mq.Disconnect:
-			d.conn.Close()
-		}
-		return err
-	}
-}
-
-func NewClientIDMaker(transmit tt.Handler) *ClientIDMaker {
-	return &ClientIDMaker{
-		transmit: transmit,
-	}
-}
-
-type ClientIDMaker struct {
-	transmit tt.Handler
-}
-
-// In sends acs for incoming Connect packets.
-func (c *ClientIDMaker) In(next tt.Handler) tt.Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
-		case *mq.Connect:
-			// todo should the ack be sent here?
-			a := mq.NewConnAck()
-			if id := p.ClientID(); id == "" {
-				a.SetAssignedClientID(uuid.NewString())
-			}
-			if err := c.transmit(ctx, a); err != nil {
-				return err
-			}
-		}
-		return next(ctx, p)
-	}
-}
-
 func NewFormChecker(transmit tt.Handler) *FormChecker {
 	return &FormChecker{
 		transmit: transmit,
