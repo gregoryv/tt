@@ -29,7 +29,7 @@ func NewServer() *Server {
 
 		router: NewRouter(),
 		Log:    log.New(os.Stderr, "ttsrv ", log.Flags()),
-		stat:   NewServerStats(),
+		stat:   newServerStats(),
 	}
 	return s
 }
@@ -53,7 +53,7 @@ type Server struct {
 	router *Router
 
 	// statistics
-	stat *ServerStats
+	stat *serverStats
 }
 
 // Run listens for tcp connections. Blocks until context is cancelled
@@ -78,10 +78,6 @@ func (s *Server) Run(ctx context.Context) error {
 	f.Listener = ln
 	f.AcceptTimeout = b.AcceptTimeout
 	return f.Run(ctx)
-}
-
-func (s *Server) Stat() ServerStats {
-	return *s.stat
 }
 
 // ServeConn handles the given remote connection. Blocks until

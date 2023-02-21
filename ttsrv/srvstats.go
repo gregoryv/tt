@@ -2,20 +2,20 @@ package ttsrv
 
 import "sync/atomic"
 
-func NewServerStats() *ServerStats {
-	return &ServerStats{}
+func newServerStats() *serverStats {
+	return &serverStats{}
 }
 
-type ServerStats struct {
+type serverStats struct {
 	ConnCount  int64
 	ConnActive int64
 }
 
-func (s *ServerStats) AddConn() {
+func (s *serverStats) AddConn() {
 	atomic.AddInt64(&s.ConnCount, 1)
 	atomic.AddInt64(&s.ConnActive, 1)
 }
 
-func (s *ServerStats) RemoveConn() {
+func (s *serverStats) RemoveConn() {
 	atomic.AddInt64(&s.ConnActive, -1)
 }

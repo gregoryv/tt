@@ -3,7 +3,6 @@ package ttsrv
 import (
 	"context"
 	"errors"
-	"reflect"
 	"testing"
 	"time"
 
@@ -38,26 +37,6 @@ func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 	p, _ := mq.ReadPacket(conn)
 	if p, ok := p.(*mq.Disconnect); !ok {
 		t.Error("expected Disconnect got", p)
-	}
-}
-
-// Server keeps statistics of active and total connections
-func TestServer_AddConnection(t *testing.T) {
-	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
-	s := NewServer()
-
-	// server increases number of connections
-	go s.ServeConn(context.Background(), srvconn)
-	<-time.After(5 * time.Millisecond)
-	before := s.Stat()
-
-	// server decreases number again
-	conn.Close()
-	<-time.After(5 * time.Millisecond)
-	after := s.Stat()
-
-	if reflect.DeepEqual(before, after) {
-		t.Error("stats are equal")
 	}
 }
 
