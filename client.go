@@ -24,9 +24,6 @@ type Client struct {
 	// Server to connect to
 	Server *url.URL
 
-	// wip better let application decide when sending Connect
-	KeepAlive uint16 // seconds
-
 	Debug bool
 
 	MaxPacketID uint16
@@ -39,7 +36,7 @@ type Client struct {
 
 func (c *Client) Run(ctx context.Context) error {
 	debug := c.Debug
-	pingInterval := time.Duration(c.KeepAlive) * time.Second
+	pingInterval := 30 * time.Second
 	maxIDLen := uint(11)
 
 	log := log.New(os.Stderr, "", log.Flags())
@@ -68,7 +65,9 @@ func (c *Client) Run(ctx context.Context) error {
 		switch p := p.(type) {
 		case *mq.Connect:
 			log.SetPrefix(trimID(p.ClientID(), maxIDLen))
-			p.SetKeepAlive(uint16(pingInterval / time.Second))
+			if v := p.KeepAlive(); v > 0 {
+				keepAlive.interval = v
+			}
 		}
 
 		// log just before sending

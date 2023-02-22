@@ -43,7 +43,6 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	client := &tt.Client{
 		Server:      c.server,
 		Debug:       c.debug,
-		KeepAlive:   uint16(10),
 		MaxPacketID: 10,
 
 		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {

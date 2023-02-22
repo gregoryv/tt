@@ -36,7 +36,6 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	client := &tt.Client{
 		Server:      c.server,
 		Debug:       c.debug,
-		KeepAlive:   uint16(c.keepAlive.Seconds()),
 		MaxPacketID: 10,
 
 		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {
@@ -68,6 +67,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 				p := mq.NewConnect()
 				p.SetClientID(c.clientID)
 				p.SetReceiveMax(1)
+				p.SetKeepAlive(uint16(c.keepAlive.Seconds()))
 				_ = client.Send(ctx, p)
 			}
 		},
