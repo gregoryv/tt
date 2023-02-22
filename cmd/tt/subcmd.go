@@ -40,7 +40,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		KeepAlive:   uint16(c.keepAlive.Seconds()),
 		MaxPacketID: 10,
 
-		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) error {
+		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {
 			switch p := p.(type) {
 			case *mq.ConnAck:
 
@@ -51,7 +51,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 					s.SetSubscriptionID(1)
 					f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
 					s.AddFilters(f)
-					return client.Send(ctx, s)
+					_ = client.Send(ctx, s)
 
 				default:
 					fmt.Fprintln(os.Stderr, p.ReasonString())
@@ -61,7 +61,6 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			case *mq.Publish:
 				fmt.Fprintln(c.output, "PAYLOAD", string(p.Payload()))
 			}
-			return nil
 		},
 
 		OnEvent: func(ctx context.Context, client *tt.Client, e tt.Event) {

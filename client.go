@@ -32,8 +32,7 @@ type Client struct {
 
 	MaxPacketID uint16
 
-	// wip what does returning an error here mean for the client?
-	OnPacket func(context.Context, *Client, mq.Packet) error
+	OnPacket func(context.Context, *Client, mq.Packet)
 	OnEvent  func(context.Context, *Client, Event)
 
 	transmit Handler // set by Run and used in Send
@@ -149,7 +148,8 @@ func (c *Client) Run(ctx context.Context) error {
 		}
 
 		// finally let the application have it
-		return c.OnPacket(ctx, c, p)
+		c.OnPacket(ctx, c, p)
+		return nil
 	}, conn)
 
 	c.OnEvent(ctx, c, EventRunning)

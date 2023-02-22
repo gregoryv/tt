@@ -18,17 +18,17 @@ func Example_client() {
 	client := &tt.Client{
 		Server: server.Binds[0].URL,
 
-		OnPacket: func(ctx context.Context, c *tt.Client, p mq.Packet) error {
+		OnPacket: func(ctx context.Context, c *tt.Client, p mq.Packet) {
 			switch p := p.(type) {
 			case *mq.ConnAck:
+
 				switch p.ReasonCode() {
-				case mq.Success: // we've connected successfully
-					// publish a message
+				case mq.Success:
 					p := mq.Pub(0, "gopher/happy", "yes")
-					return c.Send(ctx, p)
+					_ = c.Send(ctx, p)
 				}
+
 			}
-			return nil
 		},
 
 		OnEvent: func(ctx context.Context, c *tt.Client, e tt.Event) {

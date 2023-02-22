@@ -47,7 +47,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		KeepAlive:   uint16(10),
 		MaxPacketID: 10,
 
-		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) error {
+		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {
 			switch p := p.(type) {
 			case *mq.ConnAck:
 
@@ -64,10 +64,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 					log.Print(p.ReasonString())
 					cancel()
 				}
-				return nil
-
 			}
-			return nil
 		},
 
 		OnEvent: func(ctx context.Context, client *tt.Client, e tt.Event) {
