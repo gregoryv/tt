@@ -103,13 +103,7 @@ func (s *Server) ServeConn(ctx context.Context, conn Connection) {
 		s.Log.Println("del", connstr)
 		s.stat.RemoveConn()
 	}()
-	in, _ := s.createHandlers(conn)
-	// ignore error here, the connection is done
-	_ = newReceiver(in, conn).Run(ctx)
-}
 
-// createHandlers returns in and out handlers for packets.
-func (s *Server) createHandlers(conn Connection) (in, transmit Handler) {
 	var m sync.Mutex
 	var maxQoS uint8 = 0 // todo support QoS 1 and 2
 	var maxIDLen uint = 11
@@ -119,7 +113,7 @@ func (s *Server) createHandlers(conn Connection) (in, transmit Handler) {
 		remote   = includePort(conn.RemoteAddr().String(), s.Debug)
 	)
 
-	transmit = func(ctx context.Context, p mq.Packet) error {
+	transmit := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.ConnAck:
 			p.SetMaxQoS(maxQoS)
@@ -145,7 +139,7 @@ func (s *Server) createHandlers(conn Connection) (in, transmit Handler) {
 		return nil
 	}
 
-	in = func(ctx context.Context, p mq.Packet) error {
+	in := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.Connect:
 			// generate a client id before any logging
@@ -225,7 +219,9 @@ func (s *Server) createHandlers(conn Connection) (in, transmit Handler) {
 		}
 		return nil
 	}
-	return
+
+	// ignore error here, the connection is done
+	_ = newReceiver(in, conn).Run(ctx)
 }
 
 func includePort(addr string, yes bool) string {
