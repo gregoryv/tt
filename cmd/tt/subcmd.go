@@ -55,7 +55,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	// transmitter
 	c.keepAlive.SetTransmitter(transmit)
 
-	// FormChecker disconnects on malformed packets
+	// wip decouple FormChecker disconnects on malformed packets
 	checkForm := ttsrv.NewFormChecker(transmit)
 
 	onConnAck := func(next tt.Handler) tt.Handler {
