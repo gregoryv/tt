@@ -38,6 +38,7 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 	// use middlewares and build your in/out queues with desired
 	// features
 	debug := c.Debug
+	pingInterval := time.Duration(c.KeepAlive) * time.Second
 
 	log := NewLogger()
 	log.SetLogPrefix(c.ClientID)
@@ -53,7 +54,7 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 
 	// pool of packet ids for reuse
 	pool := NewIDPool(c.MaxPacketID)
-	keepAlive := NewKeepAlive(time.Duration(c.KeepAlive) * time.Second)
+	keepAlive := newKeepAlive(pingInterval)
 	go keepAlive.run(ctx)
 
 	var m sync.Mutex
@@ -66,7 +67,7 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 		//
 		switch p := p.(type) {
 		case *mq.Connect:
-			p.SetKeepAlive(c.KeepAlive)
+			p.SetKeepAlive(uint16(pingInterval / time.Second))
 		}
 
 		// log just before sending

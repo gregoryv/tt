@@ -10,20 +10,20 @@ import (
 // NewKeepAlive returns a middleware which keeps connection alive by
 // sending pings within the given interval. The interval is rounded to
 // seconds.
-func NewKeepAlive(interval time.Duration) *KeepAlive {
-	return &KeepAlive{
+func newKeepAlive(interval time.Duration) *keepAlive {
+	return &keepAlive{
 		interval:   uint16(interval.Seconds()),
 		tick:       time.NewTicker(time.Second),
 		packetSent: make(chan struct{}, 1),
 	}
 }
 
-// KeepAlive implements client logic for keeping connection alive.
+// keepAlive implements client logic for keeping connection alive.
 //
 // See [3.1.2.10 Keep Alive]
 //
 // [3.1.2.10 Keep Alive]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Keep_Alive_1
-type KeepAlive struct {
+type keepAlive struct {
 	transmit Handler
 	interval uint16 // seconds
 	tick     *time.Ticker
@@ -32,9 +32,9 @@ type KeepAlive struct {
 	disconnected chan struct{}
 }
 
-func (k *KeepAlive) SetTransmitter(v Handler) { k.transmit = v }
+func (k *keepAlive) SetTransmitter(v Handler) { k.transmit = v }
 
-func (k *KeepAlive) run(ctx context.Context) {
+func (k *keepAlive) run(ctx context.Context) {
 	last := time.Now()
 	for {
 		select {
