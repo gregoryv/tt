@@ -24,17 +24,25 @@ type Client struct {
 	// Server to connect to
 	Server *url.URL
 
+	// Set to true to include more log output
 	Debug bool
 
+	// Outgoing packets use ids from 1..MaxPacketID, this limits the
+	// number of packets in flight.
 	MaxPacketID uint16
 
+	// optional handler for incoming packets
 	OnPacket func(context.Context, *Client, mq.Packet)
-	OnEvent  func(context.Context, *Client, Event)
+
+	// optional handler for client events
+	OnEvent func(context.Context, *Client, Event)
 
 	transmit Handler // set by Run and used in Send
 }
 
 func (c *Client) Run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+
 	debug := c.Debug
 	pingInterval := 30 * time.Second
 	maxIDLen := uint(11)
@@ -58,6 +66,7 @@ func (c *Client) Run(ctx context.Context) error {
 	c.transmit = func(ctx context.Context, p mq.Packet) error {
 		// set packet id if needed
 		if err := pool.SetPacketID(ctx, p); err != nil {
+			cancel()
 			return err
 		}
 
@@ -146,11 +155,15 @@ func (c *Client) Run(ctx context.Context) error {
 		}
 
 		// finally let the application have it
-		c.OnPacket(ctx, c, p)
+		if c.OnPacket != nil {
+			c.OnPacket(ctx, c, p)
+		}
 		return nil
 	}, conn)
 
-	c.OnEvent(ctx, c, EventRunning)
+	if c.OnEvent != nil {
+		c.OnEvent(ctx, c, EventRunning)
+	}
 	return recv.Run(ctx)
 }
 
