@@ -89,7 +89,7 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 	}
 	keepAlive.transmit = c.transmit
 
-	receiver := NewReceiver(func(ctx context.Context, p mq.Packet) error {
+	recv := NewReceiver(func(ctx context.Context, p mq.Packet) error {
 		// log incoming packets
 		switch p := p.(type) {
 		case *mq.ConnAck:
@@ -149,7 +149,7 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 		return app(ctx, p)
 	}, conn)
 
-	return receiver.Run(ctx)
+	return recv.Run(ctx)
 }
 
 // Send returns when the packet was successfully encoded on the wire.

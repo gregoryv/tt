@@ -10,13 +10,13 @@ func NewDesignDiagram() *design.ClassDiagram {
 		d = design.NewClassDiagram()
 		//handler = d.Interface((*tt.Handler)(nil)) // func, unsupported in draw/design :-/
 
-		receiver = d.Struct(tt.Receiver{})
+		recv = d.Struct(tt.Receiver{})
 		remote   = d.Interface((*tt.Connection)(nil))
 
 		server = d.Struct(tt.Server{})
 
 		_ = []design.VRecord{
-			receiver, remote, server,
+			recv, remote, server,
 		}
 	)
 	d.Style.Spacing = 70
