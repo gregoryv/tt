@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func MustParseTopicFilter(v string) *topicFilter {
+func mustParseTopicFilter(v string) *topicFilter {
 	re, err := ParseTopicFilter(v)
 	if err != nil {
 		panic(err.Error())

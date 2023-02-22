@@ -6,7 +6,7 @@ import (
 )
 
 func ExampleTopicFilter() {
-	tf := MustParseTopicFilter("/a/+/b/+/+")
+	tf := mustParseTopicFilter("/a/+/b/+/+")
 	groups, _ := tf.Match("/a/gopher/b/is/cute")
 	fmt.Println(groups)
 	// output:
@@ -51,14 +51,14 @@ func Test_topicFilter_Match(t *testing.T) {
 		names    []string
 		*topicFilter
 	}{
-		{true, spec, MustParseTopicFilter("sport/tennis/player1/#")},
-		{true, spec, MustParseTopicFilter("sport/#")},
-		{true, spec, MustParseTopicFilter("#")},
-		{true, spec, MustParseTopicFilter("+/tennis/#")},
+		{true, spec, mustParseTopicFilter("sport/tennis/player1/#")},
+		{true, spec, mustParseTopicFilter("sport/#")},
+		{true, spec, mustParseTopicFilter("#")},
+		{true, spec, mustParseTopicFilter("+/tennis/#")},
 
-		{false, spec, MustParseTopicFilter("+")},
-		{false, spec, MustParseTopicFilter("tennis/player1/#")},
-		{false, spec, MustParseTopicFilter("sport/tennis#")},
+		{false, spec, mustParseTopicFilter("+")},
+		{false, spec, mustParseTopicFilter("tennis/player1/#")},
+		{false, spec, mustParseTopicFilter("sport/tennis#")},
 	}
 
 	for _, c := range cases {
@@ -78,12 +78,12 @@ func Test_topicFilter_Match(t *testing.T) {
 	}
 
 	// check String
-	if v := MustParseTopicFilter("sport/#").Filter(); v != "sport/#" {
+	if v := mustParseTopicFilter("sport/#").Filter(); v != "sport/#" {
 		t.Error("Route.String missing filter", v)
 	}
 }
 
 func TestMustParseTopicFilter_panics(t *testing.T) {
 	defer catchPanic(t)
-	MustParseTopicFilter("sport/(.")
+	mustParseTopicFilter("sport/(.")
 }
