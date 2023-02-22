@@ -48,7 +48,7 @@ type Server struct {
 	// Set to true for additional log information
 	Debug bool
 
-	// wip
+	// optional event handler
 	OnEvent func(context.Context, *Server, Event)
 
 	// router is used to route incoming publish packets to subscribing
