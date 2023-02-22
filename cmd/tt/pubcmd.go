@@ -48,15 +48,24 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		MaxPacketID: 10,
 
 		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) error {
-			switch p.(type) {
+			switch p := p.(type) {
 			case *mq.ConnAck:
-				m := mq.Pub(c.qos, c.topic, c.payload)
-				err := client.Send(ctx, m)
-				if err != nil {
-					log.Print(err)
+
+				switch p.ReasonCode() {
+				case mq.Success: // we've connected successfully
+					m := mq.Pub(c.qos, c.topic, c.payload)
+					err := client.Send(ctx, m)
+					if err != nil {
+						log.Print(err)
+					}
+					cancel()
+
+				default:
+					log.Print(p.ReasonString())
+					cancel()
 				}
-				cancel()
 				return nil
+
 			}
 			return nil
 		},

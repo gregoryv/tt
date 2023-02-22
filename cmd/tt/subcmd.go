@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/gregoryv/cmdline"
@@ -30,6 +31,7 @@ func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
 
 	client := &tt.Client{
 		Server:      c.server,
@@ -41,12 +43,20 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) error {
 			switch p := p.(type) {
 			case *mq.ConnAck:
-				// subscribe
-				s := mq.NewSubscribe()
-				s.SetSubscriptionID(1)
-				f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
-				s.AddFilters(f)
-				return client.Send(ctx, s)
+
+				switch p.ReasonCode() {
+				case mq.Success: // we've connected successfully
+					// subscribe
+					s := mq.NewSubscribe()
+					s.SetSubscriptionID(1)
+					f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
+					s.AddFilters(f)
+					return client.Send(ctx, s)
+
+				default:
+					fmt.Fprintln(os.Stderr, p.ReasonString())
+					cancel()
+				}
 
 			case *mq.Publish:
 				fmt.Fprintln(c.output, "PAYLOAD", string(p.Payload()))
