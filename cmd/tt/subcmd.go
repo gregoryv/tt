@@ -50,18 +50,6 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			return client.Send(ctx, s)
 
 		case *mq.Publish:
-			// wip move this to client
-			switch p.QoS() {
-			case 0: // no ack is needed
-			case 1:
-				ack := mq.NewPubAck()
-				ack.SetPacketID(p.PacketID())
-				if err := client.Send(ctx, ack); err != nil {
-					return err
-				}
-			case 2:
-				return fmt.Errorf("got QoS 2: unsupported ") // todo
-			}
 			fmt.Fprintln(c.output, "PAYLOAD", string(p.Payload()))
 		}
 		return nil

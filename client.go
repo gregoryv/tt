@@ -128,6 +128,20 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 			if v := p.ServerKeepAlive(); v > 0 {
 				keepAlive.interval = v
 			}
+
+		case *mq.Publish:
+
+			switch p.QoS() {
+			case 0: // no ack is needed
+			case 1:
+				ack := mq.NewPubAck()
+				ack.SetPacketID(p.PacketID())
+				if err := c.transmit(ctx, ack); err != nil {
+					return err
+				}
+			case 2:
+				return fmt.Errorf("got QoS 2: unsupported ") // todo
+			}
 		}
 
 		// finally let the application have it
