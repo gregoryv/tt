@@ -30,7 +30,7 @@ func NewServer() *Server {
 		ConnectTimeout: 200 * time.Millisecond,
 		PoolSize:       100,
 
-		router: NewRouter(),
+		router: newRouter(),
 		Log:    log.New(os.Stderr, "ttsrv ", log.Flags()),
 		stat:   newServerStats(),
 	}
@@ -53,7 +53,7 @@ type Server struct {
 
 	// router is used to route incoming publish packets to subscribing
 	// clients
-	router *Router
+	router *router
 
 	// statistics
 	stat *serverStats
@@ -364,29 +364,29 @@ loop:
 // gomerge src: router.go
 
 // NewRouter returns a router for handling the given subscriptions.
-func NewRouter(v ...*subscription) *Router {
-	return &Router{
+func newRouter(v ...*subscription) *router {
+	return &router{
 		subs: v,
 		log:  log.New(log.Writer(), "router ", log.Flags()),
 	}
 }
 
-type Router struct {
+type router struct {
 	subs []*subscription
 
 	log *log.Logger
 }
 
-func (r *Router) String() string {
+func (r *router) String() string {
 	return plural(len(r.subs), "subscription")
 }
 
-func (r *Router) AddRoute(v *subscription) {
+func (r *router) AddRoute(v *subscription) {
 	r.subs = append(r.subs, v)
 }
 
 // In forwards routes mq.Publish packets by topic name.
-func (r *Router) Handle(ctx context.Context, p mq.Packet) error {
+func (r *router) Handle(ctx context.Context, p mq.Packet) error {
 	switch p := p.(type) {
 	case *mq.Publish:
 		// naive implementation looping over each route, improve at

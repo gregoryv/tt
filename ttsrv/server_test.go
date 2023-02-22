@@ -182,7 +182,7 @@ func catchPanic(t *testing.T) {
 
 // gomerge src: router_test.go
 
-func TestRouter(t *testing.T) {
+func Test_router(t *testing.T) {
 	var wg sync.WaitGroup
 	var handle = func(_ context.Context, _ *mq.Publish) error {
 		wg.Done()
@@ -196,7 +196,7 @@ func TestRouter(t *testing.T) {
 			return fmt.Errorf("failed")
 		}),
 	}
-	r := NewRouter(subs...)
+	r := newRouter(subs...)
 
 	// number of handle routes that should be triggered by below Pub
 	wg.Add(2)
@@ -217,7 +217,7 @@ func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 	for i, _ := range subs {
 		subs[i] = MustNewSubscription("gopher/+", ttx.NoopPub)
 	}
-	r := NewRouter(subs...)
+	r := newRouter(subs...)
 
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
@@ -232,7 +232,7 @@ func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 	for i, _ := range subs {
 		subs[i] = MustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub)
 	}
-	r := NewRouter(subs...)
+	r := newRouter(subs...)
 
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
@@ -247,7 +247,7 @@ func BenchmarkRouter_10routesEndMatch(b *testing.B) {
 	for i, _ := range subs {
 		subs[i] = MustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub)
 	}
-	r := NewRouter(subs...)
+	r := newRouter(subs...)
 
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()

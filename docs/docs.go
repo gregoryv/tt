@@ -9,7 +9,7 @@ import (
 func NewDesignDiagram() *design.ClassDiagram {
 	var (
 		d      = design.NewClassDiagram()
-		router = d.Struct(ttsrv.Router{})
+		router = d.Struct(ttsrv.router{})
 		//handler = d.Interface((*tt.Handler)(nil)) // func, unsupported in draw/design :-/
 		listener = d.Struct(ttsrv.connFeed{})
 
