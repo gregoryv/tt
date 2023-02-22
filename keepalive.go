@@ -34,37 +34,6 @@ type KeepAlive struct {
 
 func (k *KeepAlive) SetTransmitter(v Handler) { k.transmit = v }
 
-// In adjusts interval based on ConnAck.ServerKeepAlive
-func (k *KeepAlive) In(next Handler) Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
-		case *mq.ConnAck:
-			// do as the server says
-			if v := p.ServerKeepAlive(); v > 0 {
-				k.interval = v
-			}
-		}
-		return next(ctx, p)
-	}
-}
-
-// Out sets keep alive on connect packets.
-func (k *KeepAlive) Out(next Handler) Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
-		case *mq.Connect:
-			p.SetKeepAlive(k.interval)
-			k.tick.Reset(time.Second)
-			go k.run(ctx)
-		}
-		err := next(ctx, p)
-		if err == nil {
-			k.packetSent <- struct{}{}
-		}
-		return err
-	}
-}
-
 func (k *KeepAlive) run(ctx context.Context) {
 	last := time.Now()
 	for {
