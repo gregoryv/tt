@@ -2,9 +2,7 @@ package tt
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
-	"errors"
 	"log"
 	"os"
 
@@ -39,53 +37,6 @@ func (l *Logger) SetRemote(v string) { l.remote = v }
 // characters. Use 0 to not trim.
 func (l *Logger) SetMaxIDLen(max uint) {
 	l.maxLen = max
-}
-
-// In logs incoming packets. Log prefix is based on
-// mq.ConnAck.AssignedClientID.
-func (f *Logger) In(next Handler) Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
-		case *mq.ConnAck:
-			if v := p.AssignedClientID(); v != "" {
-				f.SetLogPrefix(v)
-			}
-		}
-		// double spaces to align in/out. Usually this is not advised
-		// but in here it really does aid when scanning for patterns
-		// of packets.
-		if f.debug {
-			f.Print("in  ", p, "\n", dumpPacket(p))
-		} else {
-			f.Print("in  ", p)
-		}
-		err := next(ctx, p)
-		if err != nil && !errors.Is(err, StopReceiver) {
-			f.Print(err)
-		}
-		// return error just incase this middleware is not the first
-		return err
-	}
-}
-
-// Out logs outgoing packets. Log prefix is based on
-// mq.Connect.ClientID.
-func (f *Logger) Out(next Handler) Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		if p, ok := p.(*mq.Connect); ok {
-			f.SetLogPrefix(p.ClientID())
-		}
-		if f.debug {
-			f.Print("out ", p, "\n", dumpPacket(p))
-		} else {
-			f.Print("out ", p)
-		}
-		err := next(ctx, p)
-		if err != nil && !errors.Is(err, StopReceiver) {
-			f.Print(err)
-		}
-		return err
-	}
 }
 
 func (f *Logger) SetLogPrefix(v string) {
