@@ -188,7 +188,7 @@ func TestRouter(t *testing.T) {
 		wg.Done()
 		return nil
 	}
-	subs := []*Subscription{
+	subs := []*subscription{
 		MustNewSubscription("gopher/pink", handle),
 		MustNewSubscription("gopher/blue", ttx.NoopPub),
 		MustNewSubscription("#", handle),
@@ -213,7 +213,7 @@ func TestRouter(t *testing.T) {
 }
 
 func BenchmarkRouter_10routesAllMatch(b *testing.B) {
-	subs := make([]*Subscription, 10)
+	subs := make([]*subscription, 10)
 	for i, _ := range subs {
 		subs[i] = MustNewSubscription("gopher/+", ttx.NoopPub)
 	}
@@ -228,7 +228,7 @@ func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 }
 
 func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
-	subs := make([]*Subscription, 10)
+	subs := make([]*subscription, 10)
 	for i, _ := range subs {
 		subs[i] = MustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub)
 	}
@@ -243,7 +243,7 @@ func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 }
 
 func BenchmarkRouter_10routesEndMatch(b *testing.B) {
-	subs := make([]*Subscription, 10)
+	subs := make([]*subscription, 10)
 	for i, _ := range subs {
 		subs[i] = MustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub)
 	}

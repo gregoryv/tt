@@ -185,7 +185,7 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 					return nil
 				}
 
-				r := NewSubscription(tf, func(ctx context.Context, p *mq.Publish) error {
+				r := newSubscription(tf, func(ctx context.Context, p *mq.Publish) error {
 					return transmit(ctx, p)
 				})
 				s.router.AddRoute(r)
@@ -364,7 +364,7 @@ loop:
 // gomerge src: router.go
 
 // NewRouter returns a router for handling the given subscriptions.
-func NewRouter(v ...*Subscription) *Router {
+func NewRouter(v ...*subscription) *Router {
 	return &Router{
 		subs: v,
 		log:  log.New(log.Writer(), "router ", log.Flags()),
@@ -372,7 +372,7 @@ func NewRouter(v ...*Subscription) *Router {
 }
 
 type Router struct {
-	subs []*Subscription
+	subs []*subscription
 
 	log *log.Logger
 }
@@ -381,7 +381,7 @@ func (r *Router) String() string {
 	return plural(len(r.subs), "subscription")
 }
 
-func (r *Router) AddRoute(v *Subscription) {
+func (r *Router) AddRoute(v *subscription) {
 	r.subs = append(r.subs, v)
 }
 
@@ -438,28 +438,28 @@ func (s *serverStats) RemoveConn() {
 // gomerge src: subscription.go
 
 // MustNewSubscription panics on bad filter
-func MustNewSubscription(filter string, handlers ...PubHandler) *Subscription {
+func MustNewSubscription(filter string, handlers ...PubHandler) *subscription {
 	tf, err := tt.ParseTopicFilter(filter)
 	if err != nil {
 		panic(err.Error())
 	}
-	return NewSubscription(tf, handlers...)
+	return newSubscription(tf, handlers...)
 }
 
-func NewSubscription(filter *tt.TopicFilter, handlers ...PubHandler) *Subscription {
-	r := &Subscription{
+func newSubscription(filter *tt.TopicFilter, handlers ...PubHandler) *subscription {
+	r := &subscription{
 		TopicFilter: filter,
 		handlers:    handlers,
 	}
 	return r
 }
 
-type Subscription struct {
+type subscription struct {
 	*tt.TopicFilter
 
 	handlers []PubHandler
 }
 
-func (r *Subscription) String() string {
+func (r *subscription) String() string {
 	return r.Filter()
 }
