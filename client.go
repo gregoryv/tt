@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"sync"
 
 	"github.com/gregoryv/mq"
 )
@@ -23,6 +24,10 @@ type Client struct {
 	ClientID string
 
 	Debug bool
+
+	MaxPacketID uint16
+
+	transmit Handler // set by Run
 }
 
 func (c *Client) Run(ctx context.Context) error {
@@ -40,8 +45,26 @@ func (c *Client) Run(ctx context.Context) error {
 		return err
 	}
 
-	_ = conn // wip use it
-	return fmt.Errorf("Client.Run: todo")
+	// pool of packet ids for reuse
+	pool := NewIDPool(c.MaxPacketID)
+
+	var m sync.Mutex
+	c.transmit = func(ctx context.Context, p mq.Packet) error {
+
+		_ = pool // wip use it
+
+		m.Lock()
+		_, err := p.WriteTo(conn)
+		m.Unlock()
+		return err
+	}
+
+	receiver := NewReceiver(func(ctx context.Context, p mq.Packet) error {
+		// wip implement receiving end of client
+		return fmt.Errorf("receiver handler: todo")
+	}, conn)
+
+	return receiver.Run(ctx)
 }
 
 func (c *Client) Send(ctx context.Context, p mq.Packet) error {
