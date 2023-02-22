@@ -27,7 +27,8 @@ type Client struct {
 
 	MaxPacketID uint16
 
-	transmit Handler // set by Run
+
+	transmit Handler // set by Run and used in Send
 }
 
 func (c *Client) Run(ctx context.Context) error {
@@ -68,5 +69,11 @@ func (c *Client) Run(ctx context.Context) error {
 }
 
 func (c *Client) Send(ctx context.Context, p mq.Packet) error {
-	return fmt.Errorf("Client.Send: todo")
+	if c.transmit == nil {
+		return ErrClientStopped
+	}
+	return c.transmit(ctx, p)
 }
+
+var ErrClientStopped = fmt.Errorf("Client stopped")
+	
