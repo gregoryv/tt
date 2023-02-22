@@ -124,10 +124,10 @@ func TestServer_DisconnectOnMalformed(t *testing.T) {
 
 // gomerge src: connfeed_test.go
 
-func TestConnFeed(t *testing.T) {
+func Test_connFeed(t *testing.T) {
 	{ // accepts connections
 		ctx, cancel := context.WithCancel(context.Background())
-		f := NewConnFeed()
+		f := newConnFeed()
 		ln, _ := net.Listen("tcp", ":")
 
 		time.AfterFunc(3*time.Millisecond, func() {
@@ -143,7 +143,7 @@ func TestConnFeed(t *testing.T) {
 		f.Run(ctx)
 	}
 	{ // ends on listener close
-		f := NewConnFeed()
+		f := newConnFeed()
 		ln, _ := net.Listen("tcp", ":")
 		time.AfterFunc(time.Millisecond, func() { ln.Close() })
 		f.Listener = ln
@@ -155,7 +155,7 @@ func TestConnFeed(t *testing.T) {
 		}
 	}
 	{ // accepts default server
-		ln := NewConnFeed()
+		ln := newConnFeed()
 		ln.SetServer(NewServer())
 	}
 }

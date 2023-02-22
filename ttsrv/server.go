@@ -76,7 +76,7 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 	s.Log.Println("listen", ln.Addr())
 
-	f := NewConnFeed()
+	f := newConnFeed()
 	f.ServeConn = s.ServeConn
 	f.Listener = ln
 	f.AcceptTimeout = b.AcceptTimeout
@@ -304,15 +304,15 @@ type bindConf struct {
 
 // NewConnFeed returns a listener for tcp connections on a random
 // port. Each new connection is by handled in a go routine.
-func NewConnFeed() *ConnFeed {
-	return &ConnFeed{
+func newConnFeed() *connFeed {
+	return &connFeed{
 		AcceptTimeout: 200 * time.Millisecond,
 		Logger:        log.New(os.Stderr, "tcp ", log.Flags()),
 		ServeConn:     func(context.Context, Connection) { /*noop*/ },
 	}
 }
 
-type ConnFeed struct {
+type connFeed struct {
 	// Listener to watch
 	net.Listener
 
@@ -325,7 +325,7 @@ type ConnFeed struct {
 }
 
 // SetServer sets the server to which new connections should be added.
-func (f *ConnFeed) SetServer(v interface {
+func (f *connFeed) SetServer(v interface {
 	ServeConn(context.Context, Connection)
 }) {
 	f.ServeConn = v.ServeConn
@@ -334,7 +334,7 @@ func (f *ConnFeed) SetServer(v interface {
 // Run enables listener. Blocks until context is cancelled or
 // accepting a connection fails. Accepting new connection can only be
 // interrupted if listener has SetDeadline method.
-func (f *ConnFeed) Run(ctx context.Context) error {
+func (f *connFeed) Run(ctx context.Context) error {
 	l := f.Listener
 
 loop:

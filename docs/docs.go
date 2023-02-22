@@ -11,7 +11,7 @@ func NewDesignDiagram() *design.ClassDiagram {
 		d      = design.NewClassDiagram()
 		router = d.Struct(ttsrv.Router{})
 		//handler = d.Interface((*tt.Handler)(nil)) // func, unsupported in draw/design :-/
-		listener = d.Struct(ttsrv.ConnFeed{})
+		listener = d.Struct(ttsrv.connFeed{})
 
 		receiver = d.Struct(tt.Receiver{})
 		remote   = d.Interface((*ttsrv.Connection)(nil))
