@@ -37,32 +37,33 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		Debug:       c.debug,
 		KeepAlive:   uint16(c.keepAlive.Seconds()),
 		MaxPacketID: 10,
+
+		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) error {
+			switch p := p.(type) {
+			case *mq.ConnAck:
+				// subscribe
+				s := mq.NewSubscribe()
+				s.SetSubscriptionID(1)
+				f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
+				s.AddFilters(f)
+				return client.Send(ctx, s)
+
+			case *mq.Publish:
+				fmt.Fprintln(c.output, "PAYLOAD", string(p.Payload()))
+			}
+			return nil
+		},
+
+		OnEvent: func(ctx context.Context, client *tt.Client, e tt.Event) {
+			switch e {
+			case tt.EventRunning:
+				p := mq.NewConnect()
+				p.SetClientID(c.clientID)
+				p.SetReceiveMax(1)
+				_ = client.Send(ctx, p)
+			}
+		},
 	}
 
-	app := func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
-		case *mq.ConnAck:
-			// subscribe
-			s := mq.NewSubscribe()
-			s.SetSubscriptionID(1)
-			f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
-			s.AddFilters(f)
-			return client.Send(ctx, s)
-
-		case *mq.Publish:
-			fmt.Fprintln(c.output, "PAYLOAD", string(p.Payload()))
-		}
-		return nil
-	}
-
-	onEvent := func(ctx context.Context, e tt.Event) {
-		switch e {
-		case tt.EventRunning:
-			p := mq.NewConnect()
-			p.SetClientID(c.clientID)
-			p.SetReceiveMax(1)
-			_ = client.Send(ctx, p)
-		}
-	}
-	return client.Run(ctx, app, onEvent)
+	return client.Run(ctx)
 }

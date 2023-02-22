@@ -32,10 +32,14 @@ type Client struct {
 
 	MaxPacketID uint16
 
+	// wip what does returning an error here mean for the client?
+	OnPacket func(context.Context, *Client, mq.Packet) error
+	OnEvent  func(context.Context, *Client, Event)
+
 	transmit Handler // set by Run and used in Send
 }
 
-func (c *Client) Run(ctx context.Context, app Handler, onEvent EventHandler) error {
+func (c *Client) Run(ctx context.Context) error {
 	debug := c.Debug
 	pingInterval := time.Duration(c.KeepAlive) * time.Second
 	maxIDLen := uint(11)
@@ -145,10 +149,10 @@ func (c *Client) Run(ctx context.Context, app Handler, onEvent EventHandler) err
 		}
 
 		// finally let the application have it
-		return app(ctx, p)
+		return c.OnPacket(ctx, c, p)
 	}, conn)
 
-	onEvent(ctx, EventRunning)
+	c.OnEvent(ctx, c, EventRunning)
 	return recv.Run(ctx)
 }
 

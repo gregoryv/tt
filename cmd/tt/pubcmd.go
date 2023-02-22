@@ -38,6 +38,7 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *PubCmd) Run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
 
 	client := &tt.Client{
 		Server:      c.server,
@@ -45,36 +46,36 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		Debug:       c.debug,
 		KeepAlive:   uint16(10),
 		MaxPacketID: 10,
-	}
 
-	ctx, cancel := context.WithCancel(ctx)
-
-	app := func(ctx context.Context, p mq.Packet) error {
-		switch p.(type) {
-		case *mq.ConnAck:
-			m := mq.Pub(c.qos, c.topic, c.payload)
-			err := client.Send(ctx, m)
-			if err != nil {
-				log.Print(err)
+		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) error {
+			switch p.(type) {
+			case *mq.ConnAck:
+				m := mq.Pub(c.qos, c.topic, c.payload)
+				err := client.Send(ctx, m)
+				if err != nil {
+					log.Print(err)
+				}
+				cancel()
+				return nil
 			}
-			cancel()
 			return nil
-		}
-		return nil
-	}
-	onEvent := func(ctx context.Context, e tt.Event) {
-		switch e {
-		case tt.EventRunning:
-			// connect
-			p := mq.NewConnect()
-			p.SetClientID(c.clientID)
-			p.SetCleanStart(true)
-			if c.username != "" {
-				p.SetUsername(c.username)
-				p.SetPassword([]byte(c.password))
+		},
+
+		OnEvent: func(ctx context.Context, client *tt.Client, e tt.Event) {
+			switch e {
+			case tt.EventRunning:
+				// connect
+				p := mq.NewConnect()
+				p.SetClientID(c.clientID)
+				p.SetCleanStart(true)
+				if c.username != "" {
+					p.SetUsername(c.username)
+					p.SetPassword([]byte(c.password))
+				}
+				_ = client.Send(ctx, p)
 			}
-			_ = client.Send(ctx, p)
-		}
+		},
 	}
-	return client.Run(ctx, app, onEvent)
+
+	return client.Run(ctx)
 }

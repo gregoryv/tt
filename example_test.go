@@ -17,29 +17,29 @@ func Example_client() {
 
 	client := &tt.Client{
 		Server: server.Binds[0].URL,
-	}
 
-	app := func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
-		case *mq.ConnAck:
-			switch p.ReasonCode() {
-			case mq.Success: // we've connected successfully
-				// publish a message
-				p := mq.Pub(0, "gopher/happy", "yes")
-				return client.Send(ctx, p)
+		OnPacket: func(ctx context.Context, c *tt.Client, p mq.Packet) error {
+			switch p := p.(type) {
+			case *mq.ConnAck:
+				switch p.ReasonCode() {
+				case mq.Success: // we've connected successfully
+					// publish a message
+					p := mq.Pub(0, "gopher/happy", "yes")
+					return c.Send(ctx, p)
+				}
 			}
-		}
-		return nil
+			return nil
+		},
+
+		OnEvent: func(ctx context.Context, c *tt.Client, e tt.Event) {
+			switch e {
+			case tt.EventRunning:
+				_ = c.Send(ctx, mq.NewConnect())
+			}
+		},
 	}
 
-	onEvent := func(ctx context.Context, e tt.Event) {
-		switch e {
-		case tt.EventRunning:
-			_ = client.Send(ctx, mq.NewConnect())
-		}
-	}
-
-	if err := client.Run(ctx, app, onEvent); err != nil {
+	if err := client.Run(ctx); err != nil {
 		log.Fatal(err)
 	}
 }
