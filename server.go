@@ -179,7 +179,7 @@ func (s *Server) createHandlers(conn Connection) (in, transmit Handler) {
 			a := mq.NewSubAck()
 			a.SetPacketID(p.PacketID())
 			for _, f := range p.Filters() {
-				tf, err := ParseTopicFilter(f.Filter())
+				tf, err := parseTopicFilter(f.Filter())
 				if err != nil {
 					p := mq.NewDisconnect()
 					p.SetReasonCode(mq.MalformedPacket)
@@ -396,7 +396,7 @@ func (s *serverStats) RemoveConn() {
 
 // MustNewSubscription panics on bad filter
 func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
-	tf, err := ParseTopicFilter(filter)
+	tf, err := parseTopicFilter(filter)
 	if err != nil {
 		panic(err.Error())
 	}

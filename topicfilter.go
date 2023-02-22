@@ -7,14 +7,14 @@ import (
 )
 
 func mustParseTopicFilter(v string) *topicFilter {
-	re, err := ParseTopicFilter(v)
+	re, err := parseTopicFilter(v)
 	if err != nil {
 		panic(err.Error())
 	}
 	return re
 }
 
-func ParseTopicFilter(v string) (*topicFilter, error) {
+func parseTopicFilter(v string) (*topicFilter, error) {
 	if len(v) == 0 {
 		return nil, fmt.Errorf("empty filter")
 	}
