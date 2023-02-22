@@ -7,50 +7,42 @@ import (
 	"time"
 
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/testnet"
 	"github.com/gregoryv/tt"
+	"github.com/gregoryv/tt/ttsrv"
 )
 
 // Example shows a simple client for connect, publish a QoS 0 and
 // disconnect.
 func Example_client() {
-	conn, _ := testnet.Dial("tcp", "someserver:1234")
+	server := ttsrv.NewServer()
 
-	// transmit handler for synced packet writes
-	transmit := tt.Send(conn)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	go server.Run(ctx)
 
-	// initiate connect sequence
-	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
-	if err := transmit(ctx, mq.NewConnect()); err != nil {
-		log.Fatal(err)
+	client := &tt.Client{
+		Server: server.Binds[0].URL,
 	}
 
-	// define how to handle incoming packets using a receiver
-	receiver := tt.NewReceiver(
-		// handler for received packets
-		func(ctx context.Context, p mq.Packet) error {
-			switch p := p.(type) {
-			case *mq.ConnAck:
-
-				switch p.ReasonCode() {
-				case mq.Success: // we've connected successfully
-					// publish a message
-					p := mq.Pub(0, "gopher/happy", "yes")
-					if err := transmit(ctx, p); err != nil {
-						log.Print(err)
-					}
-					// disconnect
-					_ = transmit(ctx, mq.NewDisconnect())
-					return tt.StopReceiver
-				}
+	app := func(ctx context.Context, p mq.Packet) error {
+		switch p := p.(type) {
+		case *mq.ConnAck:
+			switch p.ReasonCode() {
+			case mq.Success: // we've connected successfully
+				// publish a message
+				p := mq.Pub(0, "gopher/happy", "yes")
+				return client.Send(ctx, p)
 			}
-			return nil
-		}, conn,
-	)
+		}
+		return nil
+	}
 
-	// start receiving packets
-	if err := receiver.Run(ctx); err != nil {
-		log.Print(err)
+	go func() {
+		<-time.After(1 * time.Millisecond)
+		client.Send(ctx, mq.NewConnect())
+	}()
+
+	if err := client.Run(ctx, app); err != nil {
+		log.Fatal(err)
 	}
 }
 
