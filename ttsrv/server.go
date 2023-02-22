@@ -438,7 +438,7 @@ func (s *serverStats) RemoveConn() {
 // gomerge src: subscription.go
 
 // MustNewSubscription panics on bad filter
-func MustNewSubscription(filter string, handlers ...PubHandler) *subscription {
+func mustNewSubscription(filter string, handlers ...PubHandler) *subscription {
 	tf, err := tt.ParseTopicFilter(filter)
 	if err != nil {
 		panic(err.Error())

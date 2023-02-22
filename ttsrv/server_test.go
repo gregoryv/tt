@@ -163,7 +163,7 @@ func Test_connFeed(t *testing.T) {
 // gomerge src: subscription_test.go
 
 func TestSubscription_String(t *testing.T) {
-	sub := MustNewSubscription("all/gophers/#", ttx.NoopPub)
+	sub := mustNewSubscription("all/gophers/#", ttx.NoopPub)
 	if v := sub.String(); v != "all/gophers/#" {
 		t.Errorf("unexpected subscription string %q", sub)
 	}
@@ -171,7 +171,7 @@ func TestSubscription_String(t *testing.T) {
 
 func TestMustNewSubscription(t *testing.T) {
 	defer catchPanic(t)
-	MustNewSubscription("")
+	mustNewSubscription("")
 }
 
 func catchPanic(t *testing.T) {
@@ -189,10 +189,10 @@ func Test_router(t *testing.T) {
 		return nil
 	}
 	subs := []*subscription{
-		MustNewSubscription("gopher/pink", handle),
-		MustNewSubscription("gopher/blue", ttx.NoopPub),
-		MustNewSubscription("#", handle),
-		MustNewSubscription("#", func(_ context.Context, _ *mq.Publish) error {
+		mustNewSubscription("gopher/pink", handle),
+		mustNewSubscription("gopher/blue", ttx.NoopPub),
+		mustNewSubscription("#", handle),
+		mustNewSubscription("#", func(_ context.Context, _ *mq.Publish) error {
 			return fmt.Errorf("failed")
 		}),
 	}
@@ -215,7 +215,7 @@ func Test_router(t *testing.T) {
 func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 	subs := make([]*subscription, 10)
 	for i, _ := range subs {
-		subs[i] = MustNewSubscription("gopher/+", ttx.NoopPub)
+		subs[i] = mustNewSubscription("gopher/+", ttx.NoopPub)
 	}
 	r := newRouter(subs...)
 
@@ -230,7 +230,7 @@ func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 	subs := make([]*subscription, 10)
 	for i, _ := range subs {
-		subs[i] = MustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub)
+		subs[i] = mustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub)
 	}
 	r := newRouter(subs...)
 
@@ -245,7 +245,7 @@ func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 func BenchmarkRouter_10routesEndMatch(b *testing.B) {
 	subs := make([]*subscription, 10)
 	for i, _ := range subs {
-		subs[i] = MustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub)
+		subs[i] = mustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub)
 	}
 	r := newRouter(subs...)
 
