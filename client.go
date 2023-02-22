@@ -33,9 +33,11 @@ type Client struct {
 func (c *Client) Run(ctx context.Context) error {
 	// use middlewares and build your in/out queues with desired
 	// features
+	debug := c.Debug
+
 	log := NewLogger()
 	log.SetLogPrefix(c.ClientID)
-	log.SetDebug(c.Debug)
+	log.SetDebug(debug)
 
 	// dial server
 	host := c.Server.String()
@@ -62,6 +64,28 @@ func (c *Client) Run(ctx context.Context) error {
 	}
 
 	receiver := NewReceiver(func(ctx context.Context, p mq.Packet) error {
+		// log incoming packets
+		switch p := p.(type) {
+		case *mq.ConnAck:
+			// update log prefix if client was assigned an id
+			if v := p.AssignedClientID(); v != "" {
+				log.SetLogPrefix(v)
+			}
+		}
+		// double spaces to align in/out. Usually this is not advised
+		// but in here it really does aid when scanning for patterns
+		// of packets.
+		if debug {
+			log.Print("in  ", p, "\n", dumpPacket(p))
+		} else {
+			log.Print("in  ", p)
+		}
+
+		// return packet id to pool
+		if p, ok := p.(mq.HasPacketID); ok {
+			_ = pool.reuse(p.PacketID())
+		}
+
 		// wip implement receiving end of client
 		return fmt.Errorf("receiver handler: todo")
 	}, conn)
