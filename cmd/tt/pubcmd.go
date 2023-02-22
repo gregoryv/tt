@@ -62,18 +62,19 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		}
 		return nil
 	}
-
-	{ // connect
-		p := mq.NewConnect()
-		p.SetClientID(c.clientID)
-		p.SetCleanStart(true)
-		if c.username != "" {
-			p.SetUsername(c.username)
-			p.SetPassword([]byte(c.password))
-		}
-		go time.AfterFunc(1*time.Millisecond, func() {
+	onEvent := func(ctx context.Context, e tt.Event) {
+		switch e {
+		case tt.EventRunning:
+			// connect
+			p := mq.NewConnect()
+			p.SetClientID(c.clientID)
+			p.SetCleanStart(true)
+			if c.username != "" {
+				p.SetUsername(c.username)
+				p.SetPassword([]byte(c.password))
+			}
 			_ = client.Send(ctx, p)
-		})
+		}
 	}
-	return client.Run(ctx, app)
+	return client.Run(ctx, app, onEvent)
 }

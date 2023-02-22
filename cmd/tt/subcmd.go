@@ -55,13 +55,14 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		return nil
 	}
 
-	{ // connect
-		p := mq.NewConnect()
-		p.SetClientID(c.clientID)
-		p.SetReceiveMax(1) // until we have support for QoS 2
-		go time.AfterFunc(1*time.Millisecond, func() {
+	onEvent := func(ctx context.Context, e tt.Event) {
+		switch e {
+		case tt.EventRunning:
+			p := mq.NewConnect()
+			p.SetClientID(c.clientID)
+			p.SetReceiveMax(1)
 			_ = client.Send(ctx, p)
-		})
+		}
 	}
-	return client.Run(ctx, app)
+	return client.Run(ctx, app, onEvent)
 }

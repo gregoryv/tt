@@ -3,7 +3,6 @@ package tt_test
 import (
 	"context"
 	"log"
-	"time"
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
@@ -13,8 +12,7 @@ import (
 // disconnect.
 func Example_client() {
 	server := tt.NewServer()
-
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	ctx := context.Background()
 	go server.Run(ctx)
 
 	client := &tt.Client{
@@ -34,12 +32,14 @@ func Example_client() {
 		return nil
 	}
 
-	go func() {
-		<-time.After(1 * time.Millisecond)
-		client.Send(ctx, mq.NewConnect())
-	}()
+	onEvent := func(ctx context.Context, e tt.Event) {
+		switch e {
+		case tt.EventRunning:
+			_ = client.Send(ctx, mq.NewConnect())
+		}
+	}
 
-	if err := client.Run(ctx, app); err != nil {
+	if err := client.Run(ctx, app, onEvent); err != nil {
 		log.Fatal(err)
 	}
 }

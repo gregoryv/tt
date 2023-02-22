@@ -24,21 +24,18 @@ type Client struct {
 	// Server to connect to
 	Server *url.URL
 
-	ClientID string
+	ClientID string // wip move to caller
+	// wip better let application decide when sending Connect
+	KeepAlive uint16 // seconds
 
 	Debug bool
 
 	MaxPacketID uint16
 
-	// wip better let application decide when sending Connect
-	KeepAlive uint16 // seconds
-
 	transmit Handler // set by Run and used in Send
 }
 
-func (c *Client) Run(ctx context.Context, app Handler) error {
-	// use middlewares and build your in/out queues with desired
-	// features
+func (c *Client) Run(ctx context.Context, app Handler, onEvent EventHandler) error {
 	debug := c.Debug
 	pingInterval := time.Duration(c.KeepAlive) * time.Second
 	maxIDLen := uint(11)
@@ -151,8 +148,18 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 		return app(ctx, p)
 	}, conn)
 
+	onEvent(ctx, EventRunning)
 	return recv.Run(ctx)
 }
+
+type EventHandler func(context.Context, Event)
+
+type Event int
+
+const (
+	EventUndefined Event = iota
+	EventRunning
+)
 
 // Send returns when the packet was successfully encoded on the wire.
 func (c *Client) Send(ctx context.Context, p mq.Packet) error {
