@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/gregoryv/draw/design"
 	"github.com/gregoryv/tt"
-	"github.com/gregoryv/tt/ttsrv"
 )
 
 func NewDesignDiagram() *design.ClassDiagram {
@@ -12,9 +11,9 @@ func NewDesignDiagram() *design.ClassDiagram {
 		//handler = d.Interface((*tt.Handler)(nil)) // func, unsupported in draw/design :-/
 
 		receiver = d.Struct(tt.Receiver{})
-		remote   = d.Interface((*ttsrv.Connection)(nil))
+		remote   = d.Interface((*tt.Connection)(nil))
 
-		server = d.Struct(ttsrv.Server{})
+		server = d.Struct(tt.Server{})
 
 		_ = []design.VRecord{
 			receiver, remote, server,

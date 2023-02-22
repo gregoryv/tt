@@ -1,4 +1,4 @@
-package ttsrv
+package tt
 
 import (
 	"context"

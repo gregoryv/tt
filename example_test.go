@@ -7,13 +7,12 @@ import (
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
-	"github.com/gregoryv/tt/ttsrv"
 )
 
 // Example shows a simple client for connect, publish a QoS 0 and
 // disconnect.
 func Example_client() {
-	server := ttsrv.NewServer()
+	server := tt.NewServer()
 
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	go server.Run(ctx)

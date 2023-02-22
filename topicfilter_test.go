@@ -87,9 +87,3 @@ func TestMustParseTopicFilter_panics(t *testing.T) {
 	defer catchPanic(t)
 	MustParseTopicFilter("sport/(.")
 }
-
-func catchPanic(t *testing.T) {
-	if e := recover(); e == nil {
-		t.Error("expected panic")
-	}
-}

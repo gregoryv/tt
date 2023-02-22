@@ -1,10 +1,7 @@
-// Package ttsrv provides a mqtt-v5 server
-package ttsrv
+package tt
 
 import (
-	"bytes"
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -19,7 +16,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/tt"
 )
 
 // NewServer returns a server that binds to a random port.
@@ -98,11 +94,11 @@ func (s *Server) ServeConn(ctx context.Context, conn Connection) {
 	}()
 	in, _ := s.createHandlers(conn)
 	// ignore error here, the connection is done
-	_ = tt.NewReceiver(in, conn).Run(ctx)
+	_ = NewReceiver(in, conn).Run(ctx)
 }
 
 // createHandlers returns in and out handlers for packets.
-func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
+func (s *Server) createHandlers(conn Connection) (in, transmit Handler) {
 	var m sync.Mutex
 	var maxQoS uint8 = 0 // todo support QoS 1 and 2
 	var maxIDLen uint = 11
@@ -183,7 +179,7 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 			a := mq.NewSubAck()
 			a.SetPacketID(p.PacketID())
 			for _, f := range p.Filters() {
-				tf, err := tt.ParseTopicFilter(f.Filter())
+				tf, err := ParseTopicFilter(f.Filter())
 				if err != nil {
 					p := mq.NewDisconnect()
 					p.SetReasonCode(mq.MalformedPacket)
@@ -238,21 +234,6 @@ type Connection interface {
 	io.ReadWriteCloser
 	RemoteAddr() net.Addr
 }
-
-func dumpPacket(p mq.Packet) string {
-	var buf bytes.Buffer
-	p.WriteTo(&buf)
-	return hex.Dump(buf.Bytes())
-}
-
-func trimID(s string, width uint) string {
-	if v := uint(len(s)); v > width {
-		return prefixStr + s[v-width:]
-	}
-	return s
-}
-
-const prefixStr = "~"
 
 // gomerge src: bindconf.go
 
@@ -417,14 +398,14 @@ func (s *serverStats) RemoveConn() {
 
 // MustNewSubscription panics on bad filter
 func mustNewSubscription(filter string, handlers ...PubHandler) *subscription {
-	tf, err := tt.ParseTopicFilter(filter)
+	tf, err := ParseTopicFilter(filter)
 	if err != nil {
 		panic(err.Error())
 	}
 	return newSubscription(tf, handlers...)
 }
 
-func newSubscription(filter *tt.TopicFilter, handlers ...PubHandler) *subscription {
+func newSubscription(filter *TopicFilter, handlers ...PubHandler) *subscription {
 	r := &subscription{
 		TopicFilter: filter,
 		handlers:    handlers,
@@ -433,7 +414,7 @@ func newSubscription(filter *tt.TopicFilter, handlers ...PubHandler) *subscripti
 }
 
 type subscription struct {
-	*tt.TopicFilter
+	*TopicFilter
 
 	handlers []PubHandler
 }

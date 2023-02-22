@@ -2,13 +2,13 @@ package main
 
 import (
 	"github.com/gregoryv/cmdline"
-	"github.com/gregoryv/tt/ttsrv"
+	"github.com/gregoryv/tt"
 )
 
 type SrvCmd struct {
 	debug bool
 
-	*ttsrv.Server
+	*tt.Server
 }
 
 func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
