@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/gregoryv/mq"
 )
@@ -26,6 +27,8 @@ type Client struct {
 	Debug bool
 
 	MaxPacketID uint16
+
+	KeepAlive uint16 // seconds
 
 	transmit Handler // set by Run and used in Send
 }
@@ -49,6 +52,8 @@ func (c *Client) Run(ctx context.Context) error {
 
 	// pool of packet ids for reuse
 	pool := NewIDPool(c.MaxPacketID)
+	keepAlive := NewKeepAlive(time.Duration(c.KeepAlive) * time.Second)
+	go keepAlive.run(ctx)
 
 	var m sync.Mutex
 	c.transmit = func(ctx context.Context, p mq.Packet) error {
@@ -57,9 +62,20 @@ func (c *Client) Run(ctx context.Context) error {
 			return err
 		}
 
+		//
+		switch p := p.(type) {
+		case *mq.Connect:
+			p.SetKeepAlive(c.KeepAlive)
+		}
+
 		m.Lock()
 		_, err := p.WriteTo(conn)
 		m.Unlock()
+
+		if err == nil {
+			// delay ping since we just send a packet
+			keepAlive.packetSent <- struct{}{}
+		}
 		return err
 	}
 
@@ -91,11 +107,18 @@ func (c *Client) Run(ctx context.Context) error {
 			}
 		}
 
-		// wip keep alive
-
-		// return packet id to pool
+		// reuse packet id
 		if p, ok := p.(mq.HasPacketID); ok {
 			_ = pool.reuse(p.PacketID())
+		}
+
+		// keep alive
+		switch p := p.(type) {
+		case *mq.ConnAck:
+			// do as the server says
+			if v := p.ServerKeepAlive(); v > 0 {
+				keepAlive.interval = v
+			}
 		}
 
 		// wip implement receiving end of client
