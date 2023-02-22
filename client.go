@@ -27,7 +27,6 @@ type Client struct {
 
 	MaxPacketID uint16
 
-
 	transmit Handler // set by Run and used in Send
 }
 
@@ -51,8 +50,10 @@ func (c *Client) Run(ctx context.Context) error {
 
 	var m sync.Mutex
 	c.transmit = func(ctx context.Context, p mq.Packet) error {
-
-		_ = pool // wip use it
+		// set packet id if needed
+		if err := pool.SetPacketID(ctx, p); err != nil {
+			return err
+		}
 
 		m.Lock()
 		_, err := p.WriteTo(conn)
@@ -76,4 +77,3 @@ func (c *Client) Send(ctx context.Context, p mq.Packet) error {
 }
 
 var ErrClientStopped = fmt.Errorf("Client stopped")
-	

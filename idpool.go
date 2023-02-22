@@ -57,35 +57,41 @@ func (o *IDPool) reuse(v uint16) uint16 {
 // Out on outgoing packets, refs MQTT-2.2.1-3
 func (o *IDPool) Out(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
-		if p, ok := p.(mq.HasPacketID); ok {
-			switch p := p.(type) {
-			case *mq.Publish:
-				if p.QoS() > 0 && p.PacketID() == 0 {
-					id, err := o.next(ctx)
-					if err != nil {
-						return err
-					}
-					p.SetPacketID(id)
-				}
+		if err := o.SetPacketID(ctx, p); err != nil {
+			return err
+		}
+		return next(ctx, p)
+	}
+}
 
-			case *mq.Subscribe:
-				id, err := o.next(ctx)
-				if err != nil {
-					return err
-				}
-				p.SetPacketID(id)
-
-			case *mq.Unsubscribe:
+func (o *IDPool) SetPacketID(ctx context.Context, p mq.Packet) error {
+	if p, ok := p.(mq.HasPacketID); ok {
+		switch p := p.(type) {
+		case *mq.Publish:
+			if p.QoS() > 0 && p.PacketID() == 0 {
 				id, err := o.next(ctx)
 				if err != nil {
 					return err
 				}
 				p.SetPacketID(id)
 			}
-		}
 
-		return next(ctx, p)
+		case *mq.Subscribe:
+			id, err := o.next(ctx)
+			if err != nil {
+				return err
+			}
+			p.SetPacketID(id)
+
+		case *mq.Unsubscribe:
+			id, err := o.next(ctx)
+			if err != nil {
+				return err
+			}
+			p.SetPacketID(id)
+		}
 	}
+	return nil
 }
 
 // next returns the next available ID, blocks until one is available

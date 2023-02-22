@@ -49,7 +49,12 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	// pool of packet ids for reuse
 	pool := tt.NewIDPool(10)
 
-	transmit := tt.Combine(tt.Send(conn), log.Out, c.keepAlive.Out, pool.Out)
+	transmit := tt.Combine(
+		tt.Send(conn),
+		log.Out,
+		c.keepAlive.Out,
+		pool.Out,
+	)
 
 	// set transmitter after as the middleware should be part of the
 	// transmitter
