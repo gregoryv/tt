@@ -48,6 +48,9 @@ type Server struct {
 	// Set to true for additional log information
 	Debug bool
 
+	// wip
+	OnEvent func(context.Contet, *Server, Event)
+
 	// router is used to route incoming publish packets to subscribing
 	// clients
 	router *router
@@ -77,8 +80,15 @@ func (s *Server) Run(ctx context.Context) error {
 	f.ServeConn = s.ServeConn
 	f.Listener = ln
 	f.AcceptTimeout = b.AcceptTimeout
+	if s.OnEvent != nil {
+		s.OnEvent(ctx, s, ServerUp)
+	}
 	return f.Run(ctx)
 }
+
+const (
+	EventServerUp Event = iota + lastClientEvent
+)
 
 // ServeConn handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.

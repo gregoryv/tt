@@ -174,6 +174,8 @@ type Event int
 const (
 	EventUndefined Event = iota
 	EventRunning
+
+	lastClientEvent
 )
 
 // Send returns when the packet was successfully encoded on the wire.
