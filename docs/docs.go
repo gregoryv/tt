@@ -8,10 +8,8 @@ import (
 
 func NewDesignDiagram() *design.ClassDiagram {
 	var (
-		d      = design.NewClassDiagram()
-		router = d.Struct(ttsrv.router{})
+		d = design.NewClassDiagram()
 		//handler = d.Interface((*tt.Handler)(nil)) // func, unsupported in draw/design :-/
-		listener = d.Struct(ttsrv.connFeed{})
 
 		receiver = d.Struct(tt.Receiver{})
 		remote   = d.Interface((*ttsrv.Connection)(nil))
@@ -19,7 +17,6 @@ func NewDesignDiagram() *design.ClassDiagram {
 		server = d.Struct(ttsrv.Server{})
 
 		_ = []design.VRecord{
-			router, listener,
 			receiver, remote, server,
 		}
 	)
@@ -27,6 +24,5 @@ func NewDesignDiagram() *design.ClassDiagram {
 	d.HideRealizations()
 
 	d.Place(server).At(120, 20)
-	d.Place(router).Below(server)
 	return d
 }
