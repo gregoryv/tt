@@ -29,22 +29,10 @@ type receiver struct {
 
 // Run continuously handles next packet until context is cancelled
 func (r *receiver) Run(ctx context.Context) error {
-	for {
-		_, err := r.Next(ctx)
-
-		switch {
-		case err != nil:
-			return err
-		}
-	}
-}
-
-// Next blocks until a packet is read and handled.
-func (r *receiver) Next(ctx context.Context) (mq.Packet, error) {
 loop:
 	for {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return err
 		}
 		if w, ok := r.wire.(net.Conn); ok {
 			w.SetReadDeadline(time.Now().Add(r.readTimeout))
@@ -54,14 +42,9 @@ loop:
 			if errors.Is(err, os.ErrDeadlineExceeded) {
 				continue loop
 			}
-			return nil, err
+			return err
 		}
-		// ignore most errors here, it's up to the user to configure a
-		// queue where the first middleware handles any errors,
-		// eg. Logger
-		if r.handle != nil {
-			err = r.handle(ctx, p)
-		}
-		return p, err
+		// ignore errors here, errors from handlers should never stop the receiver
+		_ = r.handle(ctx, p)
 	}
 }
