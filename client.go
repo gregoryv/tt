@@ -44,8 +44,8 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 	log.SetDebug(debug)
 
 	// dial server
-	host := c.Server.String()
-	log.Print("dial tcp://", host)
+	host := c.Server.Host
+	log.Print("dial ", c.Server.String())
 	conn, err := net.Dial("tcp", host)
 	if err != nil {
 		return err
@@ -86,6 +86,7 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 		}
 		return err
 	}
+	keepAlive.transmit = c.transmit
 
 	receiver := NewReceiver(func(ctx context.Context, p mq.Packet) error {
 		// log incoming packets

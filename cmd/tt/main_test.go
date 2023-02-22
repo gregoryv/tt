@@ -31,10 +31,10 @@ func Test_main_srv(t *testing.T) {
 }
 
 func Test_main_pub(t *testing.T) {
-	host := "localhost:3881"
+	host := "tcp://localhost:3881"
 	log.Print(host)
 
-	srv := exec.Command("tt", "srv", "-b", "tcp://"+host)
+	srv := exec.Command("tt", "srv", "-b", host)
 	startCmd(t, srv)
 	defer srv.Process.Kill()
 
@@ -75,10 +75,10 @@ func Test_subFailsOnBadHost(t *testing.T) {
 }
 
 func Test_main_sub(t *testing.T) {
-	host := "localhost:3881"
+	host := "tcp://localhost:3881"
 	log.Print(host)
 
-	srv := exec.Command("tt", "srv", "-b", "tcp://"+host)
+	srv := exec.Command("tt", "srv", "-b", host)
 	startCmd(t, srv)
 	defer srv.Process.Kill()
 

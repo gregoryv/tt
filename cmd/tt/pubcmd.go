@@ -31,7 +31,7 @@ type PubCmd struct {
 }
 
 func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
-	c.server = cli.Option("-s, --server").Url("localhost:1883")
+	c.server = cli.Option("-s, --server").Url("tcp://localhost:1883")
 	c.clientID = cli.Option("-c, --client-id").String("ttpub")
 	c.topic = cli.Option("-t, --topic-name").String("gopher/pink")
 	c.payload = cli.Option("-p, --payload").String("hug")
@@ -49,8 +49,8 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	log.SetDebug(c.debug)
 
 	// create network connection
-	log.Print("dial ", "tcp://", c.server.String())
-	conn, err := net.Dial("tcp", c.server.String())
+	log.Print("dial ", c.server.String())
+	conn, err := net.Dial("tcp", c.server.Host)
 	if err != nil {
 		return err
 	}
