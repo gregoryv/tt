@@ -152,7 +152,6 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 }
 
 // Send returns when the packet was successfully encoded on the wire.
-// Use [Client.C] for acks.
 func (c *Client) Send(ctx context.Context, p mq.Packet) error {
 	if c.transmit == nil {
 		return ErrClientStopped

@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"net"
-	"os"
 	"testing"
 	"time"
 
@@ -13,16 +12,6 @@ import (
 	"github.com/gregoryv/testnet"
 	"github.com/gregoryv/tt/ttx"
 )
-
-func ExampleNewReceiver() {
-	var (
-		pool = NewIDPool(10)
-		log  = NewLogger()
-		in   = Combine(ttx.NoopHandler, pool.In, log.In)
-	)
-	_ = NewReceiver(in, os.Stdin)
-	// output:
-}
 
 func TestReceiver(t *testing.T) {
 	{ // handler is called on packet from server
