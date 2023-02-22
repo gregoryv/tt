@@ -63,6 +63,9 @@ type Server struct {
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(ctx context.Context) error {
+
+	// wip make empty server more useful
+
 	if s.Debug {
 		s.Log.SetFlags(s.Log.Flags() | log.Lshortfile)
 	} else {
@@ -74,7 +77,8 @@ func (s *Server) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	s.Log.Println("listen", ln.Addr())
+	b.URL.Host = ln.Addr().String()
+	s.Log.Println("listen", b.URL.String())
 
 	f := newConnFeed()
 	f.ServeConn = s.ServeConn
