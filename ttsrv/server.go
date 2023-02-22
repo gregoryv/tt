@@ -164,6 +164,12 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 		}
 
 		switch p := p.(type) {
+		case *mq.PingReq:
+
+			// 3.12.4-1 The Server MUST send a PINGRESP packet in
+			// response to a PINGREQ packet
+			return transmit(ctx, mq.NewPingResp())
+
 		case *mq.Connect:
 			// todo should the ack be sent here?
 			a := mq.NewConnAck()
