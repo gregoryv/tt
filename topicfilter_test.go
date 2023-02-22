@@ -38,7 +38,7 @@ func TestParseTopicFilter(t *testing.T) {
 
 }
 
-func TestTopicFilter_Match(t *testing.T) {
+func Test_topicFilter_Match(t *testing.T) {
 	// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 	spec := []string{
 		"sport/tennis/player1",
@@ -49,7 +49,7 @@ func TestTopicFilter_Match(t *testing.T) {
 	cases := []struct {
 		expMatch bool
 		names    []string
-		*TopicFilter
+		*topicFilter
 	}{
 		{true, spec, MustParseTopicFilter("sport/tennis/player1/#")},
 		{true, spec, MustParseTopicFilter("sport/#")},
@@ -63,15 +63,15 @@ func TestTopicFilter_Match(t *testing.T) {
 
 	for _, c := range cases {
 		for _, name := range c.names {
-			words, match := c.TopicFilter.Match(name)
+			words, match := c.topicFilter.Match(name)
 
 			if match != c.expMatch {
 				t.Errorf("%s %s exp:%v got:%v %q",
-					name, c.TopicFilter.Filter(), c.expMatch, match, words,
+					name, c.topicFilter.Filter(), c.expMatch, match, words,
 				)
 			}
 
-			if v := c.TopicFilter.Filter(); v == "" {
+			if v := c.topicFilter.Filter(); v == "" {
 				t.Error("no subscription")
 			}
 		}

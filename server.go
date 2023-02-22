@@ -403,16 +403,16 @@ func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
 	return newSubscription(tf, handlers...)
 }
 
-func newSubscription(filter *TopicFilter, handlers ...pubHandler) *subscription {
+func newSubscription(filter *topicFilter, handlers ...pubHandler) *subscription {
 	r := &subscription{
-		TopicFilter: filter,
+		topicFilter: filter,
 		handlers:    handlers,
 	}
 	return r
 }
 
 type subscription struct {
-	*TopicFilter
+	*topicFilter
 
 	handlers []pubHandler
 }

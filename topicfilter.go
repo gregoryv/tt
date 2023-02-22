@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func MustParseTopicFilter(v string) *TopicFilter {
+func MustParseTopicFilter(v string) *topicFilter {
 	re, err := ParseTopicFilter(v)
 	if err != nil {
 		panic(err.Error())
@@ -14,7 +14,7 @@ func MustParseTopicFilter(v string) *TopicFilter {
 	return re
 }
 
-func ParseTopicFilter(v string) (*TopicFilter, error) {
+func ParseTopicFilter(v string) (*topicFilter, error) {
 	if len(v) == 0 {
 		return nil, fmt.Errorf("empty filter")
 	}
@@ -37,24 +37,24 @@ func ParseTopicFilter(v string) (*TopicFilter, error) {
 		return nil, err
 	}
 
-	tf := &TopicFilter{
+	tf := &topicFilter{
 		re:     re,
 		filter: v,
 	}
 	return tf, nil
 }
 
-// TopicFilter is used to match topic names as specified in [4.7 Topic
+// topicFilter is used to match topic names as specified in [4.7 Topic
 // Names and Topic Filters]
 //
 // [4.7 Topic Names and Topic Filters]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
-type TopicFilter struct {
+type topicFilter struct {
 	re     *regexp.Regexp
 	filter string
 }
 
 // Match topic name and return any wildcard words.
-func (r *TopicFilter) Match(name string) ([]string, bool) {
+func (r *topicFilter) Match(name string) ([]string, bool) {
 	res := r.re.FindAllStringSubmatch(name, -1)
 	if len(res) == 0 {
 		return nil, false
@@ -63,6 +63,6 @@ func (r *TopicFilter) Match(name string) ([]string, bool) {
 	return res[0][1:], true
 }
 
-func (r *TopicFilter) Filter() string {
+func (r *topicFilter) Filter() string {
 	return r.filter
 }
