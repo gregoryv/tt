@@ -13,10 +13,6 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-func NewClient() *Client {
-	return &Client{}
-}
-
 type Client struct {
 	// Public fields can all be modified before calling Run
 	// Changing them afterwards should have no effect.
