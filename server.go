@@ -228,7 +228,7 @@ func includePort(addr string, yes bool) string {
 	return addr
 }
 
-type PubHandler func(context.Context, *mq.Publish) error
+type pubHandler func(context.Context, *mq.Publish) error
 
 type Connection interface {
 	io.ReadWriteCloser
@@ -394,10 +394,8 @@ func (s *serverStats) RemoveConn() {
 	atomic.AddInt64(&s.ConnActive, -1)
 }
 
-// gomerge src: subscription.go
-
 // MustNewSubscription panics on bad filter
-func mustNewSubscription(filter string, handlers ...PubHandler) *subscription {
+func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
 	tf, err := ParseTopicFilter(filter)
 	if err != nil {
 		panic(err.Error())
@@ -405,7 +403,7 @@ func mustNewSubscription(filter string, handlers ...PubHandler) *subscription {
 	return newSubscription(tf, handlers...)
 }
 
-func newSubscription(filter *TopicFilter, handlers ...PubHandler) *subscription {
+func newSubscription(filter *TopicFilter, handlers ...pubHandler) *subscription {
 	r := &subscription{
 		TopicFilter: filter,
 		handlers:    handlers,
@@ -416,7 +414,7 @@ func newSubscription(filter *TopicFilter, handlers ...PubHandler) *subscription 
 type subscription struct {
 	*TopicFilter
 
-	handlers []PubHandler
+	handlers []pubHandler
 }
 
 func (r *subscription) String() string {
