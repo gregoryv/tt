@@ -30,13 +30,17 @@ type Client struct {
 
 	KeepAlive uint16 // seconds
 
-	transmit Handler // set by Run and used in Send
+	transmit Handler          // set by Run and used in Send
+	C        <-chan mq.Packet // incoming packets are send to application
 }
 
 func (c *Client) Run(ctx context.Context) error {
 	// use middlewares and build your in/out queues with desired
 	// features
 	debug := c.Debug
+
+	toApp := make(chan mq.Packet, 1)
+	c.C = toApp
 
 	log := NewLogger()
 	log.SetLogPrefix(c.ClientID)
@@ -121,13 +125,16 @@ func (c *Client) Run(ctx context.Context) error {
 			}
 		}
 
-		// wip implement receiving end of client
-		return fmt.Errorf("receiver handler: todo")
+		// finally let the application have it
+		toApp <- p
+		return nil
 	}, conn)
 
 	return receiver.Run(ctx)
 }
 
+// Send returns when the packet was successfully encoded on the wire.
+// Use [Client.C] for acks.
 func (c *Client) Send(ctx context.Context, p mq.Packet) error {
 	if c.transmit == nil {
 		return ErrClientStopped
