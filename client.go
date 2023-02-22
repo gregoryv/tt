@@ -24,7 +24,6 @@ type Client struct {
 	// Server to connect to
 	Server *url.URL
 
-	ClientID string // wip move to caller
 	// wip better let application decide when sending Connect
 	KeepAlive uint16 // seconds
 
@@ -44,7 +43,6 @@ func (c *Client) Run(ctx context.Context) error {
 	maxIDLen := uint(11)
 
 	log := log.New(os.Stderr, "", log.Flags())
-	log.SetPrefix(trimID(c.ClientID, maxIDLen))
 
 	// dial server
 	host := c.Server.Host
@@ -69,6 +67,7 @@ func (c *Client) Run(ctx context.Context) error {
 		//
 		switch p := p.(type) {
 		case *mq.Connect:
+			log.SetPrefix(trimID(p.ClientID(), maxIDLen))
 			p.SetKeepAlive(uint16(pingInterval / time.Second))
 		}
 
@@ -97,7 +96,7 @@ func (c *Client) Run(ctx context.Context) error {
 		case *mq.ConnAck:
 			// update log prefix if client was assigned an id
 			if v := p.AssignedClientID(); v != "" {
-				log.SetPrefix(trimID(c.ClientID, maxIDLen))
+				log.SetPrefix(trimID(v, maxIDLen))
 			}
 		}
 		// double spaces to align in/out. Usually this is not advised
