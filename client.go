@@ -3,8 +3,10 @@ package tt
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"net/url"
+	"os"
 	"sync"
 	"time"
 
@@ -39,10 +41,10 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 	// features
 	debug := c.Debug
 	pingInterval := time.Duration(c.KeepAlive) * time.Second
+	maxIDLen := uint(11)
 
-	log := NewLogger()
-	log.SetLogPrefix(c.ClientID)
-	log.SetDebug(debug)
+	log := log.New(os.Stderr, "", log.Flags())
+	log.SetPrefix(trimID(c.ClientID, maxIDLen))
 
 	// dial server
 	host := c.Server.Host
@@ -95,7 +97,7 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 		case *mq.ConnAck:
 			// update log prefix if client was assigned an id
 			if v := p.AssignedClientID(); v != "" {
-				log.SetLogPrefix(v)
+				log.SetPrefix(trimID(c.ClientID, maxIDLen))
 			}
 		}
 		// double spaces to align in/out. Usually this is not advised
