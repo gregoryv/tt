@@ -81,6 +81,18 @@ func (c *Client) Run(ctx context.Context) error {
 			log.Print("in  ", p)
 		}
 
+		// check if malformed
+		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
+			if err := p.WellFormed(); err != nil {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.MalformedPacket)
+				c.transmit(ctx, d)
+				return err
+			}
+		}
+
+		// wip keep alive
+
 		// return packet id to pool
 		if p, ok := p.(mq.HasPacketID); ok {
 			_ = pool.reuse(p.PacketID())
