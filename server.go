@@ -49,7 +49,7 @@ type Server struct {
 	Debug bool
 
 	// wip
-	OnEvent func(context.Contet, *Server, Event)
+	OnEvent func(context.Context, *Server, Event)
 
 	// router is used to route incoming publish packets to subscribing
 	// clients
@@ -81,7 +81,7 @@ func (s *Server) Run(ctx context.Context) error {
 	f.Listener = ln
 	f.AcceptTimeout = b.AcceptTimeout
 	if s.OnEvent != nil {
-		s.OnEvent(ctx, s, ServerUp)
+		s.OnEvent(ctx, s, EventServerUp)
 	}
 	return f.Run(ctx)
 }

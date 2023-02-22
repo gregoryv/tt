@@ -33,7 +33,7 @@ func Example_client() {
 
 		OnEvent: func(ctx context.Context, c *tt.Client, e tt.Event) {
 			switch e {
-			case tt.EventRunning:
+			case tt.EventClientUp:
 				_ = c.Send(ctx, mq.NewConnect())
 			}
 		},

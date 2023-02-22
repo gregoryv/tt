@@ -63,7 +63,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 
 		OnEvent: func(ctx context.Context, client *tt.Client, e tt.Event) {
 			switch e {
-			case tt.EventRunning:
+			case tt.EventClientUp:
 				p := mq.NewConnect()
 				p.SetClientID(c.clientID)
 				p.SetReceiveMax(1)

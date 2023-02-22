@@ -162,7 +162,7 @@ func (c *Client) Run(ctx context.Context) error {
 	}, conn)
 
 	if c.OnEvent != nil {
-		c.OnEvent(ctx, c, EventRunning)
+		c.OnEvent(ctx, c, EventClientUp)
 	}
 	return recv.Run(ctx)
 }
@@ -173,7 +173,7 @@ type Event int
 
 const (
 	EventUndefined Event = iota
-	EventRunning
+	EventClientUp
 
 	lastClientEvent
 )
