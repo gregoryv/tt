@@ -2,12 +2,8 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"io"
-	"net"
+	"log"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/gregoryv/cmdline"
@@ -36,63 +32,35 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.topic = cli.Option("-t, --topic-name").String("gopher/pink")
 	c.payload = cli.Option("-p, --payload").String("hug")
 	c.qos = cli.Option("-q, --qos").Uint8(0)
-	c.timeout = cli.Option("    --timeout").Duration("1s")
+	c.timeout = cli.Option("    --timeout").Duration("1s") // wip global ?
 	c.username = cli.Option("-u, --username").String("")
 	c.password = cli.Option("-p, --password").String("")
 }
 
 func (c *PubCmd) Run(ctx context.Context) error {
-	// create logger
-	log := tt.NewLogger()
-	log.SetOutput(os.Stderr)
-	log.SetLogPrefix(c.clientID)
-	log.SetDebug(c.debug)
 
-	// create network connection
-	log.Print("dial ", c.server.String())
-	conn, err := net.Dial("tcp", c.server.Host)
-	if err != nil {
-		return err
+	client := &tt.Client{
+		Server:      c.server,
+		ClientID:    c.clientID,
+		Debug:       c.debug,
+		KeepAlive:   uint16(10),
+		MaxPacketID: 10,
 	}
 
-	// limit number of concurrent packets
-	pool := tt.NewIDPool(10)
-
-	// transmit is used for every outgoing packet
-	transmit := tt.Combine(tt.Send(conn), log.Out, pool.Out)
-
-	handler := func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
+	app := func(ctx context.Context, p mq.Packet) error {
+		switch p.(type) {
 		case *mq.ConnAck:
-			// once connected send publish
 			m := mq.Pub(c.qos, c.topic, c.payload)
-			err := transmit(ctx, m)
-			if c.qos == 0 {
-				return tt.StopReceiver
+			err := client.Send(ctx, m)
+			if err != nil {
+				log.Print(err)
 			}
-			return err
-
-		case *mq.PubRec:
-			rel := mq.NewPubRel()
-			rel.SetPacketID(p.PacketID())
-			return transmit(ctx, rel)
-
-		case *mq.PubAck:
 			return tt.StopReceiver
-		case *mq.PubComp:
-			return tt.StopReceiver
-		case *mq.Disconnect:
-			return tt.StopReceiver
-
-		default:
-			return fmt.Errorf("got unexpected packet: %v", p)
 		}
 		return nil
 	}
-	in := tt.Combine(handler, pool.In, log.In)
-	receiver := tt.NewReceiver(in, conn)
 
-	{ // initiate connect sequence
+	{ // connect
 		p := mq.NewConnect()
 		p.SetClientID(c.clientID)
 		p.SetCleanStart(true)
@@ -100,15 +68,9 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			p.SetUsername(c.username)
 			p.SetPassword([]byte(c.password))
 		}
-		_ = transmit(ctx, p)
+		go time.AfterFunc(1*time.Millisecond, func() {
+			_ = client.Send(ctx, p)
+		})
 	}
-
-	// start receiving packets
-	ctx, _ = context.WithTimeout(ctx, c.timeout)
-	if err := receiver.Run(ctx); errors.Is(err, io.EOF) {
-		return fmt.Errorf("FAIL")
-	}
-
-	_ = transmit(ctx, mq.NewDisconnect())
-	return nil
+	return client.Run(ctx, app)
 }
