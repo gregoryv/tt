@@ -4,13 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net"
 	"net/url"
+	"time"
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
-	"github.com/gregoryv/tt/ttsrv"
 )
 
 type SubCmd struct {
@@ -20,74 +19,44 @@ type SubCmd struct {
 	debug       bool
 	output      io.Writer
 
-	keepAlive *tt.KeepAlive
+	keepAlive time.Duration
 }
 
 func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.server = cli.Option("-s, --server").Url("localhost:1883")
 	c.clientID = cli.Option("-c, --client-id").String("ttsub")
 	c.topicFilter = cli.Option("-t, --topic-filter").String("#")
-	c.keepAlive = tt.NewKeepAlive(
-		cli.Option("    --keep-alive").Duration("10s"),
-	)
+	c.keepAlive = cli.Option("    --keep-alive").Duration("10s")
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {
-	// use middlewares and build your in/out queues with desired
-	// features
-	log := tt.NewLogger()
-	log.SetLogPrefix(c.clientID)
-	log.SetDebug(c.debug)
 
-	// open
-	log.Print("dial tcp://", c.server.String())
-	conn, err := net.Dial("tcp", c.server.String())
-	if err != nil {
-		return err
+	client := &tt.Client{
+		Server:      c.server,
+		ClientID:    c.clientID,
+		Debug:       c.debug,
+		KeepAlive:   uint16(c.keepAlive.Seconds()),
+		MaxPacketID: 10,
 	}
 
-	// pool of packet ids for reuse
-	pool := tt.NewIDPool(10)
-
-	transmit := tt.Combine(
-		tt.Send(conn),
-		log.Out,
-		c.keepAlive.Out,
-		pool.Out,
-	)
-
-	// set transmitter after as the middleware should be part of the
-	// transmitter
-	c.keepAlive.SetTransmitter(transmit)
-
-	// wip decouple FormChecker disconnects on malformed packets
-	checkForm := ttsrv.NewFormChecker(transmit)
-
-	onConnAck := func(next tt.Handler) tt.Handler {
-		return func(ctx context.Context, p mq.Packet) error {
-			switch p.(type) {
-			case *mq.ConnAck:
-				// subscribe
-				s := mq.NewSubscribe()
-				s.SetSubscriptionID(1)
-				f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
-				s.AddFilters(f)
-				return transmit(ctx, s)
-			}
-			return next(ctx, p)
-		}
-	}
-
-	// final handler when receiving packets
-	handler := func(ctx context.Context, p mq.Packet) error {
+	app := func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
+		case *mq.ConnAck:
+			// subscribe
+			s := mq.NewSubscribe()
+			s.SetSubscriptionID(1)
+			f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
+			s.AddFilters(f)
+			return client.Send(ctx, s)
+
 		case *mq.Publish:
+			// wip move this to client
 			switch p.QoS() {
 			case 0: // no ack is needed
 			case 1:
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
-				if err := transmit(ctx, ack); err != nil {
+				if err := client.Send(ctx, ack); err != nil {
 					return err
 				}
 			case 2:
@@ -98,20 +67,13 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		return nil
 	}
 
-	receive := tt.NewReceiver(
-		tt.Combine(handler,
-			onConnAck, pool.In, c.keepAlive.In, checkForm.In, log.In,
-		),
-		conn,
-	)
-
-	// connect
-	p := mq.NewConnect()
-	p.SetClientID(c.clientID)
-	p.SetReceiveMax(1) // until we have support for QoS 2
-	if err := transmit(ctx, p); err != nil {
-		return err
+	{ // connect
+		p := mq.NewConnect()
+		p.SetClientID(c.clientID)
+		p.SetReceiveMax(1) // until we have support for QoS 2
+		go time.AfterFunc(1*time.Millisecond, func() {
+			_ = client.Send(ctx, p)
+		})
 	}
-
-	return receive.Run(ctx)
+	return client.Run(ctx, app)
 }

@@ -31,17 +31,13 @@ type Client struct {
 	// wip better let application decide when sending Connect
 	KeepAlive uint16 // seconds
 
-	transmit Handler          // set by Run and used in Send
-	C        <-chan mq.Packet // incoming packets are send to application
+	transmit Handler // set by Run and used in Send
 }
 
-func (c *Client) Run(ctx context.Context) error {
+func (c *Client) Run(ctx context.Context, app Handler) error {
 	// use middlewares and build your in/out queues with desired
 	// features
 	debug := c.Debug
-
-	toApp := make(chan mq.Packet, 1)
-	c.C = toApp
 
 	log := NewLogger()
 	log.SetLogPrefix(c.ClientID)
@@ -79,7 +75,7 @@ func (c *Client) Run(ctx context.Context) error {
 		} else {
 			log.Print("in  ", p)
 		}
-		
+
 		m.Lock()
 		_, err := p.WriteTo(conn)
 		m.Unlock()
@@ -134,8 +130,7 @@ func (c *Client) Run(ctx context.Context) error {
 		}
 
 		// finally let the application have it
-		toApp <- p
-		return nil
+		return app(ctx, p)
 	}, conn)
 
 	return receiver.Run(ctx)
