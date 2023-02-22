@@ -86,10 +86,6 @@ func (s *Server) Run(ctx context.Context) error {
 	return f.Run(ctx)
 }
 
-const (
-	EventServerUp Event = iota + lastClientEvent
-)
-
 // ServeConn handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.
 func (s *Server) ServeConn(ctx context.Context, conn Connection) {

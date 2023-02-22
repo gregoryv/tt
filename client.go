@@ -167,17 +167,6 @@ func (c *Client) Run(ctx context.Context) error {
 	return recv.Run(ctx)
 }
 
-type EventHandler func(context.Context, Event)
-
-type Event int
-
-const (
-	EventUndefined Event = iota
-	EventClientUp
-
-	lastClientEvent
-)
-
 // Send returns when the packet was successfully encoded on the wire.
 func (c *Client) Send(ctx context.Context, p mq.Packet) error {
 	if c.transmit == nil {
