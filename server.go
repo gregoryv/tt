@@ -178,7 +178,6 @@ func (s *Server) createHandlers(conn Connection) (in, transmit Handler) {
 			return transmit(ctx, mq.NewPingResp())
 
 		case *mq.Connect:
-			// todo should the ack be sent here?
 			a := mq.NewConnAck()
 			if p.ClientID() == "" {
 				a.SetAssignedClientID(clientID)
