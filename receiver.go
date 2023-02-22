@@ -14,15 +14,15 @@ import (
 
 // NewReceiver returns a receiver that reads packets from the reader
 // and calls the handler. Handler can be nil.
-func NewReceiver(h Handler, r io.Reader) *Receiver {
-	return &Receiver{
+func newReceiver(h Handler, r io.Reader) *receiver {
+	return &receiver{
 		wire:        r,
 		handle:      h,
 		readTimeout: 100 * time.Millisecond,
 	}
 }
 
-type Receiver struct {
+type receiver struct {
 	wire        io.Reader
 	handle      Handler
 	readTimeout time.Duration
@@ -30,7 +30,7 @@ type Receiver struct {
 
 // Run continuously handles next packet until context is cancelled or
 // stopped by StopReceiver
-func (r *Receiver) Run(ctx context.Context) error {
+func (r *receiver) Run(ctx context.Context) error {
 	for {
 		_, err := r.Next(ctx)
 
@@ -45,7 +45,7 @@ func (r *Receiver) Run(ctx context.Context) error {
 }
 
 // Next blocks until a packet is read and handled.
-func (r *Receiver) Next(ctx context.Context) (mq.Packet, error) {
+func (r *receiver) Next(ctx context.Context) (mq.Packet, error) {
 loop:
 	for {
 		if err := ctx.Err(); err != nil {

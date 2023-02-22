@@ -13,11 +13,11 @@ import (
 	"github.com/gregoryv/tt/ttx"
 )
 
-func TestReceiver(t *testing.T) {
+func Test_receiver(t *testing.T) {
 	{ // handler is called on packet from server
 		conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 		called := ttx.NewCalled()
-		go NewReceiver(called.Handler, srvconn).Run(context.Background())
+		go newReceiver(called.Handler, srvconn).Run(context.Background())
 
 		p := mq.NewPublish()
 		p.SetTopicName("a/b")
@@ -40,7 +40,7 @@ func TestReceiver(t *testing.T) {
 		}
 		defer conn.Close()
 
-		recv := NewReceiver(nil, conn)
+		recv := newReceiver(nil, conn)
 		recv.readTimeout = time.Microsecond // speedup
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -51,7 +51,7 @@ func TestReceiver(t *testing.T) {
 	}
 
 	{ // Run is stopped on closed connection
-		recv := NewReceiver(nil, &ttx.ClosedConn{})
+		recv := newReceiver(nil, &ttx.ClosedConn{})
 		if err := recv.Run(context.Background()); err == nil {
 			t.Errorf("receiver should fail once connection is closed")
 		}
@@ -63,7 +63,7 @@ func TestReceiver(t *testing.T) {
 		stop := func(_ context.Context, _ mq.Packet) error {
 			return StopReceiver
 		}
-		recv := NewReceiver(stop, &buf)
+		recv := newReceiver(stop, &buf)
 
 		if err := recv.Run(context.Background()); err != nil {
 			t.Error("receiver should stop without error on StopReceiver", err)

@@ -89,7 +89,7 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 	}
 	keepAlive.transmit = c.transmit
 
-	recv := NewReceiver(func(ctx context.Context, p mq.Packet) error {
+	recv := newReceiver(func(ctx context.Context, p mq.Packet) error {
 		// log incoming packets
 		switch p := p.(type) {
 		case *mq.ConnAck:
