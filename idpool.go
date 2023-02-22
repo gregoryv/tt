@@ -8,9 +8,9 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-// NewIDPool returns a IDPool of reusable id's from 1..max, 0 is not used
-func NewIDPool(max uint16) *IDPool {
-	o := IDPool{
+// NewIDPool returns a iDPool of reusable id's from 1..max, 0 is not used
+func newIDPool(max uint16) *iDPool {
+	o := iDPool{
 		nextTimeout: 3 * time.Second,
 		max:         max,
 		used:        make([]time.Time, max+1),
@@ -22,7 +22,7 @@ func NewIDPool(max uint16) *IDPool {
 	return &o
 }
 
-type IDPool struct {
+type iDPool struct {
 	nextTimeout time.Duration
 	max         uint16
 	used        []time.Time // flags id that has been used in Out handler
@@ -31,7 +31,7 @@ type IDPool struct {
 
 // In checks if incoming packet has a packet ID, if so it's
 // returned to the pool before next handler is called.
-func (o *IDPool) In(next Handler) Handler {
+func (o *iDPool) In(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if p, ok := p.(mq.HasPacketID); ok {
 			_ = o.reuse(p.PacketID())
@@ -42,7 +42,7 @@ func (o *IDPool) In(next Handler) Handler {
 
 // reuse returns the given value to the pool, returns the reused value
 // or 0 if ignored
-func (o *IDPool) reuse(v uint16) uint16 {
+func (o *iDPool) reuse(v uint16) uint16 {
 	if v == 0 || v > o.max {
 		return 0
 	}
@@ -55,7 +55,7 @@ func (o *IDPool) reuse(v uint16) uint16 {
 }
 
 // Out on outgoing packets, refs MQTT-2.2.1-3
-func (o *IDPool) Out(next Handler) Handler {
+func (o *iDPool) Out(next Handler) Handler {
 	return func(ctx context.Context, p mq.Packet) error {
 		if err := o.SetPacketID(ctx, p); err != nil {
 			return err
@@ -64,7 +64,7 @@ func (o *IDPool) Out(next Handler) Handler {
 	}
 }
 
-func (o *IDPool) SetPacketID(ctx context.Context, p mq.Packet) error {
+func (o *iDPool) SetPacketID(ctx context.Context, p mq.Packet) error {
 	if p, ok := p.(mq.HasPacketID); ok {
 		switch p := p.(type) {
 		case *mq.Publish:
@@ -97,7 +97,7 @@ func (o *IDPool) SetPacketID(ctx context.Context, p mq.Packet) error {
 // next returns the next available ID, blocks until one is available
 // or context is canceled. next is safe for concurrent use by multiple
 // goroutines.
-func (o *IDPool) next(ctx context.Context) (uint16, error) {
+func (o *iDPool) next(ctx context.Context) (uint16, error) {
 	select {
 	case <-ctx.Done():
 		return 0, ctx.Err()

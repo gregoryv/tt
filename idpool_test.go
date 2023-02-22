@@ -9,8 +9,8 @@ import (
 	"github.com/gregoryv/tt/ttx"
 )
 
-func TestIDPool(t *testing.T) {
-	pool := NewIDPool(5) // 1 .. 5
+func Test_iDPool(t *testing.T) {
+	pool := newIDPool(5) // 1 .. 5
 	In := pool.In(ttx.NoopHandler)
 	Out := pool.Out(ttx.NoopHandler)
 	ctx := context.Background()
@@ -57,8 +57,8 @@ func TestIDPool(t *testing.T) {
 	}
 }
 
-func TestIDPool_nextTimeout(t *testing.T) {
-	pool := NewIDPool(1) // 1 .. 5
+func Test_iDPool_nextTimeout(t *testing.T) {
+	pool := newIDPool(1) // 1 .. 5
 	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
 	pool.next(ctx)
 	if v, _ := pool.next(ctx); v != 0 {
@@ -66,8 +66,8 @@ func TestIDPool_nextTimeout(t *testing.T) {
 	}
 }
 
-func TestIDPool_reuse(t *testing.T) {
-	pool := NewIDPool(3)
+func Test_iDPool_reuse(t *testing.T) {
+	pool := newIDPool(3)
 	if v := pool.reuse(99); v != 0 {
 		t.Error("pool.reuse accepted value > max")
 	}

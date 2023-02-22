@@ -53,7 +53,7 @@ func (c *Client) Run(ctx context.Context, app Handler) error {
 	}
 
 	// pool of packet ids for reuse
-	pool := NewIDPool(c.MaxPacketID)
+	pool := newIDPool(c.MaxPacketID)
 	keepAlive := newKeepAlive(pingInterval)
 	go keepAlive.run(ctx)
 
