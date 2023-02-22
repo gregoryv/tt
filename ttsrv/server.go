@@ -24,9 +24,9 @@ import (
 
 // NewServer returns a server that binds to a random port.
 func NewServer() *Server {
-	tcpRandom, _ := NewBindConf("tcp://localhost:", "500ms")
+	tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
 	s := &Server{
-		Binds:          []*BindConf{tcpRandom},
+		Binds:          []*bindConf{tcpRandom},
 		ConnectTimeout: 200 * time.Millisecond,
 		PoolSize:       100,
 
@@ -38,7 +38,7 @@ func NewServer() *Server {
 }
 
 type Server struct {
-	Binds []*BindConf
+	Binds []*bindConf
 
 	// client has to send the initial connect packet
 	ConnectTimeout time.Duration
@@ -278,7 +278,7 @@ const prefixStr = "~"
 
 // gomerge src: bindconf.go
 
-func NewBindConf(uri, acceptTimeout string) (*BindConf, error) {
+func newBindConf(uri, acceptTimeout string) (*bindConf, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, err
@@ -288,13 +288,13 @@ func NewBindConf(uri, acceptTimeout string) (*BindConf, error) {
 		return nil, err
 	}
 
-	return &BindConf{
+	return &bindConf{
 		URL:           u,
 		AcceptTimeout: d,
 	}, nil
 }
 
-type BindConf struct {
+type bindConf struct {
 	*url.URL
 	AcceptTimeout time.Duration
 	Debug         bool
