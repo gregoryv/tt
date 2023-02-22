@@ -19,7 +19,7 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-// NewServer returns a server that binds to a random port.
+// wip remove NewServer returns a server that binds to a random port.
 func NewServer() *Server {
 	tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
 	s := &Server{
@@ -35,7 +35,7 @@ func NewServer() *Server {
 }
 
 type Server struct {
-	Binds []*bindConf
+	Binds []*bindConf // wip replace with public type of sorts as we'll want to configure them separately
 
 	// client has to send the initial connect packet
 	ConnectTimeout time.Duration
