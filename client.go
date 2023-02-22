@@ -28,6 +28,7 @@ type Client struct {
 
 	MaxPacketID uint16
 
+	// wip better let application decide when sending Connect
 	KeepAlive uint16 // seconds
 
 	transmit Handler          // set by Run and used in Send
@@ -72,6 +73,13 @@ func (c *Client) Run(ctx context.Context) error {
 			p.SetKeepAlive(c.KeepAlive)
 		}
 
+		// log just before sending
+		if debug {
+			log.Print("in  ", p, "\n", dumpPacket(p))
+		} else {
+			log.Print("in  ", p)
+		}
+		
 		m.Lock()
 		_, err := p.WriteTo(conn)
 		m.Unlock()
