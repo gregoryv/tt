@@ -3,15 +3,9 @@
 This project adheres to semantic versioning and all notable
 changes will be documented in this file.
 
-## [unreleased]
+## [0.9.0] 2023-02-22
 
-- Remove interfaces Inner and Outer
-- Replace CombineIn and CombineOut with func Combine
-- Add type tt.KeepAlive
-- Rename options to use one letter short variant or only long
-- Option --debug is shared
-- Log to stderr by default
-- Add type ttsrv.Logger with network and clientID in log lines
+- Majore rewrite with fewer abstractions
 
 ## [0.8.0] 2023-02-11
 
