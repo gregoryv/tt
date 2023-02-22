@@ -232,34 +232,6 @@ func includePort(addr string, yes bool) string {
 	return addr
 }
 
-func NewFormChecker(transmit tt.Handler) *FormChecker {
-	return &FormChecker{
-		transmit: transmit,
-	}
-}
-
-// FormChecker rejects any malformed packet
-type FormChecker struct {
-	transmit tt.Handler
-}
-
-// CheckForm returns a handler that checks if a packet is well
-// formed. The handler returns *mq.Malformed error without calling
-// next if malformed.
-func (f *FormChecker) In(next tt.Handler) tt.Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
-			if err := p.WellFormed(); err != nil {
-				d := mq.NewDisconnect()
-				d.SetReasonCode(mq.MalformedPacket)
-				f.transmit(ctx, d)
-				return err
-			}
-		}
-		return next(ctx, p)
-	}
-}
-
 type PubHandler func(context.Context, *mq.Publish) error
 
 type Connection interface {
