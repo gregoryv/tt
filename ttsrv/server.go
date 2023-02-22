@@ -150,9 +150,9 @@ func (s *Server) createHandlers(conn Connection) (in, transmit tt.Handler) {
 		}
 
 		if s.Debug {
-			s.Log.Print("out ", p, "\n", dumpPacket(p))
+			s.Log.Print("in  ", p, "\n", dumpPacket(p))
 		} else {
-			s.Log.Printf("out %v -> %s:%s", p, remote, shortID)
+			s.Log.Printf("in %v <- %s:%s", p, remote, shortID)
 		}
 
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
