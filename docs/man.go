@@ -138,9 +138,9 @@ func Manual() *Element {
 
 			Pre(Class("cmd"), func() interface{} {
 				var buf, a, b bytes.Buffer
-				server := "localhost:9983"
+				server := "tcp://localhost:9983"
 				{ // start server
-					cmd := exec.Command("tt", "srv", "-b", "tcp://"+server)
+					cmd := exec.Command("tt", "srv", "-b", server)
 					cmd.Stdout = &buf
 					cmd.Stderr = &buf
 					tidyGobin(&buf, cmd, "&")
