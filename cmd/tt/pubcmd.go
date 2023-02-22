@@ -47,6 +47,8 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		MaxPacketID: 10,
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+
 	app := func(ctx context.Context, p mq.Packet) error {
 		switch p.(type) {
 		case *mq.ConnAck:
@@ -55,7 +57,8 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			if err != nil {
 				log.Print(err)
 			}
-			return tt.StopReceiver
+			cancel()
+			return nil
 		}
 		return nil
 	}

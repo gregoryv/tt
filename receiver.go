@@ -3,7 +3,6 @@ package tt
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"os"
@@ -28,16 +27,12 @@ type receiver struct {
 	readTimeout time.Duration
 }
 
-// Run continuously handles next packet until context is cancelled or
-// stopped by StopReceiver
+// Run continuously handles next packet until context is cancelled
 func (r *receiver) Run(ctx context.Context) error {
 	for {
 		_, err := r.Next(ctx)
 
 		switch {
-		case errors.Is(err, StopReceiver):
-			return nil
-
 		case err != nil:
 			return err
 		}
@@ -70,7 +65,3 @@ loop:
 		return p, err
 	}
 }
-
-// StopReceiver error can be returned by handlers to stop Receiver.Run
-// from handling further packets.
-var StopReceiver = fmt.Errorf("receiver stop")

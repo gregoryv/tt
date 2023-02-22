@@ -1,7 +1,6 @@
 package tt
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"net"
@@ -57,16 +56,4 @@ func Test_receiver(t *testing.T) {
 		}
 	}
 
-	{ // Run is stopped on StopReceiverclosed connection
-		var buf bytes.Buffer
-		mq.Pub(0, "a/b", "hello").WriteTo(&buf)
-		stop := func(_ context.Context, _ mq.Packet) error {
-			return StopReceiver
-		}
-		recv := newReceiver(stop, &buf)
-
-		if err := recv.Run(context.Background()); err != nil {
-			t.Error("receiver should stop without error on StopReceiver", err)
-		}
-	}
 }
