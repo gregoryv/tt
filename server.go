@@ -80,6 +80,8 @@ func (s *Server) Run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// this is done so clients can connect once server is running
+	// wip decouple Bind from actual listeners
 	b.URL.Host = ln.Addr().String()
 	s.Println("listen", b.URL.String())
 
