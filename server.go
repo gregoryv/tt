@@ -86,7 +86,7 @@ func (s *Server) Run(ctx context.Context) error {
 	s.Println("listen", b.URL.String())
 
 	f := newConnFeed()
-	f.ServeConn = s.ServeConn
+	f.serveConn = s.serveConn
 	f.Listener = ln
 	f.AcceptTimeout = b.AcceptTimeout
 	if s.OnEvent != nil {
@@ -95,9 +95,9 @@ func (s *Server) Run(ctx context.Context) error {
 	return f.Run(ctx)
 }
 
-// ServeConn handles the given remote connection. Blocks until
+// serveConn handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.
-func (s *Server) ServeConn(ctx context.Context, conn Connection) {
+func (s *Server) serveConn(ctx context.Context, conn Connection) {
 	s.once.Do(s.setDefaults)
 
 	// the server tracks active connections
@@ -278,7 +278,7 @@ func newConnFeed() *connFeed {
 	return &connFeed{
 		AcceptTimeout: 200 * time.Millisecond,
 		Logger:        log.New(os.Stderr, "tcp ", log.Flags()),
-		ServeConn:     func(context.Context, Connection) { /*noop*/ },
+		serveConn:     func(context.Context, Connection) { /*noop*/ },
 	}
 }
 
@@ -289,16 +289,16 @@ type connFeed struct {
 	AcceptTimeout time.Duration
 
 	// AddConnection handles new remote connections
-	ServeConn func(context.Context, Connection)
+	serveConn func(context.Context, Connection)
 
 	*log.Logger
 }
 
 // SetServer sets the server to which new connections should be added.
 func (f *connFeed) SetServer(v interface {
-	ServeConn(context.Context, Connection)
+	serveConn(context.Context, Connection)
 }) {
-	f.ServeConn = v.ServeConn
+	f.serveConn = v.serveConn
 }
 
 // Run enables listener. Blocks until context is cancelled or
@@ -327,7 +327,7 @@ loop:
 			return err
 		}
 
-		go f.ServeConn(ctx, conn)
+		go f.serveConn(ctx, conn)
 	}
 }
 

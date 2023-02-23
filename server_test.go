@@ -38,7 +38,7 @@ func TestServer_Run(t *testing.T) {
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 	s := NewServer()
-	go s.ServeConn(context.Background(), srvconn)
+	go s.serveConn(context.Background(), srvconn)
 
 	// initiate connect sequence
 	mq.NewConnect().WriteTo(conn)
@@ -63,7 +63,7 @@ func TestServer_AssignsID(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 	defer conn.Close()
 	s := NewServer()
-	go s.ServeConn(context.Background(), srvconn)
+	go s.serveConn(context.Background(), srvconn)
 
 	// initiate connect sequence
 	mq.NewConnect().WriteTo(conn)
@@ -78,7 +78,7 @@ func TestServer_AssignsID(t *testing.T) {
 func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 	s := NewServer()
-	go s.ServeConn(context.Background(), srvconn)
+	go s.serveConn(context.Background(), srvconn)
 
 	{ // initiate connect sequence
 		p := mq.NewConnect()
@@ -99,7 +99,7 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 func TestServer_DisconnectOnMalformed(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 	s := NewServer()
-	go s.ServeConn(context.Background(), srvconn)
+	go s.serveConn(context.Background(), srvconn)
 	{ // initiate connect sequence
 		p := mq.NewConnect()
 		p.WriteTo(conn)
