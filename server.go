@@ -50,7 +50,7 @@ type Server struct {
 	// statistics
 	stat *serverStats
 
-	setup sync.Once
+	once sync.Once
 }
 
 func (s *Server) setDefaults() {
@@ -72,7 +72,7 @@ func (s *Server) setDefaults() {
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(ctx context.Context) error {
-	s.setup.Do(s.setDefaults)
+	s.once.Do(s.setDefaults)
 	// wip make empty server more useful
 
 	b := s.Binds[0]
@@ -96,7 +96,7 @@ func (s *Server) Run(ctx context.Context) error {
 // ServeConn handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.
 func (s *Server) ServeConn(ctx context.Context, conn Connection) {
-	s.setup.Do(s.setDefaults)
+	s.once.Do(s.setDefaults)
 
 	// the server tracks active connections
 	addr := conn.RemoteAddr()
