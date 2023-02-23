@@ -77,17 +77,19 @@ func (s *Server) setDefaults() {
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(ctx context.Context) error {
 	s.once.Do(s.setDefaults)
-	// wip make empty server more useful
 
 	b := s.Binds[0]
+	s.Println("bind", b.URL.String())
 	ln, err := net.Listen(b.URL.Scheme, b.URL.Host)
 	if err != nil {
 		return err
 	}
 	// this is done so clients can connect once server is running
 	// wip decouple Bind from actual listeners
-	b.URL.Host = ln.Addr().String()
-	s.Println("listen", b.URL.String())
+	if v := ln.Addr().String(); v != b.URL.Host {
+		b.URL.Host = v
+		s.Println("listen", b.URL.String())
+	}
 
 	f := newConnFeed()
 	f.serveConn = s.serveConn
