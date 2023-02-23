@@ -92,7 +92,7 @@ func (c *Client) Run(ctx context.Context) error {
 		}
 
 		// log just before sending
-		log.Printf("in  %s%s", p, dump(debug, p))
+		log.Printf("out %s%s", p, dump(debug, p))
 
 		m.Lock()
 		_, err := p.WriteTo(conn)
@@ -115,10 +115,8 @@ func (c *Client) Run(ctx context.Context) error {
 				log.SetPrefix(trimID(v, maxIDLen))
 			}
 		}
-		// double spaces to align in/out. Usually this is not advised
-		// but in here it really does aid when scanning for patterns
-		// of packets.
-		log.Printf("in  %s%s", p, dump(debug, p))
+
+		log.Printf("in %s%s", p, dump(debug, p))
 
 		// check if malformed
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
@@ -181,7 +179,6 @@ func (c *Client) Send(ctx context.Context, p mq.Packet) error {
 }
 
 var ErrClientStopped = fmt.Errorf("Client stopped")
-
 
 // newIDPool returns a iDPool of reusable id's from 1..max, 0 is not used
 func newIDPool(max uint16) *iDPool {
