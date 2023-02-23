@@ -76,7 +76,11 @@ func (c *Client) Run(ctx context.Context) error {
 
 	var m sync.Mutex
 	c.transmit = func(ctx context.Context, p mq.Packet) error {
-		// set packet id if needed
+		// sync each outgoing packet
+		m.Lock()
+		defer m.Unlock()
+
+		// set packet id if needed, only fails if pool is exhausted
 		if err := pool.SetPacketID(ctx, p); err != nil {
 			cancel()
 			return err
@@ -94,28 +98,27 @@ func (c *Client) Run(ctx context.Context) error {
 		// log just before sending
 		log.Printf("out %s%s", p, dump(debug, p))
 
-		m.Lock()
+		// write packet on the wire
 		_, err := p.WriteTo(conn)
-		m.Unlock()
 
-		if err == nil {
-			// delay ping since we just send a packet
-			keepAlive.packetSent <- struct{}{}
+		if err != nil {
+			return err
 		}
-		return err
+		// delay ping since we just send a packet
+		keepAlive.packetSent <- struct{}{}
+
+		return nil
 	}
 	keepAlive.transmit = c.transmit
 
 	recv := newReceiver(func(ctx context.Context, p mq.Packet) error {
-		// log incoming packets
-		switch p := p.(type) {
-		case *mq.ConnAck:
-			// update log prefix if client was assigned an id
+		// set log prefix if client was assigned an id
+		if p, ok := p.(*mq.ConnAck); ok {
 			if v := p.AssignedClientID(); v != "" {
 				log.SetPrefix(trimID(v, maxIDLen))
 			}
 		}
-
+		// log incoming packet
 		log.Printf("in %s%s", p, dump(debug, p))
 
 		// check if malformed
@@ -133,16 +136,14 @@ func (c *Client) Run(ctx context.Context) error {
 			_ = pool.reuse(p.PacketID())
 		}
 
-		// keep alive
 		switch p := p.(type) {
 		case *mq.ConnAck:
-			// do as the server says
+			// keep alive as the server instructs
 			if v := p.ServerKeepAlive(); v > 0 {
 				keepAlive.interval = v
 			}
 
 		case *mq.Publish:
-
 			switch p.QoS() {
 			case 0: // no ack is needed
 			case 1:
