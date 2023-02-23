@@ -72,33 +72,40 @@ func (s *Server) setDefaults() {
 	s.stat = newServerStats()
 }
 
-// Run listens for tcp connections. Blocks until context is cancelled
-// or accepting a connection fails. Accepting new connection can only
-// be interrupted if listener has SetDeadline method.
+// Run listens for tcp connections. Blocks until context is cancelled.
+// Accepting new connection can only be interrupted if listener has
+// SetDeadline method.
 func (s *Server) Run(ctx context.Context) error {
 	s.once.Do(s.setDefaults)
 
-	b := s.Binds[0]
-	s.Println("bind", b.URL.String())
-	ln, err := net.Listen(b.URL.Scheme, b.URL.Host)
-	if err != nil {
-		return err
-	}
-	// this is done so clients can connect once server is running
-	// wip decouple Bind from actual listeners
-	if v := ln.Addr().String(); v != b.URL.Host {
-		b.URL.Host = v
-		s.Println("listen", b.URL.String())
-	}
+	// Each bind feeds the server with connections
+	for _, b := range s.Binds {
+		ln, err := net.Listen(b.URL.Scheme, b.URL.Host)
+		if err != nil {
+			return err
+		}
 
-	f := newConnFeed()
-	f.serveConn = s.serveConn
-	f.Listener = ln
-	f.AcceptTimeout = b.AcceptTimeout
+		// log configured and actual port
+		tmp := *b.URL
+		tmp.Host = ln.Addr().String()
+		if b.URL.Port() != tmp.Port() {
+			s.Printf("bind %s (configured as %s)", tmp.String(), b.URL.String())
+		} else {
+			s.Println("bind", b.URL.String())
+		}
+
+		// run the connection feed
+		f := newConnFeed()
+		f.serveConn = s.serveConn
+		f.Listener = ln
+		f.AcceptTimeout = b.AcceptTimeout
+		go f.Run(ctx)
+	}
 	if s.OnEvent != nil {
 		s.OnEvent(ctx, s, EventServerUp)
 	}
-	return f.Run(ctx)
+	<-ctx.Done()
+	return nil
 }
 
 // serveConn handles the given remote connection. Blocks until
