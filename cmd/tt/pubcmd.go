@@ -52,7 +52,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		Server:      c.server,
 		Debug:       c.debug,
 		MaxPacketID: 10,
-		Logger:      log.New(os.Stderr, "ttpub ", log.Flags()),
+		Logger:      log.New(os.Stderr, c.clientID+" ", log.Flags()),
 
 		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {
 			switch p := p.(type) {
@@ -67,7 +67,6 @@ func (c *PubCmd) Run(ctx context.Context) error {
 					}
 					if c.qos == 0 {
 						_ = client.Send(ctx, mq.NewDisconnect())
-						cancel()
 					}
 
 				default:
@@ -77,7 +76,6 @@ func (c *PubCmd) Run(ctx context.Context) error {
 
 			case *mq.PubAck:
 				_ = client.Send(ctx, mq.NewDisconnect())
-				cancel()
 			}
 		},
 
