@@ -143,7 +143,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 			p.SetMaxQoS(maxQoS)
 		}
 
-		s.Printf("out %v -> %s:%s%s", p, remote, shortID, dump(s.Debug, p))
+		s.Printf("out %v -> %s@%s%s", p, shortID, remote, dump(s.Debug, p))
 
 		m.Lock()
 		defer m.Unlock()
@@ -170,7 +170,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 			shortID = trimID(clientID, maxIDLen)
 		}
 
-		s.Printf("in %v <- %s:%s%s", p, remote, shortID, dump(s.Debug, p))
+		s.Printf("in %v <- %s@%s%s", p, shortID, remote, dump(s.Debug, p))
 
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 			if err := p.WellFormed(); err != nil {
