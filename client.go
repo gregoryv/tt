@@ -172,6 +172,7 @@ func (c *Client) Run(ctx context.Context) error {
 }
 
 // Send returns when the packet was successfully encoded on the wire.
+// Returns ErrClientStopped if not running.
 func (c *Client) Send(ctx context.Context, p mq.Packet) error {
 	if c.transmit == nil {
 		return ErrClientStopped
@@ -181,9 +182,8 @@ func (c *Client) Send(ctx context.Context, p mq.Packet) error {
 
 var ErrClientStopped = fmt.Errorf("Client stopped")
 
-// gomerge src: idpool.go
 
-// NewIDPool returns a iDPool of reusable id's from 1..max, 0 is not used
+// newIDPool returns a iDPool of reusable id's from 1..max, 0 is not used
 func newIDPool(max uint16) *iDPool {
 	o := iDPool{
 		nextTimeout: 3 * time.Second,
@@ -228,6 +228,8 @@ func (o *iDPool) reuse(v uint16) uint16 {
 	o.used[v] = zero
 	return v
 }
+
+var zero = time.Time{}
 
 // Out on outgoing packets, refs MQTT-2.2.1-3
 func (o *iDPool) Out(next Handler) Handler {
@@ -287,10 +289,6 @@ func (o *iDPool) next(ctx context.Context) (uint16, error) {
 }
 
 var ErrIDPoolEmpty = fmt.Errorf("no available packet ids")
-
-var zero = time.Time{}
-
-// gomerge src: keepalive.go
 
 // NewKeepAlive returns a middleware which keeps connection alive by
 // sending pings within the given interval. The interval is rounded to
