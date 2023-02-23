@@ -26,7 +26,7 @@ func Example_server() {
 }
 
 func TestServer_Run(t *testing.T) {
-	s := NewServer()
+	var s Server
 	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
 	if err := s.Run(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		t.Error(err)
@@ -35,7 +35,7 @@ func TestServer_Run(t *testing.T) {
 
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
-	s := NewServer()
+	var s Server
 	go s.serveConn(context.Background(), srvconn)
 
 	// initiate connect sequence
@@ -60,7 +60,7 @@ func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 func TestServer_AssignsID(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 	defer conn.Close()
-	s := NewServer()
+	var s Server
 	go s.serveConn(context.Background(), srvconn)
 
 	// initiate connect sequence
@@ -75,7 +75,7 @@ func TestServer_AssignsID(t *testing.T) {
 // connection.
 func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
-	s := NewServer()
+	var s Server
 	go s.serveConn(context.Background(), srvconn)
 
 	{ // initiate connect sequence
@@ -96,7 +96,7 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 // reason code MalformedPacket 0x81
 func TestServer_DisconnectOnMalformed(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
-	s := NewServer()
+	var s Server
 	go s.serveConn(context.Background(), srvconn)
 	{ // initiate connect sequence
 		p := mq.NewConnect()
