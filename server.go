@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/url"
@@ -25,10 +26,8 @@ func NewServer() *Server {
 	s := &Server{
 		Binds:          []*Bind{tcpRandom},
 		ConnectTimeout: 200 * time.Millisecond,
-		PoolSize:       100,
 
 		router: newRouter(),
-		Log:    log.New(os.Stderr, "ttsrv ", log.Flags()),
 		stat:   newServerStats(),
 	}
 	return s
@@ -40,10 +39,8 @@ type Server struct {
 	// client has to send the initial connect packet
 	ConnectTimeout time.Duration
 
-	// Max packet id for each connection, ids range from 1..PoolSize
-	PoolSize uint16
-
-	Log *log.Logger
+	// optional logger, if nil defaults to log.Logg
+	*log.Logger
 
 	// Set to true for additional log information
 	Debug bool
@@ -51,34 +48,39 @@ type Server struct {
 	// optional event handler
 	OnEvent func(context.Context, *Server, Event)
 
-	// router is used to route incoming publish packets to subscribing
-	// clients
+	// router routes incoming publish packets to subscribing clients
 	router *router
 
 	// statistics
 	stat *serverStats
+
+	setup sync.Once
+}
+
+func (s *Server) setDefaults() {
+	// no logging if logger not set
+	if s.Logger == nil {
+		s.Logger = log.New(ioutil.Discard, "", 0)
+	}
+	if s.Debug {
+		s.SetFlags(s.Flags() | log.Lshortfile)
+	}
 }
 
 // Run listens for tcp connections. Blocks until context is cancelled
 // or accepting a connection fails. Accepting new connection can only
 // be interrupted if listener has SetDeadline method.
 func (s *Server) Run(ctx context.Context) error {
-
+	s.setup.Do(s.setDefaults)
 	// wip make empty server more useful
-
-	if s.Debug {
-		s.Log.SetFlags(s.Log.Flags() | log.Lshortfile)
-	} else {
-		s.Log.SetFlags(log.Flags()) // default
-	}
-
+	
 	b := s.Binds[0]
 	ln, err := net.Listen(b.URL.Scheme, b.URL.Host)
 	if err != nil {
 		return err
 	}
 	b.URL.Host = ln.Addr().String()
-	s.Log.Println("listen", b.URL.String())
+	s.Println("listen", b.URL.String())
 
 	f := newConnFeed()
 	f.ServeConn = s.ServeConn
@@ -93,14 +95,16 @@ func (s *Server) Run(ctx context.Context) error {
 // ServeConn handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.
 func (s *Server) ServeConn(ctx context.Context, conn Connection) {
+	s.setup.Do(s.setDefaults)
+
 	// the server tracks active connections
 	addr := conn.RemoteAddr()
 	a := includePort(addr.String(), s.Debug)
 	connstr := fmt.Sprintf("conn %s://%s", addr.Network(), a)
-	s.Log.Println("new", connstr)
+	s.Println("new", connstr)
 	s.stat.AddConn()
 	defer func() {
-		s.Log.Println("del", connstr)
+		s.Println("del", connstr)
 		s.stat.RemoveConn()
 	}()
 
@@ -120,9 +124,9 @@ func (s *Server) ServeConn(ctx context.Context, conn Connection) {
 		}
 
 		if s.Debug {
-			s.Log.Print("out ", p, "\n", dumpPacket(p))
+			s.Print("out ", p, "\n", dumpPacket(p))
 		} else {
-			s.Log.Printf("out %v -> %s:%s", p, remote, shortID)
+			s.Printf("out %v -> %s:%s", p, remote, shortID)
 		}
 
 		m.Lock()
@@ -151,9 +155,9 @@ func (s *Server) ServeConn(ctx context.Context, conn Connection) {
 		}
 
 		if s.Debug {
-			s.Log.Print("in  ", p, "\n", dumpPacket(p))
+			s.Print("in  ", p, "\n", dumpPacket(p))
 		} else {
-			s.Log.Printf("in %v <- %s:%s", p, remote, shortID)
+			s.Printf("in %v <- %s:%s", p, remote, shortID)
 		}
 
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
