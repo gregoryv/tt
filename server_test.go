@@ -120,14 +120,10 @@ func TestServer_DisconnectOnMalformed(t *testing.T) {
 	}
 }
 
-// gomerge src: connfeed_test.go
-
 func Test_connFeed(t *testing.T) {
 	{ // accepts connections
 		ctx, cancel := context.WithCancel(context.Background())
-		f := newConnFeed()
 		ln, _ := net.Listen("tcp", ":")
-
 		time.AfterFunc(3*time.Millisecond, func() {
 			conn, err := net.Dial("tcp", ln.Addr().String())
 			if err != nil {
@@ -136,29 +132,28 @@ func Test_connFeed(t *testing.T) {
 			conn.Close()
 			cancel()
 		})
-		f.Listener = ln
-		f.AcceptTimeout = time.Millisecond
+		f := connFeed{
+			Listener:      ln,
+			AcceptTimeout: time.Millisecond,
+			serveConn:     func(context.Context, connection) { /*noop*/ },
+		}
 		f.Run(ctx)
 	}
 	{ // ends on listener close
-		f := newConnFeed()
 		ln, _ := net.Listen("tcp", ":")
 		time.AfterFunc(time.Millisecond, func() { ln.Close() })
-		f.Listener = ln
-		f.AcceptTimeout = time.Millisecond
+		f := connFeed{
+			Listener:      ln,
+			AcceptTimeout: time.Millisecond,
+			serveConn:     func(context.Context, connection) { /*noop*/ },
+		}
 
 		err := f.Run(context.Background())
 		if !errors.Is(err, net.ErrClosed) {
 			t.Error(err)
 		}
 	}
-	{ // accepts default server
-		ln := newConnFeed()
-		ln.SetServer(NewServer())
-	}
 }
-
-// gomerge src: subscription_test.go
 
 func TestSubscription_String(t *testing.T) {
 	sub := mustNewSubscription("all/gophers/#", ttx.NoopPub)
@@ -177,8 +172,6 @@ func catchPanic(t *testing.T) {
 		t.Fatal("expect panic")
 	}
 }
-
-// gomerge src: router_test.go
 
 func Test_router(t *testing.T) {
 	var wg sync.WaitGroup
@@ -254,8 +247,6 @@ func BenchmarkRouter_10routesEndMatch(b *testing.B) {
 		}
 	}
 }
-
-// gomerge src: topicfilter_test.go
 
 func ExampleTopicFilter() {
 	tf := mustParseTopicFilter("/a/+/b/+/+")
