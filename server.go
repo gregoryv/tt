@@ -20,15 +20,6 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-// wip remove NewServer returns a server that binds to a random port.
-func NewServer() *Server {
-	tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
-	s := &Server{
-		Binds: []*Bind{tcpRandom},
-	}
-	return s
-}
-
 type Server struct {
 	Binds []*Bind
 

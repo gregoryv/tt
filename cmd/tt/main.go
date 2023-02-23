@@ -28,7 +28,7 @@ func main() {
 		})
 		_ = commands.New("srv", &SrvCmd{
 			debug:  debug,
-			Server: tt.NewServer(),
+			Server: new(tt.Server),
 		})
 
 		cmd = commands.Selected()
