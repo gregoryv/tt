@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"net"
 	"net/url"
 	"os"
 	"time"
@@ -44,6 +46,8 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		ctx, cancel = context.WithTimeout(ctx, c.timeout)
 	}
 
+	var pubErr error
+
 	client := &tt.Client{
 		Server:      c.server,
 		Debug:       c.debug,
@@ -57,16 +61,23 @@ func (c *PubCmd) Run(ctx context.Context) error {
 				switch p.ReasonCode() {
 				case mq.Success: // we've connected successfully
 					m := mq.Pub(c.qos, c.topic, c.payload)
-					err := client.Send(ctx, m)
-					if err != nil {
-						log.Print(err)
+					if err := client.Send(ctx, m); err != nil {
+						pubErr = err
+						cancel()
 					}
-					cancel()
+					if c.qos == 0 {
+						_ = client.Send(ctx, mq.NewDisconnect())
+						cancel()
+					}
 
 				default:
-					log.Print(p.ReasonString())
+					pubErr = fmt.Errorf(p.ReasonString())
 					cancel()
 				}
+
+			case *mq.PubAck:
+				_ = client.Send(ctx, mq.NewDisconnect())
+				cancel()
 			}
 		},
 
@@ -86,5 +97,10 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		},
 	}
 
-	return client.Run(ctx)
+	if err := client.Run(ctx); err != nil {
+		if _, ok := err.(*net.OpError); ok {
+			return err
+		}
+	}
+	return pubErr
 }

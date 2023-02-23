@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- tt pub sends disconnect when done
 - Server supports QoS 1
 
 ## [0.9.0] 2023-02-22
