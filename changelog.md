@@ -3,9 +3,12 @@
 This project adheres to semantic versioning and all notable
 changes will be documented in this file.
 
+## [unreleased]
+
+
 ## [0.9.0] 2023-02-22
 
-- Majore rewrite with fewer abstractions
+- Major rewrite with fewer abstractions
 
 ## [0.8.0] 2023-02-11
 
