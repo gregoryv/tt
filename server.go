@@ -23,7 +23,7 @@ import (
 func NewServer() *Server {
 	tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
 	s := &Server{
-		Binds:          []*bindConf{tcpRandom},
+		Binds:          []*Bind{tcpRandom},
 		ConnectTimeout: 200 * time.Millisecond,
 		PoolSize:       100,
 
@@ -35,7 +35,7 @@ func NewServer() *Server {
 }
 
 type Server struct {
-	Binds []*bindConf // wip replace with public type of sorts as we'll want to configure them separately
+	Binds []Bind
 
 	// client has to send the initial connect packet
 	ConnectTimeout time.Duration
@@ -243,7 +243,7 @@ type Connection interface {
 
 // gomerge src: bindconf.go
 
-func newBindConf(uri, acceptTimeout string) (*bindConf, error) {
+func newBindConf(uri, acceptTimeout string) (*Bind, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, err
@@ -253,19 +253,18 @@ func newBindConf(uri, acceptTimeout string) (*bindConf, error) {
 		return nil, err
 	}
 
-	return &bindConf{
+	return &Bind{
 		URL:           u,
 		AcceptTimeout: d,
 	}, nil
 }
 
-type bindConf struct {
+// Bind holds server listening settings
+type Bind struct {
 	*url.URL
 	AcceptTimeout time.Duration
 	Debug         bool
 }
-
-// gomerge src: connfeed.go
 
 // NewConnFeed returns a listener for tcp connections on a random
 // port. Each new connection is by handled in a go routine.
