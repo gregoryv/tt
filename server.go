@@ -35,7 +35,7 @@ func NewServer() *Server {
 }
 
 type Server struct {
-	Binds []Bind
+	Binds []*Bind
 
 	// client has to send the initial connect packet
 	ConnectTimeout time.Duration
@@ -263,7 +263,6 @@ func newBindConf(uri, acceptTimeout string) (*Bind, error) {
 type Bind struct {
 	*url.URL
 	AcceptTimeout time.Duration
-	Debug         bool
 }
 
 // NewConnFeed returns a listener for tcp connections on a random
