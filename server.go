@@ -129,7 +129,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 	}()
 
 	var m sync.Mutex
-	var maxQoS uint8 = 0 // todo support QoS 1 and 2
+	var maxQoS uint8 = 1 // wip support QoS 2
 	var maxIDLen uint = 11
 	var (
 		clientID string
@@ -228,7 +228,20 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 				d.SetReasonCode(mq.QoSNotSupported)
 				return transmit(ctx, d)
 			}
-			return s.router.Handle(ctx, p)
+
+			switch p.QoS() {
+			case 0:
+				return s.router.Handle(ctx, p)
+			case 1:
+				ack := mq.NewPubAck()
+				ack.SetPacketID(p.PacketID())
+				_ = s.router.Handle(ctx, p)
+				return transmit(ctx, ack)
+
+			case 2:
+				// wip implement server support for QoS
+
+			}
 
 		case *mq.Disconnect:
 			return conn.Close()
