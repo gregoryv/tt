@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/url"
 	"os"
 	"time"
@@ -37,6 +38,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		Server:      c.server,
 		Debug:       c.debug,
 		MaxPacketID: 10,
+		Logger:      log.New(os.Stderr, "ttsub ", log.Flags()),
 
 		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {
 			switch p := p.(type) {

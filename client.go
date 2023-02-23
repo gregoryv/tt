@@ -3,21 +3,20 @@ package tt
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/url"
-	"os"
 	"sync"
 	"time"
 
 	"github.com/gregoryv/mq"
 )
 
+// Client implements a mqtt-v5 client. Public fields should be set
+// before calling Run.
 type Client struct {
-	// Public fields can all be modified before calling Run
-	// Changing them afterwards should have no effect.
-
-	// Server to connect to
+	// Server to connect to, defaults to tcp://localhost:1883
 	Server *url.URL
 
 	// Set to true to include more log output
@@ -33,22 +32,39 @@ type Client struct {
 	// optional handler for client events
 	OnEvent func(context.Context, *Client, Event)
 
+	// for setting defaults
+	once sync.Once
+
+	// optional logger, leave empty for no logging
+	*log.Logger
+
 	transmit Handler // set by Run and used in Send
 }
 
+func (c *Client) setDefaults() {
+	if c.Logger == nil {
+		c.Logger = log.New(ioutil.Discard, "", log.Flags())
+	}
+	if c.Server == nil {
+		u, _ := url.Parse("tcp://127.0.0.1:1883")
+		c.Server = u
+	}
+}
+
 func (c *Client) Run(ctx context.Context) error {
+	c.once.Do(c.setDefaults)
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	debug := c.Debug
 	pingInterval := 30 * time.Second
 	maxIDLen := uint(11)
-
-	log := log.New(os.Stderr, "", log.Flags())
+	log := c.Logger
 
 	// dial server
 	host := c.Server.Host
 	log.Print("dial ", c.Server.String())
-	conn, err := net.Dial("tcp", host)
+	conn, err := net.Dial(c.Server.Scheme, host)
 	if err != nil {
 		return err
 	}
@@ -66,10 +82,10 @@ func (c *Client) Run(ctx context.Context) error {
 			return err
 		}
 
-		//
+		// use client id
 		switch p := p.(type) {
 		case *mq.Connect:
-			log.SetPrefix(trimID(p.ClientID(), maxIDLen))
+			log.SetPrefix(trimID(p.ClientID(), maxIDLen) + " ")
 			if v := p.KeepAlive(); v > 0 {
 				keepAlive.interval = v
 			}

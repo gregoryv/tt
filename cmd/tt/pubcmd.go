@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/gregoryv/cmdline"
@@ -47,6 +48,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		Server:      c.server,
 		Debug:       c.debug,
 		MaxPacketID: 10,
+		Logger:      log.New(os.Stderr, "ttpub ", log.Flags()),
 
 		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {
 			switch p := p.(type) {
