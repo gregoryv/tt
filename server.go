@@ -24,11 +24,7 @@ import (
 func NewServer() *Server {
 	tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
 	s := &Server{
-		Binds:          []*Bind{tcpRandom},
-		ConnectTimeout: 200 * time.Millisecond,
-
-		router: newRouter(),
-		stat:   newServerStats(),
+		Binds: []*Bind{tcpRandom},
 	}
 	return s
 }
@@ -36,7 +32,7 @@ func NewServer() *Server {
 type Server struct {
 	Binds []*Bind
 
-	// client has to send the initial connect packet
+	// client has to send the initial connect packet, default 200ms
 	ConnectTimeout time.Duration
 
 	// optional logger, if nil defaults to log.Logg
@@ -65,6 +61,11 @@ func (s *Server) setDefaults() {
 	if s.Debug {
 		s.SetFlags(s.Flags() | log.Lshortfile)
 	}
+	if s.ConnectTimeout == 0 {
+		s.ConnectTimeout = 200 * time.Millisecond
+	}
+	s.router = newRouter()
+	s.stat = newServerStats()
 }
 
 // Run listens for tcp connections. Blocks until context is cancelled
@@ -73,7 +74,7 @@ func (s *Server) setDefaults() {
 func (s *Server) Run(ctx context.Context) error {
 	s.setup.Do(s.setDefaults)
 	// wip make empty server more useful
-	
+
 	b := s.Binds[0]
 	ln, err := net.Listen(b.URL.Scheme, b.URL.Host)
 	if err != nil {
