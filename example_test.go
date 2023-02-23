@@ -3,6 +3,7 @@ package tt_test
 import (
 	"context"
 	"log"
+	"net/url"
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
@@ -11,12 +12,10 @@ import (
 // Example shows a simple client for connect, publish a QoS 0 and
 // disconnect.
 func Example_client() {
-	server := tt.NewServer()
-	ctx := context.Background()
-	go server.Run(ctx)
+	srv, _ := url.Parse("tcp://localhost:1883")
 
 	client := &tt.Client{
-		Server: server.Binds[0].URL,
+		Server: srv,
 
 		OnPacket: func(ctx context.Context, c *tt.Client, p mq.Packet) {
 			switch p := p.(type) {
@@ -39,7 +38,7 @@ func Example_client() {
 		},
 	}
 
-	if err := client.Run(ctx); err != nil {
+	if err := client.Run(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 }
