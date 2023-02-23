@@ -76,11 +76,7 @@ func (c *Client) Run(ctx context.Context) error {
 		}
 
 		// log just before sending
-		if debug {
-			log.Print("in  ", p, "\n", dumpPacket(p))
-		} else {
-			log.Print("in  ", p)
-		}
+		log.Printf("in  %s%s", p, dump(debug, p))
 
 		m.Lock()
 		_, err := p.WriteTo(conn)
@@ -106,11 +102,7 @@ func (c *Client) Run(ctx context.Context) error {
 		// double spaces to align in/out. Usually this is not advised
 		// but in here it really does aid when scanning for patterns
 		// of packets.
-		if debug {
-			log.Print("in  ", p, "\n", dumpPacket(p))
-		} else {
-			log.Print("in  ", p)
-		}
+		log.Printf("in  %s%s", p, dump(debug, p))
 
 		// check if malformed
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {

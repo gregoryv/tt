@@ -12,10 +12,13 @@ import (
 // Handler handles a mqtt control packet
 type Handler func(context.Context, mq.Packet) error
 
-func dumpPacket(p mq.Packet) string {
+func dump(debug bool, p mq.Packet) string {
+	if !debug {
+		return ""
+	}
 	var buf bytes.Buffer
 	p.WriteTo(&buf)
-	return hex.Dump(buf.Bytes())
+	return "\n" + hex.Dump(buf.Bytes()) + "\n"
 }
 
 func trimID(s string, width uint) string {
