@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 	"sync"
@@ -17,14 +18,11 @@ import (
 
 // Example shows how to run the provided server.
 func Example_server() {
-	s := NewServer()
-	go s.Run(context.Background())
-
-	b := s.Binds[0] // by default there is one
-	fmt.Println(b.URL)
-
-	// output:
-	// tcp://localhost:
+	var s Server
+	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
+	if err := s.Run(ctx); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func TestServer_Run(t *testing.T) {

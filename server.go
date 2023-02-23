@@ -64,6 +64,10 @@ func (s *Server) setDefaults() {
 	if s.ConnectTimeout == 0 {
 		s.ConnectTimeout = 200 * time.Millisecond
 	}
+	if len(s.Binds) == 0 {
+		tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
+		s.Binds = append(s.Binds, tcpRandom)
+	}
 	s.router = newRouter()
 	s.stat = newServerStats()
 }
@@ -310,7 +314,7 @@ func (f *connFeed) Run(ctx context.Context) error {
 loop:
 	for {
 		if err := ctx.Err(); err != nil {
-			return err
+			return nil
 		}
 
 		// set deadline allows to break the loop early should the
