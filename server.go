@@ -80,25 +80,35 @@ func (s *Server) Run(ctx context.Context) error {
 
 	// Each bind feeds the server with connections
 	for _, b := range s.Binds {
-		ln, err := net.Listen(b.URL.Scheme, b.URL.Host)
+		u, err := url.Parse(b.URL)
+		if err != nil {
+			return err
+		}
+
+		ln, err := net.Listen(u.Scheme, u.Host)
 		if err != nil {
 			return err
 		}
 
 		// log configured and actual port
-		tmp := *b.URL
+		tmp := *u
 		tmp.Host = ln.Addr().String()
-		if b.URL.Port() != tmp.Port() {
-			s.Printf("bind %s (configured as %s)", tmp.String(), b.URL.String())
+		if u.Port() != tmp.Port() {
+			s.Printf("bind %s (configured as %s)", tmp.String(), u.String())
 		} else {
-			s.Println("bind", b.URL.String())
+			s.Println("bind", u.String())
+		}
+
+		t, err := time.ParseDuration(b.AcceptTimeout)
+		if err != nil {
+			return err
 		}
 
 		// run the connection feed
 		f := connFeed{
 			serveConn:     s.serveConn,
 			Listener:      ln,
-			AcceptTimeout: b.AcceptTimeout,
+			AcceptTimeout: t,
 		}
 		go f.Run(ctx)
 	}
@@ -265,25 +275,19 @@ type connection interface {
 // gomerge src: bindconf.go
 
 func newBindConf(uri, acceptTimeout string) (*Bind, error) {
-	u, err := url.Parse(uri)
-	if err != nil {
-		return nil, err
-	}
-	d, err := time.ParseDuration(acceptTimeout)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Bind{
-		URL:           u,
-		AcceptTimeout: d,
+		URL:           uri,
+		AcceptTimeout: acceptTimeout,
 	}, nil
 }
 
 // Bind holds server listening settings
 type Bind struct {
-	*url.URL
-	AcceptTimeout time.Duration
+	// eg. tcp://localhost:
+	URL string
+
+	// eg. 500ms
+	AcceptTimeout string
 }
 
 type connFeed struct {
