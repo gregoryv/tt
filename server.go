@@ -238,8 +238,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 				_ = s.router.Handle(ctx, p)
 				return transmit(ctx, ack)
 
-			case 2:
-				// wip implement server support for QoS
+			case 2: // wip implement server support for QoS 2
 
 			}
 

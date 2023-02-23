@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -14,10 +15,13 @@ import (
 )
 
 func main() {
+	log.SetFlags(0)
+
 	var (
 		cli = cmdline.NewBasicParser()
 		// shared options
-		debug = cli.Flag("--debug")
+		debug        = cli.Flag("    --debug")
+		logTimestamp = cli.Flag("    --log-timestamp")
 
 		commands = cli.Group("Commands", "COMMAND")
 
@@ -39,6 +43,9 @@ func main() {
 	)
 	cli.Parse()
 
+	if logTimestamp {
+		log.SetFlags(log.Flags() | log.LstdFlags)
+	}
 	// run the selected command
 	if err := runCommand(cmd); err != nil {
 		// using DefaultShell.Fatal so we can verify the behavior
