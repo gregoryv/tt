@@ -134,7 +134,13 @@ func Manual() *Element {
 
 			P(`Clients connect to the same server. First client
             subscribes to topic filter gopher/+, and second publishes
-            a message to topic name gopher/pink.`),
+            a message to topic name gopher/pink. Log messages are
+            grouped for clarity. See `,
+				A(
+					Href("https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Message_delivery_retry"),
+					"4.4 Message delivery retry wip ",
+				),
+			),
 
 			Pre(Class("cmd"), func() interface{} {
 				var buf, a, b bytes.Buffer
