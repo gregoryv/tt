@@ -97,7 +97,7 @@ func (s *Server) Run(ctx context.Context) error {
 
 // serveConn handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.
-func (s *Server) serveConn(ctx context.Context, conn Connection) {
+func (s *Server) serveConn(ctx context.Context, conn connection) {
 	s.once.Do(s.setDefaults)
 
 	// the server tracks active connections
@@ -243,7 +243,7 @@ func includePort(addr string, yes bool) string {
 
 type pubHandler func(context.Context, *mq.Publish) error
 
-type Connection interface {
+type connection interface {
 	io.ReadWriteCloser
 	RemoteAddr() net.Addr
 }
@@ -278,7 +278,7 @@ func newConnFeed() *connFeed {
 	return &connFeed{
 		AcceptTimeout: 200 * time.Millisecond,
 		Logger:        log.New(os.Stderr, "tcp ", log.Flags()),
-		serveConn:     func(context.Context, Connection) { /*noop*/ },
+		serveConn:     func(context.Context, connection) { /*noop*/ },
 	}
 }
 
@@ -289,14 +289,14 @@ type connFeed struct {
 	AcceptTimeout time.Duration
 
 	// AddConnection handles new remote connections
-	serveConn func(context.Context, Connection)
+	serveConn func(context.Context, connection)
 
 	*log.Logger
 }
 
 // SetServer sets the server to which new connections should be added.
 func (f *connFeed) SetServer(v interface {
-	serveConn(context.Context, Connection)
+	serveConn(context.Context, connection)
 }) {
 	f.serveConn = v.serveConn
 }
