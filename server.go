@@ -21,15 +21,17 @@ import (
 )
 
 type Server struct {
+	// bind configuration where server listens for connections, empty
+	// defaults to random port on localhost
 	Binds []*Bind
 
 	// client has to send the initial connect packet, default 200ms
 	ConnectTimeout time.Duration
 
-	// optional logger, if nil defaults to log.Logg
+	// if nil, log output is discarded
 	*log.Logger
 
-	// Set to true for additional log information
+	// set to true for additional log information
 	Debug bool
 
 	// optional event handler
