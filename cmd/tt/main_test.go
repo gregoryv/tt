@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"os/exec"
 	"testing"
 	"time"
@@ -11,7 +10,6 @@ import (
 )
 
 func Test_main_help(t *testing.T) {
-	os.Args = []string{"test", "-h"}
 	cmdline.DefaultShell = clitest.NewShellT("test", "-h")
 	main()
 }
