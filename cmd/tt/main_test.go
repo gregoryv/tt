@@ -27,40 +27,6 @@ func Test_main_srv(t *testing.T) {
 	}
 }
 
-func Test_main_pub(t *testing.T) {
-	host := "tcp://localhost:3881"
-
-	srv := exec.Command("tt", "srv", "-b", host)
-	startCmd(t, srv)
-	defer srv.Process.Kill()
-
-	<-time.After(2 * time.Millisecond) // let it start
-
-	{ // pub
-		pub := exec.Command("tt", "pub", "-s", host)
-		_ = pub.Run()
-		if code := pub.ProcessState.ExitCode(); code != 0 {
-			t.Fatalf("unexpected exit code %v", code)
-		}
-	}
-
-	{ // pub 1
-		pub := exec.Command("tt", "pub", "-q", "1", "-s", host)
-		_ = pub.Run()
-		if code := pub.ProcessState.ExitCode(); code != 0 {
-			t.Fatalf("unexpected exit code %v", code)
-		}
-	}
-
-	{ // pub 2
-		pub := exec.Command("tt", "pub", "-q", "2", "-s", host)
-		_ = pub.Run()
-		if code := pub.ProcessState.ExitCode(); code != 0 {
-			t.Fatalf("unexpected exit code %v", code)
-		}
-	}
-}
-
 func Test_subFailsOnBadHost(t *testing.T) {
 	sh := clitest.NewShellT("test", "sub", "-s", "__")
 	cmdline.DefaultShell = sh
@@ -73,14 +39,12 @@ func Test_subFailsOnBadHost(t *testing.T) {
 func TestCommands(t *testing.T) {
 	url := "tcp://localhost:3881"
 
-	srv := exec.Command("tt", "srv", "-b", url)
-	startCmd(t, srv)
+	startCmd(t, exec.Command("tt", "srv", "-b", url))
+	startCmd(t, exec.Command("tt", "sub", "-s", url))
 
-	sub := exec.Command("tt", "sub", "-s", url)
-	startCmd(t, sub)
-
-	pub := exec.Command("tt", "pub", "-s", url)
-	runCmd(t, pub)
+	runCmd(t, exec.Command("tt", "pub", "-s", url))
+	runCmd(t, exec.Command("tt", "pub", "-q", "1", "-s", url))
+	notRun(t, exec.Command("tt", "pub", "-q", "2", "-s", url)) // should fail
 }
 
 // disabled once we added feature to interrupt commands gracefully
@@ -113,5 +77,12 @@ func runCmd(t *testing.T, cmd *exec.Cmd) {
 	}
 	if v := cmd.ProcessState.ExitCode(); v != 0 {
 		t.Fatalf("unexpected exit code %v", v)
+	}
+}
+
+func notRun(t *testing.T, cmd *exec.Cmd) {
+	t.Helper()
+	if out, err := cmd.CombinedOutput(); err == nil {
+		t.Error(cmd, "\n", string(out), err)
 	}
 }

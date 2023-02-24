@@ -46,7 +46,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		ctx, cancel = context.WithTimeout(ctx, c.timeout)
 	}
 
-	var pubErr error
+	var pubErr error // wip I don't like this solution
 
 	client := &tt.Client{
 		Server:      c.server,
@@ -76,6 +76,10 @@ func (c *PubCmd) Run(ctx context.Context) error {
 
 			case *mq.PubAck:
 				_ = client.Send(ctx, mq.NewDisconnect())
+
+			default:
+				pubErr = fmt.Errorf("received unexpected packet")
+				cancel()
 			}
 		},
 
