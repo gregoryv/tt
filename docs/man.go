@@ -153,7 +153,7 @@ func Manual() *Element {
 					if err := cmd.Start(); err != nil {
 						log.Println(cmd, err)
 					}
-					defer cmd.Process.Signal(os.Interrupt)
+					defer cmd.Process.Kill()
 				}
 				{ // start sub client
 					<-time.After(3 * time.Millisecond)
