@@ -182,7 +182,6 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 
 		switch p := p.(type) {
 		case *mq.PingReq:
-
 			// 3.12.4-1 The Server MUST send a PINGRESP packet in
 			// response to a PINGREQ packet
 			return transmit(ctx, mq.NewPingResp())

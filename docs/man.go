@@ -21,6 +21,7 @@ import (
 	"github.com/gregoryv/web/toc"
 )
 
+//go:generate go run .
 func main() {
 	log.SetFlags(log.Flags() | log.Lshortfile)
 
@@ -141,7 +142,6 @@ func Manual() *Element {
 					"4.4 Message delivery retry wip ",
 				),
 			),
-
 			Pre(Class("cmd"), func() interface{} {
 				var buf, a, b bytes.Buffer
 				server := "tcp://localhost:9983"
@@ -176,14 +176,40 @@ func Manual() *Element {
 						log.Println(cmd, err)
 					}
 				}
-
-				return strings.Join([]string{
-					buf.String(),
-					a.String(),
-					b.String(),
-				}, "\n")
+				return Wrap(&buf, "\n", &a, "\n", &b)
 			}()),
 			//
+
+			H3("ping pong"),
+
+			P(`Server responds to ping requests.`),
+			Pre(Class("cmd"), func() interface{} {
+				var buf, a bytes.Buffer
+				server := "tcp://localhost:9983"
+				{ // start server
+					cmd := exec.Command("tt", "srv", "-b", server)
+					cmd.Stdout = &buf
+					cmd.Stderr = &buf
+					tidyGobin(&buf, cmd, "&")
+					if err := cmd.Start(); err != nil {
+						log.Println(cmd, err)
+					}
+					defer cmd.Process.Signal(os.Interrupt)
+				}
+				{ // start sub client
+					<-time.After(3 * time.Millisecond)
+					cmd := exec.Command("tt", "sub", "-s", server, "--keep-alive", "2s")
+					cmd.Stdout = &a
+					cmd.Stderr = &a
+					tidyGobin(&a, cmd, "&")
+					if err := cmd.Start(); err != nil {
+						log.Println(cmd, err)
+					}
+					<-time.After(2 * time.Second)
+					defer cmd.Process.Signal(os.Interrupt)
+				}
+				return Wrap(&buf, "\n", &a, "\n")
+			}()),
 		),
 	)
 	// must link these first as the words are part in secondary links
