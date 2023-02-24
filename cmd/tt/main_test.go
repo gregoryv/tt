@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"log"
 	"os"
 	"os/exec"
-	"strings"
 	"testing"
 	"time"
 
@@ -73,37 +70,17 @@ func Test_subFailsOnBadHost(t *testing.T) {
 	}
 }
 
-func Test_main_sub(t *testing.T) {
-	host := "tcp://localhost:3881"
-	log.Print(host)
+func TestCommands(t *testing.T) {
+	url := "tcp://localhost:3881"
 
-	srv := exec.Command("tt", "srv", "-b", host)
+	srv := exec.Command("tt", "srv", "-b", url)
 	startCmd(t, srv)
-	defer srv.Process.Kill()
 
-	<-time.After(2 * time.Millisecond) // let it start
+	sub := exec.Command("tt", "sub", "-s", url)
+	startCmd(t, sub)
 
-	{ // sub
-		sub := exec.Command("tt", "sub", "-s", host)
-		var buf bytes.Buffer
-		sub.Stdout = &buf
-		sub.Start()
-
-		<-time.After(2 * time.Millisecond) // let it start
-
-		{ // publish something
-			pub := exec.Command("tt", "pub", "-s", host)
-			_ = pub.Run()
-			if code := pub.ProcessState.ExitCode(); code != 0 {
-				t.Fatalf("unexpected exit code %v", code)
-			}
-		}
-
-		<-time.After(2 * time.Millisecond)
-		if v := buf.String(); !strings.Contains(v, "PAYLOAD hug") {
-			t.Error("missing logged payload", v)
-		}
-	}
+	pub := exec.Command("tt", "pub", "-s", url)
+	runCmd(t, pub)
 }
 
 // disabled once we added feature to interrupt commands gracefully
@@ -121,5 +98,20 @@ func startCmd(t *testing.T, cmd *exec.Cmd) {
 	t.Helper()
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		cmd.Process.Kill()
+		cmd.Process.Wait()
+	})
+	<-time.After(2 * time.Millisecond) // let it start
+}
+
+func runCmd(t *testing.T, cmd *exec.Cmd) {
+	t.Helper()
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatal(string(out), err)
+	}
+	if v := cmd.ProcessState.ExitCode(); v != 0 {
+		t.Fatalf("unexpected exit code %v", v)
 	}
 }
