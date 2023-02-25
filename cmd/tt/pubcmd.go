@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"time"
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/mq"
@@ -16,8 +15,6 @@ import (
 
 type PubCmd struct {
 	shared opts
-
-	timeout time.Duration
 
 	topic   string
 	payload string
@@ -36,16 +33,12 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.topic = cli.Option("-t, --topic-name").String("gopher/pink")
 	c.payload = cli.Option("-p, --payload").String("hug")
 	c.qos = cli.Option("-q, --qos").Uint8(0)
-	c.timeout = cli.Option("    --timeout").Duration("1s")
 	c.username = cli.Option("-u, --username").String("")
 	c.password = cli.Option("-p, --password").String("")
 }
 
 func (c *PubCmd) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
-	if c.timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, c.timeout)
-	}
 
 	var pubErr error // wip I don't like this solution
 

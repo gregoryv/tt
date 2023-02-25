@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/gregoryv/cmdline"
 )
@@ -22,6 +23,7 @@ func main() {
 			Debug:        cli.Flag("-d, --debug"),
 			LogTimestamp: cli.Flag("-T, --log-timestamp"),
 			ShowSettings: cli.Flag("-S, --show-settings"),
+			Timeout:      cli.Option("--timeout", "0 means never").Duration("0"),
 		}
 
 		commands = cli.Group("Commands", "COMMAND")
@@ -40,7 +42,9 @@ func main() {
 
 	// Run command in the background so we can interrupt it
 	ctx, cancel := context.WithCancel(context.Background())
-
+	if v := shared.Timeout; v > 0 {
+		ctx, cancel = context.WithTimeout(context.Background(), v)
+	}
 	// handle interrupt gracefully
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
@@ -65,6 +69,7 @@ type opts struct {
 	Debug        bool
 	LogTimestamp bool
 	ShowSettings bool
+	Timeout      time.Duration
 }
 
 type Runner interface {
