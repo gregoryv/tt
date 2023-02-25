@@ -44,6 +44,8 @@ type Client struct {
 	*log.Logger `json:-`
 
 	transmit Handler // set by Run and used in Send
+
+	app chan interface{}
 }
 
 func (c *Client) setDefaults() {
@@ -65,8 +67,24 @@ func (c *Client) setDefaults() {
 	}
 }
 
+// Start returns a channel where client pushes incoming packets or
+// events.
+func (c *Client) Start(ctx context.Context) <-chan interface{} {
+	c.app = make(chan interface{}, 1)
+	go c.run(ctx)
+	return c.app
+}
+
 func (c *Client) Run(ctx context.Context) error {
+	return c.run(ctx)
+}
+
+func (c *Client) run(ctx context.Context) error {
 	c.once.Do(c.setDefaults)
+
+	if c.app != nil && c.OnPacket != nil {
+		return fmt.Errorf("cannot set bot OnPacket and using channel")
+	}
 
 	s, err := url.Parse(c.Server)
 	if err != nil {
@@ -176,9 +194,15 @@ func (c *Client) Run(ctx context.Context) error {
 		if c.OnPacket != nil {
 			c.OnPacket(ctx, c, p)
 		}
+		if c.app != nil {
+			c.app <- EventClientUp
+		}
 		return nil
 	}, conn)
 
+	if c.app != nil {
+		c.app <- EventClientUp
+	}
 	if c.OnEvent != nil {
 		c.OnEvent(ctx, c, EventClientUp)
 	}
