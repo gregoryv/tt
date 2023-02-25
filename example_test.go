@@ -3,7 +3,6 @@ package tt_test
 import (
 	"context"
 	"log"
-	"net/url"
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
@@ -12,10 +11,8 @@ import (
 // Example shows a simple client for connect, publish a QoS 0 and
 // disconnect.
 func Example_client() {
-	srv, _ := url.Parse("tcp://localhost:1883")
-
 	client := &tt.Client{
-		Server: srv,
+		Server: "tcp://localhost:1883",
 
 		OnPacket: func(ctx context.Context, c *tt.Client, p mq.Packet) {
 			switch p := p.(type) {

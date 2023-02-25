@@ -19,7 +19,7 @@ import (
 // before calling Run.
 type Client struct {
 	// Server to connect to, defaults to tcp://localhost:1883
-	Server *url.URL
+	Server string
 
 	// Set to true to include more log output
 	Debug bool
@@ -50,9 +50,8 @@ func (c *Client) setDefaults() {
 	if c.Logger == nil {
 		c.Logger = log.New(ioutil.Discard, "", log.Flags())
 	}
-	if c.Server == nil {
-		u, _ := url.Parse("tcp://127.0.0.1:1883")
-		c.Server = u
+	if c.Server == "" {
+		c.Server = "tcp://127.0.0.1:1883"
 	}
 
 	if c.ShowSettings {
@@ -69,15 +68,19 @@ func (c *Client) setDefaults() {
 func (c *Client) Run(ctx context.Context) error {
 	c.once.Do(c.setDefaults)
 
+	s, err := url.Parse(c.Server)
+	if err != nil {
+		return err
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	log := c.Logger
 	debug := c.Debug
 	maxIDLen := uint(11)
 
 	// dial server
-	host := c.Server.Host
-	log.Print("dial ", c.Server.String())
-	conn, err := net.Dial(c.Server.Scheme, host)
+	log.Print("dial ", s.String())
+	conn, err := net.Dial(s.Scheme, s.Host)
 	if err != nil {
 		return err
 	}

@@ -5,16 +5,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"net"
+	"net/url"
 	"os"
 	"os/signal"
 	"time"
+
 	"github.com/gregoryv/cmdline"
-	"net"
-	"net/url"
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
-	"io"
 )
 
 func main() {
@@ -110,7 +111,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	var pubErr error // wip I don't like this solution
 
 	client := &tt.Client{
-		Server:       c.server,
+		Server:       c.server.String(),
 		Debug:        c.shared.Debug,
 		ShowSettings: c.shared.ShowSettings,
 		MaxPacketID:  10,
@@ -192,7 +193,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 
 	client := &tt.Client{
-		Server:       c.server,
+		Server:       c.server.String(),
 		Debug:        c.shared.Debug,
 		ShowSettings: c.shared.ShowSettings,
 		MaxPacketID:  10,
