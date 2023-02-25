@@ -28,7 +28,7 @@ func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.server = cli.Option("-s, --server").Url("tcp://localhost:1883")
 	c.clientID = cli.Option("-c, --client-id").String("ttsub")
 	c.topicFilter = cli.Option("-t, --topic-filter").String("#")
-	c.keepAlive = cli.Option("    --keep-alive").Duration("10s")
+	c.keepAlive = cli.Option("-k, --keep-alive", "disable with 0").Duration("10s")
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {
