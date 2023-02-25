@@ -1,7 +1,9 @@
 package tt
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -29,13 +31,15 @@ type Server struct {
 	ConnectTimeout time.Duration
 
 	// if nil, log output is discarded
-	*log.Logger
+	*log.Logger `json:"-"`
 
 	// set to true for additional log information
 	Debug bool
 
 	// optional event handler
-	OnEvent func(context.Context, *Server, Event)
+	OnEvent func(context.Context, *Server, Event) `json:"-"`
+
+	ShowSettings bool
 
 	// router routes incoming publish packets to subscribing clients
 	router *router
@@ -63,6 +67,16 @@ func (s *Server) setDefaults() {
 	}
 	s.router = newRouter()
 	s.stat = newServerStats()
+
+	if s.ShowSettings {
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(s); err != nil {
+			s.Fatal(err)
+		}
+		var nice bytes.Buffer
+		json.Indent(&nice, buf.Bytes(), "", "  ")
+		s.Print(nice.String())
+	}
 }
 
 // Run listens for tcp connections. Blocks until context is cancelled.

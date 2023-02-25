@@ -36,8 +36,10 @@ func main() {
 			showSettings: showSettings,
 		})
 		_ = commands.New("srv", &SrvCmd{
-			debug:  debug,
-			Server: new(tt.Server),
+			debug: debug,
+			Server: &tt.Server{
+				ShowSettings: showSettings,
+			},
 		})
 
 		cmd = commands.Selected()
