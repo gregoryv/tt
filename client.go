@@ -1,7 +1,9 @@
 package tt
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -27,19 +29,22 @@ type Client struct {
 	MaxPacketID uint16
 
 	// optional handler for incoming packets
-	OnPacket func(context.Context, *Client, mq.Packet)
+	OnPacket func(context.Context, *Client, mq.Packet) `json:"-"`
 
 	// optional handler for client events
-	OnEvent func(context.Context, *Client, Event)
+	OnEvent func(context.Context, *Client, Event) `json:"-"`
 
 	// optional ping interval for keeping connection alive
 	KeepAlive time.Duration
+
+	// show settings once client runs
+	ShowSettings bool
 
 	// for setting defaults
 	once sync.Once
 
 	// optional logger, leave empty for no logging
-	*log.Logger
+	*log.Logger `json:-`
 
 	transmit Handler // set by Run and used in Send
 }
@@ -52,17 +57,24 @@ func (c *Client) setDefaults() {
 		u, _ := url.Parse("tcp://127.0.0.1:1883")
 		c.Server = u
 	}
+
+	if c.ShowSettings {
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(c); err != nil {
+			c.Fatal(err)
+		}
+		var nice bytes.Buffer
+		json.Indent(&nice, buf.Bytes(), "", "  ")
+		c.Print(nice.String())
+	}
 }
 
 func (c *Client) Run(ctx context.Context) error {
 	c.once.Do(c.setDefaults)
 
 	ctx, cancel := context.WithCancel(ctx)
-
 	log := c.Logger
 	debug := c.Debug
-	log.Println("debug", debug)
-
 	maxIDLen := uint(11)
 
 	// dial server
@@ -76,7 +88,6 @@ func (c *Client) Run(ctx context.Context) error {
 	// pool of packet ids for reuse
 	pool := newIDPool(c.MaxPacketID)
 	ping := newKeepAlive(c.KeepAlive)
-	log.Println("KeepAlive", c.KeepAlive)
 
 	var m sync.Mutex
 	c.transmit = func(ctx context.Context, p mq.Packet) error {
