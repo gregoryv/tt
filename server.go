@@ -128,16 +128,20 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 		s.stat.RemoveConn()
 	}()
 
-	var m sync.Mutex
-	var maxQoS uint8 = 1 // wip support QoS 2
-	var maxIDLen uint = 11
 	var (
+		m        sync.Mutex
+		maxQoS   uint8 = 1 // wip support QoS 2
+		maxIDLen uint  = 11
+
 		clientID string
 		shortID  string
 		remote   = includePort(conn.RemoteAddr().String(), s.Debug)
 	)
 
 	transmit := func(ctx context.Context, p mq.Packet) error {
+		m.Lock()
+		defer m.Unlock()
+
 		switch p := p.(type) {
 		case *mq.ConnAck:
 			p.SetMaxQoS(maxQoS)
@@ -145,8 +149,6 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 
 		s.Printf("out %v -> %s@%s%s", p, shortID, remote, dump(s.Debug, p))
 
-		m.Lock()
-		defer m.Unlock()
 		if _, err := p.WriteTo(conn); err != nil {
 			return err
 		}
