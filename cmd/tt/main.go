@@ -25,19 +25,14 @@ func main() {
 		showSettings = cli.Flag("-S, --show-settings")
 
 		commands = cli.Group("Commands", "COMMAND")
-
-		_ = commands.New("pub", &PubCmd{
-			Client: &tt.Client{
-				Debug:        debug,
-				ShowSettings: showSettings,
-			},
-		})
+		client   = &tt.Client{
+			Debug:        debug,
+			ShowSettings: showSettings,
+		}
+		_ = commands.New("pub", &PubCmd{Client: client})
 		_ = commands.New("sub", &SubCmd{
+			Client: client,
 			output: cmdline.DefaultShell.Stdout(),
-			Client: &tt.Client{
-				Debug:        debug,
-				ShowSettings: showSettings,
-			},
 		})
 		_ = commands.New("srv", &SrvCmd{
 			Server: &tt.Server{

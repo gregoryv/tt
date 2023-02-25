@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/url"
 	"os"
 	"time"
 
@@ -15,20 +14,15 @@ import (
 )
 
 type PubCmd struct {
-	server *url.URL
+	timeout time.Duration
 
-	topic    string
-	payload  string
-	qos      uint8
-	timeout  time.Duration
+	topic   string
+	payload string
+	qos     uint8
+
 	clientID string
-
 	username string
 	password string
-
-	showSettings bool
-
-	debug bool
 
 	*tt.Client
 }
