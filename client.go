@@ -45,7 +45,8 @@ type Client struct {
 
 	transmit Handler // set by Run and used in Send
 
-	app chan interface{}
+	appPackets chan mq.Packet
+	appEvents  chan Event
 }
 
 func (c *Client) setDefaults() {
@@ -69,10 +70,11 @@ func (c *Client) setDefaults() {
 
 // Start returns a channel where client pushes incoming packets or
 // events.
-func (c *Client) Start(ctx context.Context) <-chan interface{} {
-	c.app = make(chan interface{}, 1)
+func (c *Client) Start(ctx context.Context) (onPacket <-chan mq.Packet, onEvent <-chan Event) {
+	c.appPackets = make(chan mq.Packet, 1)
+	c.appEvents = make(chan Event, 1)
 	go c.run(ctx)
-	return c.app
+	return c.appPackets, c.appEvents
 }
 
 func (c *Client) Run(ctx context.Context) error {
@@ -82,7 +84,7 @@ func (c *Client) Run(ctx context.Context) error {
 func (c *Client) run(ctx context.Context) error {
 	c.once.Do(c.setDefaults)
 
-	if c.app != nil && c.OnPacket != nil {
+	if c.appPackets != nil && c.OnPacket != nil {
 		return fmt.Errorf("cannot set bot OnPacket and using channel")
 	}
 
@@ -194,17 +196,17 @@ func (c *Client) run(ctx context.Context) error {
 		if c.OnPacket != nil {
 			c.OnPacket(ctx, c, p)
 		}
-		if c.app != nil {
-			c.app <- EventClientUp
+		if c.appPackets != nil {
+			c.appPackets <- p
 		}
 		return nil
 	}, conn)
 
-	if c.app != nil {
-		c.app <- EventClientUp
-	}
 	if c.OnEvent != nil {
 		c.OnEvent(ctx, c, EventClientUp)
+	}
+	if c.appEvents != nil {
+		c.appEvents <- EventClientUp
 	}
 	return recv.Run(ctx)
 }
