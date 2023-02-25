@@ -34,9 +34,6 @@ type Client struct {
 	// optional handler for client events
 	OnEvent func(context.Context, *Client, Event) `json:"-"`
 
-	// optional ping interval for keeping connection alive, wip remove, part of mq.Connect
-	KeepAlive time.Duration
-
 	// show settings once client runs
 	ShowSettings bool
 
@@ -87,7 +84,7 @@ func (c *Client) Run(ctx context.Context) error {
 
 	// pool of packet ids for reuse
 	pool := newIDPool(c.MaxPacketID)
-	ping := newKeepAlive(c.KeepAlive)
+	ping := newKeepAlive()
 
 	var m sync.Mutex
 	c.transmit = func(ctx context.Context, p mq.Packet) error {
@@ -305,9 +302,8 @@ var ErrIDPoolEmpty = fmt.Errorf("no available packet ids")
 
 // sending pings within the given interval. The interval is rounded to
 // seconds.
-func newKeepAlive(interval time.Duration) *keepAlive {
+func newKeepAlive() *keepAlive {
 	return &keepAlive{
-		interval:   interval,
 		packetSent: make(chan struct{}, 1),
 	}
 }
