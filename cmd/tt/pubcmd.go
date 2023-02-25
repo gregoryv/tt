@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 )
 
 type PubCmd struct {
+	shared opts
+
 	timeout time.Duration
 
 	topic   string
@@ -24,11 +27,11 @@ type PubCmd struct {
 	username string
 	password string
 
-	*tt.Client
+	server *url.URL
 }
 
 func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
-	c.Client.Server = cli.Option("-s, --server").Url("tcp://localhost:1883")
+	c.server = cli.Option("-s, --server").Url("tcp://localhost:1883")
 	c.clientID = cli.Option("-c, --client-id").String("ttpub")
 	c.topic = cli.Option("-t, --topic-name").String("gopher/pink")
 	c.payload = cli.Option("-p, --payload").String("hug")
@@ -46,7 +49,9 @@ func (c *PubCmd) Run(ctx context.Context) error {
 
 	var pubErr error // wip I don't like this solution
 
-	client := c.Client
+	client := &tt.Client{
+		Debug: c.shared.Debug,
+	}
 
 	client.MaxPacketID = 10
 	client.Logger = log.New(os.Stderr, c.clientID+" ", log.Flags())

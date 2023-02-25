@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/url"
 	"os"
 	"time"
 
@@ -14,16 +15,18 @@ import (
 )
 
 type SubCmd struct {
+	shared opts
+
 	output      io.Writer
 	clientID    string
 	topicFilter string
 	keepAlive   time.Duration
 
-	*tt.Client
+	server *url.URL
 }
 
 func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
-	c.Client.Server = cli.Option("-s, --server").Url("tcp://localhost:1883")
+	c.server = cli.Option("-s, --server").Url("tcp://localhost:1883")
 	c.clientID = cli.Option("-c, --client-id").String("ttsub")
 	c.topicFilter = cli.Option("-t, --topic-filter").String("#")
 	c.keepAlive = cli.Option("-k, --keep-alive", "disable with 0").Duration("10s")
@@ -32,9 +35,12 @@ func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 func (c *SubCmd) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 
-	client := c.Client
-	client.MaxPacketID = 10
-	client.Logger = log.New(os.Stderr, c.clientID+" ", log.Flags())
+	client := &tt.Client{
+		Debug:        c.shared.Debug,
+		ShowSettings: c.shared.ShowSettings,
+		MaxPacketID:  10,
+		Logger:       log.New(os.Stderr, c.clientID+" ", log.Flags()),
+	}
 
 	client.OnPacket = func(ctx context.Context, client *tt.Client, p mq.Packet) {
 		switch p := p.(type) {

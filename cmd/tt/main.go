@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/gregoryv/cmdline"
-	"github.com/gregoryv/tt"
 )
 
 func main() {
@@ -21,28 +20,17 @@ func main() {
 	var (
 		cli = cmdline.NewBasicParser()
 		// shared options
-		debug        = cli.Flag("-d, --debug")
-		logTimestamp = cli.Flag("-T, --log-timestamp")
-		showSettings = cli.Flag("-S, --show-settings")
-
-		// wip do not create client or server until we know which one
-		// user selected, ie. move it to Run
-		commands = cli.Group("Commands", "COMMAND")
-		client   = &tt.Client{
-			Debug:        debug,
-			ShowSettings: showSettings,
+		shared = opts{
+			Debug:        cli.Flag("-d, --debug"),
+			LogTimestamp: cli.Flag("-T, --log-timestamp"),
+			ShowSettings: cli.Flag("-S, --show-settings"),
 		}
-		_ = commands.New("pub", &PubCmd{Client: client})
-		_ = commands.New("sub", &SubCmd{
-			Client: client,
-			output: os.Stdout,
-		})
-		_ = commands.New("srv", &SrvCmd{
-			Server: &tt.Server{
-				Debug:        debug,
-				ShowSettings: showSettings,
-			},
-		})
+
+		commands = cli.Group("Commands", "COMMAND")
+
+		_ = commands.New("pub", &PubCmd{shared: shared})
+		_ = commands.New("sub", &SubCmd{shared: shared})
+		_ = commands.New("srv", &SrvCmd{shared: shared})
 
 		cmd = commands.Selected()
 	)
@@ -52,12 +40,19 @@ func main() {
 	)
 	cli.Parse()
 
-	if logTimestamp {
-		log.SetFlags(log.Flags() | log.LstdFlags)
+	if shared.LogTimestamp {
+		log.SetFlags(log.LstdFlags)
 	}
 	if err := runCommand(cmd.(Command)); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// shared
+type opts struct {
+	Debug        bool
+	LogTimestamp bool
+	ShowSettings bool
 }
 
 func runCommand(command Command) (err error) {

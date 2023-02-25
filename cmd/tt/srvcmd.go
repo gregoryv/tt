@@ -1,32 +1,32 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/tt"
 )
 
 type SrvCmd struct {
-	*tt.Server
+	shared opts
+	tt.Bind
+	ConnectTimeout time.Duration
 }
 
 func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
-	c.Server.Logger = log.New(os.Stderr, "ttsrv ", log.Flags())
+	c.Bind.URL = cli.Option("-b, --bind-tcp, $TT_BIND_TCP").Url("tcp://localhost:").String()
+	c.Bind.AcceptTimeout = cli.Option("-a, --accept-timeout").Duration("500ms").String()
+	c.ConnectTimeout = cli.Option("--connect-timeout").Duration("200ms")
+}
 
-	var b tt.Bind
-	{
-		v := cli.Option("-b, --bind-tcp, $TT_BIND_TCP").Url("tcp://localhost:")
-		b.URL = v.String()
+func (c *SrvCmd) Run(ctx context.Context) error {
+	s := &tt.Server{
+		Logger:         log.New(os.Stderr, "ttsrv ", log.Flags()),
+		ConnectTimeout: c.ConnectTimeout,
 	}
-	{
-		v := cli.Option("-a, --accept-timeout").Duration("500ms")
-		b.AcceptTimeout = v.String()
-	}
-	c.Server.Binds = append(c.Server.Binds, &b)
-
-	// Server settings
-	// indent only long option variation for alignement in help output
-	c.ConnectTimeout = cli.Option("    --connect-timeout").Duration("200ms")
+	s.Binds = append(s.Binds, &c.Bind)
+	return s.Run(ctx)
 }
