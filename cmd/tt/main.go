@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/gregoryv/cmdline"
 )
@@ -38,7 +37,26 @@ func main() {
 	if shared.LogTimestamp {
 		log.SetFlags(log.LstdFlags)
 	}
-	if err := runCommand(cmd.(Command)); err != nil {
+
+	// Run command in the background so we can interrupt it
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// handle interrupt gracefully
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	go func() {
+		s := <-c
+		fmt.Fprintln(os.Stderr, s)
+		switch s {
+		case os.Kill:
+			os.Exit(1)
+		case os.Interrupt:
+			cancel()
+			return
+		}
+	}()
+	err := cmd.(Command).Run(ctx)
+	if err != nil && !errors.Is(err, context.Canceled) {
 		log.Fatal(err)
 	}
 }
@@ -48,43 +66,6 @@ type opts struct {
 	Debug        bool
 	LogTimestamp bool
 	ShowSettings bool
-}
-
-func runCommand(cmd Command) (err error) {
-	intsig := make(chan os.Signal, 1)
-	killsig := make(chan os.Signal, 1)
-	signal.Notify(intsig, os.Interrupt)
-	signal.Notify(killsig, os.Kill)
-
-	// closed when command execution returns
-	done := make(chan struct{})
-
-	// Run command in the background so we can interrupt it
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		defer close(done)
-		// note that the outer err is set here
-		if err = cmd.Run(ctx); err != nil {
-			if errors.Is(err, context.Canceled) {
-				err = nil
-			}
-		}
-	}()
-
-	// Handle interruptions gracefully
-	select {
-	case <-done:
-		cancel()
-
-	case <-killsig:
-		return fmt.Errorf("killed")
-
-	case <-intsig:
-		// this is ok
-		cancel()
-		<-time.After(time.Millisecond)
-	}
-	return
 }
 
 type Command interface {
