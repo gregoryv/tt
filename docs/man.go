@@ -130,19 +130,21 @@ func Manual() *Element {
 
 			Pre(Class("cmd"), must(exec.Command("tt", "srv", "-b", "tcp://localhost:9983"))),
 
-			H2("Full features"),
-			H3("pub-sub sequence"),
+			H2("Quality of Service levels and protocol flows"),
+
+			P(`This section illustrates flows using tt client and server as specified in `,
+				ref("_Toc3901234", "4.3"),
+			),
+
+			H3("QoS 0: At most once deliveryQoS 0"),
 
 			P(`Clients connect to the same server. First client
             subscribes to topic filter gopher/+, and second publishes
             a message to topic name gopher/pink. Log messages are
-            grouped for clarity. See `,
-				A(
-					Href("https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Message_delivery_retry"),
-					"4.4 Message delivery retry wip ",
-				),
+            grouped for clarity.`,
+				ref("_Toc3901235", "4.3.1"),
 			),
-			Pre(Class("cmd"), func() interface{} {
+			func() interface{} {
 				var buf, a, b bytes.Buffer
 				server := "tcp://localhost:9983"
 				{ // start server
@@ -176,14 +178,15 @@ func Manual() *Element {
 						log.Println(cmd, err)
 					}
 				}
-				return Wrap(&buf, "\n", &a, "\n", &b)
-			}()),
+				return Pre(Class("cmd"), buf.String(), "\n", a.String(), "\n", b.String())
+
+			}(),
 			//
 
 			H3("ping pong"),
 
 			P(`Server responds to ping requests.`),
-			Pre(Class("cmd"), func() interface{} {
+			func() interface{} {
 				var buf, a bytes.Buffer
 				server := "tcp://localhost:9983"
 				{ // start server
@@ -208,8 +211,8 @@ func Manual() *Element {
 					<-time.After(2 * time.Second)
 					defer cmd.Process.Signal(os.Interrupt)
 				}
-				return Wrap(&buf, "\n", &a, "\n")
-			}()),
+				return Pre(Class("cmd"), buf.String(), "\n", a.String())
+			}(),
 		),
 	)
 	// must link these first as the words are part in secondary links
@@ -296,4 +299,12 @@ func must(cmd *exec.Cmd) interface{} {
 	}
 
 	return buf.String()
+}
+
+// ref returns a link to the specification
+func ref(toc, label string) *Element {
+	return A(
+		Href("https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#"+toc),
+		label,
+	)
 }
