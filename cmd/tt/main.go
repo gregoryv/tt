@@ -53,13 +53,13 @@ func main() {
 		log.SetFlags(log.Flags() | log.LstdFlags)
 	}
 	// run the selected command
-	if err := runCommand(cmd); err != nil {
+	if err := runCommand(cmd.(Command)); err != nil {
 		// using DefaultShell.Fatal so we can verify the behavior
 		cmdline.DefaultShell.Fatal(err)
 	}
 }
 
-func runCommand(command any) (err error) {
+func runCommand(command Command) (err error) {
 	if command == nil {
 		return fmt.Errorf("empty command")
 	}
