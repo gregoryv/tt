@@ -26,6 +26,7 @@ type SubCmd struct {
 }
 
 func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
+	c.output = os.Stdout
 	c.server = cli.Option("-s, --server").Url("tcp://localhost:1883")
 	c.clientID = cli.Option("-c, --client-id").String("ttsub")
 	c.topicFilter = cli.Option("-t, --topic-filter").String("#")
@@ -36,6 +37,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 
 	client := &tt.Client{
+		Server:       c.server,
 		Debug:        c.shared.Debug,
 		ShowSettings: c.shared.ShowSettings,
 		MaxPacketID:  10,

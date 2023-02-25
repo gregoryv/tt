@@ -50,11 +50,11 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	var pubErr error // wip I don't like this solution
 
 	client := &tt.Client{
-		Debug: c.shared.Debug,
+		Server:      c.server,
+		Debug:       c.shared.Debug,
+		MaxPacketID: 10,
+		Logger:      log.New(os.Stderr, c.clientID+" ", log.Flags()),
 	}
-
-	client.MaxPacketID = 10
-	client.Logger = log.New(os.Stderr, c.clientID+" ", log.Flags())
 
 	client.OnPacket = func(ctx context.Context, client *tt.Client, p mq.Packet) {
 		switch p := p.(type) {
