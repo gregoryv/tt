@@ -34,7 +34,7 @@ type Client struct {
 	// optional handler for client events
 	OnEvent func(context.Context, *Client, Event) `json:"-"`
 
-	// optional ping interval for keeping connection alive
+	// optional ping interval for keeping connection alive, wip remove, part of mq.Connect
 	KeepAlive time.Duration
 
 	// show settings once client runs

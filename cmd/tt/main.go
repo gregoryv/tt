@@ -31,9 +31,11 @@ func main() {
 			showSettings: showSettings,
 		})
 		_ = commands.New("sub", &SubCmd{
-			debug:        debug,
-			output:       cmdline.DefaultShell.Stdout(),
-			showSettings: showSettings,
+			output: cmdline.DefaultShell.Stdout(),
+			Client: &tt.Client{
+				Debug:        debug,
+				ShowSettings: showSettings,
+			},
 		})
 		_ = commands.New("srv", &SrvCmd{
 			Server: &tt.Server{
