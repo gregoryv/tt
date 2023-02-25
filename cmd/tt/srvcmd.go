@@ -9,13 +9,10 @@ import (
 )
 
 type SrvCmd struct {
-	debug bool
-
 	*tt.Server
 }
 
 func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
-	c.Server.Debug = c.debug
 	c.Server.Logger = log.New(os.Stderr, "ttsrv ", log.Flags())
 
 	var b tt.Bind

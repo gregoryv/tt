@@ -36,8 +36,8 @@ func main() {
 			showSettings: showSettings,
 		})
 		_ = commands.New("srv", &SrvCmd{
-			debug: debug,
 			Server: &tt.Server{
+				Debug:        debug,
 				ShowSettings: showSettings,
 			},
 		})
