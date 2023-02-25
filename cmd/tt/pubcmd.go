@@ -29,10 +29,12 @@ type PubCmd struct {
 	showSettings bool
 
 	debug bool
+
+	*tt.Client
 }
 
 func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
-	c.server = cli.Option("-s, --server").Url("tcp://localhost:1883")
+	c.Client.Server = cli.Option("-s, --server").Url("tcp://localhost:1883")
 	c.clientID = cli.Option("-c, --client-id").String("ttpub")
 	c.topic = cli.Option("-t, --topic-name").String("gopher/pink")
 	c.payload = cli.Option("-p, --payload").String("hug")
@@ -50,56 +52,53 @@ func (c *PubCmd) Run(ctx context.Context) error {
 
 	var pubErr error // wip I don't like this solution
 
-	client := &tt.Client{
-		Server:       c.server,
-		Debug:        c.debug,
-		MaxPacketID:  10,
-		ShowSettings: c.showSettings,
-		Logger:       log.New(os.Stderr, c.clientID+" ", log.Flags()),
+	client := c.Client
 
-		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {
-			switch p := p.(type) {
-			case *mq.ConnAck:
+	client.MaxPacketID = 10
+	client.Logger = log.New(os.Stderr, c.clientID+" ", log.Flags())
 
-				switch p.ReasonCode() {
-				case mq.Success: // we've connected successfully
-					m := mq.Pub(c.qos, c.topic, c.payload)
-					if err := client.Send(ctx, m); err != nil {
-						pubErr = err
-						cancel()
-					}
-					if c.qos == 0 {
-						_ = client.Send(ctx, mq.NewDisconnect())
-					}
+	client.OnPacket = func(ctx context.Context, client *tt.Client, p mq.Packet) {
+		switch p := p.(type) {
+		case *mq.ConnAck:
 
-				default:
-					pubErr = fmt.Errorf(p.ReasonString())
+			switch p.ReasonCode() {
+			case mq.Success: // we've connected successfully
+				m := mq.Pub(c.qos, c.topic, c.payload)
+				if err := client.Send(ctx, m); err != nil {
+					pubErr = err
 					cancel()
 				}
-
-			case *mq.PubAck:
-				_ = client.Send(ctx, mq.NewDisconnect())
+				if c.qos == 0 {
+					_ = client.Send(ctx, mq.NewDisconnect())
+				}
 
 			default:
-				pubErr = fmt.Errorf("received unexpected packet")
+				pubErr = fmt.Errorf(p.ReasonString())
 				cancel()
 			}
-		},
 
-		OnEvent: func(ctx context.Context, client *tt.Client, e tt.Event) {
-			switch e {
-			case tt.EventClientUp:
-				// connect
-				p := mq.NewConnect()
-				p.SetClientID(c.clientID)
-				p.SetCleanStart(true)
-				if c.username != "" {
-					p.SetUsername(c.username)
-					p.SetPassword([]byte(c.password))
-				}
-				_ = client.Send(ctx, p)
+		case *mq.PubAck:
+			_ = client.Send(ctx, mq.NewDisconnect())
+
+		default:
+			pubErr = fmt.Errorf("received unexpected packet")
+			cancel()
+		}
+	}
+
+	client.OnEvent = func(ctx context.Context, client *tt.Client, e tt.Event) {
+		switch e {
+		case tt.EventClientUp:
+			// connect
+			p := mq.NewConnect()
+			p.SetClientID(c.clientID)
+			p.SetCleanStart(true)
+			if c.username != "" {
+				p.SetUsername(c.username)
+				p.SetPassword([]byte(c.password))
 			}
-		},
+			_ = client.Send(ctx, p)
+		}
 	}
 
 	if err := client.Run(ctx); err != nil {

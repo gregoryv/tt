@@ -27,8 +27,10 @@ func main() {
 		commands = cli.Group("Commands", "COMMAND")
 
 		_ = commands.New("pub", &PubCmd{
-			debug:        debug,
-			showSettings: showSettings,
+			Client: &tt.Client{
+				Debug:        debug,
+				ShowSettings: showSettings,
+			},
 		})
 		_ = commands.New("sub", &SubCmd{
 			output: cmdline.DefaultShell.Stdout(),
