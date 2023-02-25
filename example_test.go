@@ -2,7 +2,6 @@ package tt_test
 
 import (
 	"context"
-	"log"
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
@@ -12,13 +11,23 @@ import (
 // disconnect.
 func Example_client() {
 	client := &tt.Client{
-		Server:   "tcp://localhost:1883",
-		OnPacket: onPacket,
-		OnEvent:  onEvent,
+		Server: "tcp://localhost:1883",
 	}
 
-	if err := client.Run(context.Background()); err != nil {
-		log.Fatal(err)
+	ctx := context.Background()
+	packets, events := client.Start(ctx)
+
+	for {
+		select {
+		case p := <-packets:
+			onPacket(ctx, client, p)
+
+		case e := <-events:
+			onEvent(ctx, client, e)
+
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 
