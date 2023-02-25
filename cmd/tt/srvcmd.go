@@ -24,9 +24,12 @@ func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 
 func (c *SrvCmd) Run(ctx context.Context) error {
 	s := &tt.Server{
+		Debug:        c.shared.Debug,
+		ShowSettings: c.shared.ShowSettings,
+
 		Logger:         log.New(os.Stderr, "ttsrv ", log.Flags()),
 		ConnectTimeout: c.ConnectTimeout,
+		Binds:          []*tt.Bind{&c.Bind},
 	}
-	s.Binds = append(s.Binds, &c.Bind)
 	return s.Run(ctx)
 }
