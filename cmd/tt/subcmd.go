@@ -38,6 +38,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		Server:      c.server,
 		Debug:       c.debug,
 		MaxPacketID: 10,
+		KeepAlive:   c.keepAlive,
 		Logger:      log.New(os.Stderr, c.clientID+" ", log.Flags()),
 
 		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {

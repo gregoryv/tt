@@ -32,6 +32,9 @@ type Client struct {
 	// optional handler for client events
 	OnEvent func(context.Context, *Client, Event)
 
+	// optional ping interval for keeping connection alive
+	KeepAlive time.Duration
+
 	// for setting defaults
 	once sync.Once
 
@@ -56,10 +59,11 @@ func (c *Client) Run(ctx context.Context) error {
 
 	ctx, cancel := context.WithCancel(ctx)
 
-	debug := c.Debug
-	pingInterval := 30 * time.Second
-	maxIDLen := uint(11)
 	log := c.Logger
+	debug := c.Debug
+	log.Println("debug", debug)
+
+	maxIDLen := uint(11)
 
 	// dial server
 	host := c.Server.Host
@@ -71,8 +75,8 @@ func (c *Client) Run(ctx context.Context) error {
 
 	// pool of packet ids for reuse
 	pool := newIDPool(c.MaxPacketID)
-	keepAlive := newKeepAlive(pingInterval)
-	go keepAlive.run(ctx)
+	keepAlive := newKeepAlive(c.KeepAlive)
+	log.Println("KeepAlive", c.KeepAlive)
 
 	var m sync.Mutex
 	c.transmit = func(ctx context.Context, p mq.Packet) error {
@@ -91,7 +95,7 @@ func (c *Client) Run(ctx context.Context) error {
 		case *mq.Connect:
 			log.SetPrefix(trimID(p.ClientID(), maxIDLen) + " ")
 			if v := p.KeepAlive(); v > 0 {
-				keepAlive.interval = v
+				keepAlive.SetInterval(v)
 			}
 		}
 
@@ -110,6 +114,7 @@ func (c *Client) Run(ctx context.Context) error {
 		return nil
 	}
 	keepAlive.transmit = c.transmit
+	go keepAlive.run(ctx)
 
 	recv := newReceiver(func(ctx context.Context, p mq.Packet) error {
 		// set log prefix if client was assigned an id
@@ -140,7 +145,7 @@ func (c *Client) Run(ctx context.Context) error {
 		case *mq.ConnAck:
 			// keep alive as the server instructs
 			if v := p.ServerKeepAlive(); v > 0 {
-				keepAlive.interval = v
+				keepAlive.SetInterval(v)
 			}
 
 		case *mq.Publish:
@@ -288,12 +293,11 @@ func (o *iDPool) next(ctx context.Context) (uint16, error) {
 
 var ErrIDPoolEmpty = fmt.Errorf("no available packet ids")
 
-// NewKeepAlive returns a middleware which keeps connection alive by
 // sending pings within the given interval. The interval is rounded to
 // seconds.
 func newKeepAlive(interval time.Duration) *keepAlive {
 	return &keepAlive{
-		interval:   uint16(interval.Seconds()),
+		interval:   interval,
 		tick:       time.NewTicker(time.Second),
 		packetSent: make(chan struct{}, 1),
 	}
@@ -301,19 +305,18 @@ func newKeepAlive(interval time.Duration) *keepAlive {
 
 // keepAlive implements client logic for keeping connection alive.
 //
-// See [3.1.2.10 Keep Alive]
-//
-// [3.1.2.10 Keep Alive]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Keep_Alive_1
+// See 3.1.2.10 Keep Alive
 type keepAlive struct {
 	transmit Handler
-	interval uint16 // seconds
+	interval time.Duration
 	tick     *time.Ticker
 
-	packetSent   chan struct{}
-	disconnected chan struct{}
+	packetSent chan struct{}
 }
 
-func (k *keepAlive) SetTransmitter(v Handler) { k.transmit = v }
+func (k *keepAlive) SetInterval(v uint16) {
+	k.interval = time.Duration(v) * time.Second
+}
 
 func (k *keepAlive) run(ctx context.Context) {
 	last := time.Now()
@@ -327,8 +330,7 @@ func (k *keepAlive) run(ctx context.Context) {
 			last = time.Now()
 
 		case <-k.tick.C:
-			// check if its time to send a ping
-			if time.Since(last).Round(time.Second) == time.Duration(k.interval)*time.Second-time.Second {
+			if k.interval != 0 && time.Since(last) > k.interval {
 				k.transmit(ctx, mq.NewPingReq())
 			}
 		}
