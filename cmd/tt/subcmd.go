@@ -22,6 +22,8 @@ type SubCmd struct {
 	output      io.Writer
 
 	keepAlive time.Duration
+
+	showSettings bool
 }
 
 func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
@@ -35,11 +37,13 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 
 	client := &tt.Client{
-		Server:      c.server,
-		Debug:       c.debug,
-		MaxPacketID: 10,
-		KeepAlive:   c.keepAlive,
-		Logger:      log.New(os.Stderr, c.clientID+" ", log.Flags()),
+		Server:       c.server,
+		Debug:        c.debug,
+		MaxPacketID:  10,
+		KeepAlive:    c.keepAlive,
+		ShowSettings: c.showSettings,
+
+		Logger: log.New(os.Stderr, c.clientID+" ", log.Flags()),
 
 		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {
 			switch p := p.(type) {

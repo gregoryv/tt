@@ -20,15 +20,20 @@ func main() {
 	var (
 		cli = cmdline.NewBasicParser()
 		// shared options
-		debug        = cli.Flag("    --debug")
-		logTimestamp = cli.Flag("    --log-timestamp")
+		debug        = cli.Flag("-d, --debug")
+		logTimestamp = cli.Flag("-T, --log-timestamp")
+		showSettings = cli.Flag("-S, --show-settings")
 
 		commands = cli.Group("Commands", "COMMAND")
 
-		_ = commands.New("pub", &PubCmd{debug: debug})
+		_ = commands.New("pub", &PubCmd{
+			debug:        debug,
+			showSettings: showSettings,
+		})
 		_ = commands.New("sub", &SubCmd{
-			debug:  debug,
-			output: cmdline.DefaultShell.Stdout(),
+			debug:        debug,
+			output:       cmdline.DefaultShell.Stdout(),
+			showSettings: showSettings,
 		})
 		_ = commands.New("srv", &SrvCmd{
 			debug:  debug,

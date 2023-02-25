@@ -26,6 +26,8 @@ type PubCmd struct {
 	username string
 	password string
 
+	showSettings bool
+
 	debug bool
 }
 
@@ -49,10 +51,11 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	var pubErr error // wip I don't like this solution
 
 	client := &tt.Client{
-		Server:      c.server,
-		Debug:       c.debug,
-		MaxPacketID: 10,
-		Logger:      log.New(os.Stderr, c.clientID+" ", log.Flags()),
+		Server:       c.server,
+		Debug:        c.debug,
+		MaxPacketID:  10,
+		ShowSettings: c.showSettings,
+		Logger:       log.New(os.Stderr, c.clientID+" ", log.Flags()),
 
 		OnPacket: func(ctx context.Context, client *tt.Client, p mq.Packet) {
 			switch p := p.(type) {
