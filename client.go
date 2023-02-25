@@ -75,7 +75,7 @@ func (c *Client) Run(ctx context.Context) error {
 
 	// pool of packet ids for reuse
 	pool := newIDPool(c.MaxPacketID)
-	keepAlive := newKeepAlive(c.KeepAlive)
+	ping := newKeepAlive(c.KeepAlive)
 	log.Println("KeepAlive", c.KeepAlive)
 
 	var m sync.Mutex
@@ -95,7 +95,7 @@ func (c *Client) Run(ctx context.Context) error {
 		case *mq.Connect:
 			log.SetPrefix(trimID(p.ClientID(), maxIDLen) + " ")
 			if v := p.KeepAlive(); v > 0 {
-				keepAlive.SetInterval(v)
+				ping.SetInterval(v)
 			}
 		}
 
@@ -108,13 +108,12 @@ func (c *Client) Run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		// delay ping since we just send a packet
-		keepAlive.packetSent <- struct{}{}
+
+		ping.delay() // since we just send a packet
 
 		return nil
 	}
-	keepAlive.transmit = c.transmit
-	go keepAlive.run(ctx)
+	go ping.run(ctx, c.transmit)
 
 	recv := newReceiver(func(ctx context.Context, p mq.Packet) error {
 		// set log prefix if client was assigned an id
@@ -145,7 +144,7 @@ func (c *Client) Run(ctx context.Context) error {
 		case *mq.ConnAck:
 			// keep alive as the server instructs
 			if v := p.ServerKeepAlive(); v > 0 {
-				keepAlive.SetInterval(v)
+				ping.SetInterval(v)
 			}
 
 		case *mq.Publish:
@@ -298,7 +297,6 @@ var ErrIDPoolEmpty = fmt.Errorf("no available packet ids")
 func newKeepAlive(interval time.Duration) *keepAlive {
 	return &keepAlive{
 		interval:   interval,
-		tick:       time.NewTicker(time.Second),
 		packetSent: make(chan struct{}, 1),
 	}
 }
@@ -307,9 +305,7 @@ func newKeepAlive(interval time.Duration) *keepAlive {
 //
 // See 3.1.2.10 Keep Alive
 type keepAlive struct {
-	transmit Handler
 	interval time.Duration
-	tick     *time.Ticker
 
 	packetSent chan struct{}
 }
@@ -318,20 +314,25 @@ func (k *keepAlive) SetInterval(v uint16) {
 	k.interval = time.Duration(v) * time.Second
 }
 
-func (k *keepAlive) run(ctx context.Context) {
+func (k *keepAlive) delay() {
+	k.packetSent <- struct{}{}
+}
+
+func (k *keepAlive) run(ctx context.Context, transmit Handler) {
 	last := time.Now()
+	tick := time.NewTicker(time.Second)
 	for {
 		select {
 		case <-ctx.Done():
-			k.tick.Stop()
+			tick.Stop()
 			return
 
 		case <-k.packetSent:
 			last = time.Now()
 
-		case <-k.tick.C:
+		case <-tick.C:
 			if k.interval != 0 && time.Since(last) > k.interval {
-				k.transmit(ctx, mq.NewPingReq())
+				transmit(ctx, mq.NewPingReq())
 			}
 		}
 	}
