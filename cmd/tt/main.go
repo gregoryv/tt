@@ -55,19 +55,18 @@ func main() {
 			return
 		}
 	}()
-	err := cmd.(Command).Run(ctx)
+	err := cmd.(Runner).Run(ctx)
 	if err != nil && !errors.Is(err, context.Canceled) {
 		log.Fatal(err)
 	}
 }
 
-// shared
 type opts struct {
 	Debug        bool
 	LogTimestamp bool
 	ShowSettings bool
 }
 
-type Command interface {
+type Runner interface {
 	Run(context.Context) error
 }
