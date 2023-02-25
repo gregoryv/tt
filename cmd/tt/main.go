@@ -15,6 +15,7 @@ import (
 )
 
 func main() {
+	// allows cmdline options to configure log flags
 	log.SetFlags(0)
 
 	var (
@@ -24,6 +25,8 @@ func main() {
 		logTimestamp = cli.Flag("-T, --log-timestamp")
 		showSettings = cli.Flag("-S, --show-settings")
 
+		// wip do not create client or server until we know which one
+		// user selected, ie. move it to Run
 		commands = cli.Group("Commands", "COMMAND")
 		client   = &tt.Client{
 			Debug:        debug,
@@ -32,7 +35,7 @@ func main() {
 		_ = commands.New("pub", &PubCmd{Client: client})
 		_ = commands.New("sub", &SubCmd{
 			Client: client,
-			output: cmdline.DefaultShell.Stdout(),
+			output: os.Stdout,
 		})
 		_ = commands.New("srv", &SrvCmd{
 			Server: &tt.Server{
@@ -52,10 +55,8 @@ func main() {
 	if logTimestamp {
 		log.SetFlags(log.Flags() | log.LstdFlags)
 	}
-	// run the selected command
 	if err := runCommand(cmd.(Command)); err != nil {
-		// using DefaultShell.Fatal so we can verify the behavior
-		cmdline.DefaultShell.Fatal(err)
+		log.Fatal(err)
 	}
 }
 
