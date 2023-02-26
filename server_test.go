@@ -31,7 +31,7 @@ func Example_server() {
 		}
 
 		switch v.(type) {
-		case event.ServerDown:
+		case event.ServerStop:
 			cancel()
 		}
 	}

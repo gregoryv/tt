@@ -12,7 +12,14 @@ package event
 type ClientUp uint8
 type ClientConnect uint8
 type ClientConnectFail string
+
+// ClientStop indicates client has stopped
 type ClientStop uint8
 
+// ServerUp indicates server is listening for
 type ServerUp uint8
-type ServerDown uint8
+
+// ServerStop indicates server has stopped
+type ServerStop struct {
+	Err error
+}

@@ -82,15 +82,12 @@ func (s *Server) Start(ctx context.Context) <-chan interface{} {
 	s.app = make(chan interface{}, 1)
 	go func() {
 		if err := s.run(ctx); err != nil {
-			s.app <- event.ServerDown(0)
+			s.app <- event.ServerStop{err}
 		}
 	}()
 	return s.app
 }
 
-// Run listens for tcp connections. Blocks until context is cancelled.
-// Accepting new connection can only be interrupted if listener has
-// SetDeadline method.
 func (s *Server) run(ctx context.Context) error {
 	s.once.Do(s.setDefaults)
 

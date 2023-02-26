@@ -265,7 +265,7 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 		}
 
 		switch v.(type) {
-		case event.ServerDown:
+		case event.ServerStop:
 			cancel()
 		}
 	}
