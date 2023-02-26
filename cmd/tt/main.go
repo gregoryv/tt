@@ -226,7 +226,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		case *mq.Publish:
 			fmt.Fprintln(c.output, "PAYLOAD", string(v.Payload()))
 
-		case event.ClientDown:
+		case event.ClientStop:
 			cancel()
 		}
 	}

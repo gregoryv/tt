@@ -68,7 +68,7 @@ func (c *Client) Start(ctx context.Context) <-chan interface{} {
 	c.app = make(chan interface{}, 1)
 	go func() {
 		if err := c.run(ctx); err != nil {
-			c.app <- event.ClientDown(0)
+			c.app <- event.ClientStop(0)
 		}
 	}()
 	return c.app

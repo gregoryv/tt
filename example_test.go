@@ -39,7 +39,7 @@ func Example_client() {
 				_ = client.Send(ctx, p)
 			}
 
-		case event.ClientDown:
+		case event.ClientStop:
 			cancel()
 		}
 	}
