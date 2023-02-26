@@ -161,9 +161,16 @@ func (c *Client) run(ctx context.Context) error {
 
 		switch p := p.(type) {
 		case *mq.ConnAck:
-			// keep alive as the server instructs
-			if v := p.ServerKeepAlive(); v > 0 {
-				ping.SetInterval(v)
+			code := p.ReasonCode()
+			switch {
+			case code == mq.Success:
+				c.app <- event.ClientConnect(0)
+				// keep alive as the server instructs
+				if v := p.ServerKeepAlive(); v > 0 {
+					ping.SetInterval(v)
+				}
+			case code >= 0x80:
+				c.app <- event.ClientConnectFail(code.String())
 			}
 
 		case *mq.Publish:

@@ -135,22 +135,19 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			}
 			_ = client.Send(ctx, p)
 
-		case *mq.ConnAck:
-			switch v.ReasonCode() {
-			case mq.Success: // we've connected successfully
-				m := mq.Pub(c.qos, c.topic, c.payload)
-				if err := client.Send(ctx, m); err != nil {
-					return err
-				}
-				if c.qos == 0 {
-					_ = client.Send(ctx, mq.NewDisconnect())
-					cancel() // we are done
-				}
-
-			default:
-				cancel()
-				return fmt.Errorf(v.ReasonString())
+		case event.ClientConnect:
+			m := mq.Pub(c.qos, c.topic, c.payload)
+			if err := client.Send(ctx, m); err != nil {
+				return err
 			}
+			if c.qos == 0 {
+				_ = client.Send(ctx, mq.NewDisconnect())
+				cancel() // we are done
+			}
+
+		case event.ClientConnectFail:
+			cancel()
+			return fmt.Errorf(string(v))
 
 		case *mq.PubAck:
 			_ = client.Send(ctx, mq.NewDisconnect())
@@ -161,10 +158,6 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			if r := v.ReasonCode(); r > 0x80 {
 				return fmt.Errorf(v.String())
 			}
-
-		default:
-			cancel()
-			fmt.Errorf("got unexpected %v", v)
 		}
 	}
 }
