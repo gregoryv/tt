@@ -10,7 +10,10 @@ package event
 
 // ClientUp indicates client is ready for sending packets.
 type ClientUp uint8
+
+// ClientConnect indicates a successful ConnAck
 type ClientConnect uint8
+
 type ClientConnectFail string
 
 // ClientStop indicates client has stopped
