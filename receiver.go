@@ -43,7 +43,6 @@ func (r *receiver) Run(ctx context.Context) error {
 			}
 			return err
 		}
-		// ignore errors here, errors from handlers should never stop the receiver
-		_ = r.handle(ctx, p)
+		r.handle(ctx, p)
 	}
 }

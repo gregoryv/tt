@@ -43,7 +43,7 @@ type Client struct {
 	// optional logger, leave empty for no logging
 	*log.Logger `json:-`
 
-	transmit Handler // set by Run and used in Send
+	transmit func(ctx context.Context, p mq.Packet) error // set by Run and used in Send
 
 	appPackets chan mq.Packet
 	appEvents  chan Event
@@ -146,7 +146,7 @@ func (c *Client) run(ctx context.Context) error {
 	}
 	go ping.run(ctx, c.transmit)
 
-	recv := newReceiver(func(ctx context.Context, p mq.Packet) error {
+	recv := newReceiver(func(ctx context.Context, p mq.Packet) {
 		// set log prefix if client was assigned an id
 		if p, ok := p.(*mq.ConnAck); ok {
 			if v := p.AssignedClientID(); v != "" {
@@ -161,8 +161,7 @@ func (c *Client) run(ctx context.Context) error {
 			if err := p.WellFormed(); err != nil {
 				d := mq.NewDisconnect()
 				d.SetReasonCode(mq.MalformedPacket)
-				c.transmit(ctx, d)
-				return err
+				_ = c.transmit(ctx, d)
 			}
 		}
 
@@ -184,11 +183,9 @@ func (c *Client) run(ctx context.Context) error {
 			case 1:
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
-				if err := c.transmit(ctx, ack); err != nil {
-					return err
-				}
+				_ = c.transmit(ctx, ack)
 			case 2:
-				return fmt.Errorf("got QoS 2: unsupported ") // todo
+				log.Print(fmt.Errorf("got QoS 2: unsupported ")) // todo disconnect them
 			}
 		}
 
@@ -199,7 +196,6 @@ func (c *Client) run(ctx context.Context) error {
 		if c.appPackets != nil {
 			c.appPackets <- p
 		}
-		return nil
 	}, conn)
 
 	if c.OnEvent != nil {
@@ -243,17 +239,6 @@ type iDPool struct {
 	values      chan uint16
 }
 
-// In checks if incoming packet has a packet ID, if so it's
-// returned to the pool before next handler is called.
-func (o *iDPool) In(next Handler) Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		if p, ok := p.(mq.HasPacketID); ok {
-			_ = o.reuse(p.PacketID())
-		}
-		return next(ctx, p)
-	}
-}
-
 // reuse returns the given value to the pool, returns the reused value
 // or 0 if ignored
 func (o *iDPool) reuse(v uint16) uint16 {
@@ -269,16 +254,6 @@ func (o *iDPool) reuse(v uint16) uint16 {
 }
 
 var zero = time.Time{}
-
-// Out on outgoing packets, refs MQTT-2.2.1-3
-func (o *iDPool) Out(next Handler) Handler {
-	return func(ctx context.Context, p mq.Packet) error {
-		if err := o.SetPacketID(ctx, p); err != nil {
-			return err
-		}
-		return next(ctx, p)
-	}
-}
 
 func (o *iDPool) SetPacketID(ctx context.Context, p mq.Packet) error {
 	if p, ok := p.(mq.HasPacketID); ok {
@@ -354,7 +329,7 @@ func (k *keepAlive) delay() {
 	k.packetSent <- struct{}{}
 }
 
-func (k *keepAlive) run(ctx context.Context, transmit Handler) {
+func (k *keepAlive) run(ctx context.Context, transmit errHandler) {
 	last := time.Now()
 	tick := time.NewTicker(time.Second)
 	for {

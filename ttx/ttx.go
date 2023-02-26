@@ -9,8 +9,9 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-func NoopHandler(_ context.Context, _ mq.Packet) error { return nil }
-func NoopPub(_ context.Context, _ *mq.Publish) error   { return nil }
+func NoopHandler(_ context.Context, _ mq.Packet) {}
+
+func NoopPub(_ context.Context, _ *mq.Publish) error { return nil }
 
 func NewCalled() *Called {
 	return &Called{
@@ -22,13 +23,12 @@ type Called struct {
 	c chan struct{}
 }
 
-func (c *Called) Handler(_ context.Context, _ mq.ControlPacket) error {
+func (c *Called) Handler(_ context.Context, _ mq.ControlPacket) {
 	defer func() {
 		// close may panic, just ignore it
 		_ = recover()
 	}()
 	close(c.c)
-	return nil
 }
 
 func (c *Called) Done() <-chan struct{} {

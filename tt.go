@@ -10,7 +10,8 @@ import (
 )
 
 // Handler handles a mqtt control packet
-type Handler func(context.Context, mq.Packet) error
+type Handler func(context.Context, mq.Packet)
+type errHandler func(context.Context, mq.Packet) error
 
 func dump(debug bool, p mq.Packet) string {
 	if !debug {

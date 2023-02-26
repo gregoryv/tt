@@ -2,16 +2,9 @@ package ttx
 
 import "testing"
 
-func Test_NoopPub(t *testing.T) {
-	if err := NoopPub(nil, nil); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func Test_NoopHandler(t *testing.T) {
-	if err := NoopHandler(nil, nil); err != nil {
-		t.Fatal(err)
-	}
+func Test_Noops(t *testing.T) {
+	NoopPub(nil, nil)
+	NoopHandler(nil, nil)
 }
 
 func TestCalled(t *testing.T) {

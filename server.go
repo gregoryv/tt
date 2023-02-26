@@ -175,7 +175,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 		return nil
 	}
 
-	in := func(ctx context.Context, p mq.Packet) error {
+	in := func(ctx context.Context, p mq.Packet) {
 		switch p := p.(type) {
 		case *mq.Connect:
 			// generate a client id before any logging
@@ -192,7 +192,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 			if err := p.WellFormed(); err != nil {
 				d := mq.NewDisconnect()
 				d.SetReasonCode(mq.MalformedPacket)
-				return transmit(ctx, d)
+				_ = transmit(ctx, d)
 			}
 		}
 
@@ -200,15 +200,14 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 		case *mq.PingReq:
 			// 3.12.4-1 The Server MUST send a PINGRESP packet in
 			// response to a PINGREQ packet
-			return transmit(ctx, mq.NewPingResp())
+			_ = transmit(ctx, mq.NewPingResp())
 
 		case *mq.Connect:
 			a := mq.NewConnAck()
 			if p.ClientID() == "" {
 				a.SetAssignedClientID(clientID)
 			}
-
-			return transmit(ctx, a)
+			_ = transmit(ctx, a)
 
 		case *mq.Subscribe:
 			a := mq.NewSubAck()
@@ -218,12 +217,12 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 				if err != nil {
 					p := mq.NewDisconnect()
 					p.SetReasonCode(mq.MalformedPacket)
-					transmit(ctx, p)
-					return nil
+					_ = transmit(ctx, p)
 				}
 
 				r := newSubscription(tf, func(ctx context.Context, p *mq.Publish) error {
 					return transmit(ctx, p)
+
 				})
 				s.router.AddRoute(r)
 				// todo Subscribe.WellFormed fails if for any reason, though
@@ -231,9 +230,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 				// 3.9.3 SUBACK Payload
 				a.AddReasonCode(mq.Success)
 			}
-			if err := transmit(ctx, a); err != nil {
-				return err
-			}
+			_ = transmit(ctx, a)
 
 		case *mq.Publish:
 			// Disconnect any attempts to publish exceeding qos.
@@ -241,26 +238,25 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 			if p.QoS() > maxQoS {
 				d := mq.NewDisconnect()
 				d.SetReasonCode(mq.QoSNotSupported)
-				return transmit(ctx, d)
+				_ = transmit(ctx, d)
 			}
 
 			switch p.QoS() {
 			case 0:
-				return s.router.Handle(ctx, p)
+				_ = s.router.Handle(ctx, p)
 			case 1:
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
 				_ = s.router.Handle(ctx, p)
-				return transmit(ctx, ack)
+				_ = transmit(ctx, ack)
 
 			case 2: // wip implement server support for QoS 2
 
 			}
 
 		case *mq.Disconnect:
-			return conn.Close()
+			_ = conn.Close()
 		}
-		return nil
 	}
 
 	// ignore error here, the connection is done
