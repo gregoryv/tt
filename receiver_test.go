@@ -40,7 +40,7 @@ func Test_receiver(t *testing.T) {
 		defer conn.Close()
 
 		recv := newReceiver(nil, conn)
-		recv.readTimeout = time.Microsecond // speedup
+		recv.deadline = time.Microsecond // speedup
 
 		ctx, cancel := context.WithCancel(context.Background())
 		time.AfterFunc(2*time.Microsecond, cancel)
