@@ -14,7 +14,9 @@ type ClientConnect uint8
 type ClientConnectFail string
 
 // ClientStop indicates client has stopped
-type ClientStop uint8
+type ClientStop struct {
+	Err error
+}
 
 // ServerUp indicates server is listening for
 type ServerUp uint8
