@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"net/url"
 	"os"
 	"os/signal"
@@ -106,10 +105,6 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *PubCmd) Run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
-
-	var pubErr error // wip I don't like this solution
-
 	client := &tt.Client{
 		Server:       c.server.String(),
 		Debug:        c.shared.Debug,
@@ -118,56 +113,55 @@ func (c *PubCmd) Run(ctx context.Context) error {
 		Logger:       log.New(os.Stderr, c.clientID+" ", log.Flags()),
 	}
 
-	client.OnPacket = func(ctx context.Context, client *tt.Client, p mq.Packet) {
-		switch p := p.(type) {
-		case *mq.ConnAck:
+	ctx, cancel := context.WithCancel(ctx)
+	packets, events := client.Start(ctx)
+	for {
+		select {
+		case p := <-packets:
+			switch p := p.(type) {
+			case *mq.ConnAck:
 
-			switch p.ReasonCode() {
-			case mq.Success: // we've connected successfully
-				m := mq.Pub(c.qos, c.topic, c.payload)
-				if err := client.Send(ctx, m); err != nil {
-					pubErr = err
-					cancel()
+				switch p.ReasonCode() {
+				case mq.Success: // we've connected successfully
+					m := mq.Pub(c.qos, c.topic, c.payload)
+					if err := client.Send(ctx, m); err != nil {
+						return err
+					}
+					if c.qos == 0 {
+						_ = client.Send(ctx, mq.NewDisconnect())
+						cancel() // we are done
+					}
+
+				default:
+					return fmt.Errorf(p.ReasonString())
 				}
-				if c.qos == 0 {
-					_ = client.Send(ctx, mq.NewDisconnect())
-				}
+
+			case *mq.PubAck:
+				_ = client.Send(ctx, mq.NewDisconnect())
+				cancel()
 
 			default:
-				pubErr = fmt.Errorf(p.ReasonString())
-				cancel()
+				return fmt.Errorf("received unexpected packet")
 			}
 
-		case *mq.PubAck:
-			_ = client.Send(ctx, mq.NewDisconnect())
-
-		default:
-			pubErr = fmt.Errorf("received unexpected packet")
-			cancel()
-		}
-	}
-
-	client.OnEvent = func(ctx context.Context, client *tt.Client, e tt.Event) {
-		switch e {
-		case tt.EventClientUp:
-			// connect
-			p := mq.NewConnect()
-			p.SetClientID(c.clientID)
-			p.SetCleanStart(true)
-			if c.username != "" {
-				p.SetUsername(c.username)
-				p.SetPassword([]byte(c.password))
+		case e := <-events:
+			switch e {
+			case tt.EventClientUp:
+				// connect
+				p := mq.NewConnect()
+				p.SetClientID(c.clientID)
+				p.SetCleanStart(true)
+				if c.username != "" {
+					p.SetUsername(c.username)
+					p.SetPassword([]byte(c.password))
+				}
+				_ = client.Send(ctx, p)
 			}
-			_ = client.Send(ctx, p)
-		}
-	}
 
-	if err := client.Run(ctx); err != nil {
-		if _, ok := err.(*net.OpError); ok {
-			return err
+		case <-ctx.Done():
+			return nil
 		}
 	}
-	return pubErr
 }
 
 type SubCmd struct {
@@ -190,7 +184,6 @@ func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
 
 	client := &tt.Client{
 		Server:       c.server.String(),
@@ -200,41 +193,47 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		Logger:       log.New(os.Stderr, c.clientID+" ", log.Flags()),
 	}
 
-	client.OnPacket = func(ctx context.Context, client *tt.Client, p mq.Packet) {
-		switch p := p.(type) {
-		case *mq.ConnAck:
+	packets, events := client.Start(ctx)
+	for {
+		select {
+		case p := <-packets:
+			switch p := p.(type) {
+			case *mq.ConnAck:
 
-			switch p.ReasonCode() {
-			case mq.Success: // we've connected successfully
-				// subscribe
-				s := mq.NewSubscribe()
-				s.SetSubscriptionID(1)
-				f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
-				s.AddFilters(f)
-				_ = client.Send(ctx, s)
+				switch p.ReasonCode() {
+				case mq.Success: // we've connected successfully
+					// subscribe
+					s := mq.NewSubscribe()
+					s.SetSubscriptionID(1)
+					f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
+					s.AddFilters(f)
+					_ = client.Send(ctx, s)
 
-			default:
-				fmt.Fprintln(os.Stderr, p.ReasonString())
-				cancel()
+				default:
+					return fmt.Errorf(p.ReasonString())
+				}
+
+			case *mq.Publish:
+				fmt.Fprintln(c.output, "PAYLOAD", string(p.Payload()))
 			}
 
-		case *mq.Publish:
-			fmt.Fprintln(c.output, "PAYLOAD", string(p.Payload()))
+		case e := <-events:
+			switch e {
+			case tt.EventClientUp:
+				p := mq.NewConnect()
+				p.SetClientID(c.clientID)
+				p.SetReceiveMax(1)
+				p.SetKeepAlive(uint16(c.keepAlive.Seconds()))
+				_ = client.Send(ctx, p)
+
+			case tt.EventClientDown:
+				return nil
+			}
+
+		case <-ctx.Done():
+			return nil
 		}
 	}
-
-	client.OnEvent = func(ctx context.Context, client *tt.Client, e tt.Event) {
-		switch e {
-		case tt.EventClientUp:
-			p := mq.NewConnect()
-			p.SetClientID(c.clientID)
-			p.SetReceiveMax(1)
-			p.SetKeepAlive(uint16(c.keepAlive.Seconds()))
-			_ = client.Send(ctx, p)
-		}
-	}
-
-	return client.Run(ctx)
 }
 
 type SrvCmd struct {

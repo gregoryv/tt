@@ -28,12 +28,6 @@ type Client struct {
 	// number of packets in flight.
 	MaxPacketID uint16
 
-	// optional handler for incoming packets
-	OnPacket func(context.Context, *Client, mq.Packet) `json:"-"`
-
-	// optional handler for client events
-	OnEvent func(context.Context, *Client, Event) `json:"-"`
-
 	// show settings once client runs
 	ShowSettings bool
 
@@ -70,10 +64,14 @@ func (c *Client) setDefaults() {
 
 // Start returns a channel where client pushes incoming packets or
 // events.
-func (c *Client) Start(ctx context.Context) (onPacket <-chan mq.Packet, onEvent <-chan Event) {
+func (c *Client) Start(ctx context.Context) (packets <-chan mq.Packet, events <-chan Event) {
 	c.appPackets = make(chan mq.Packet, 1)
 	c.appEvents = make(chan Event, 1)
-	go c.run(ctx)
+	go func() {
+		if err := c.run(ctx); err != nil {
+			c.appEvents <- EventClientDown
+		}
+	}()
 	return c.appPackets, c.appEvents
 }
 
@@ -83,10 +81,6 @@ func (c *Client) Run(ctx context.Context) error {
 
 func (c *Client) run(ctx context.Context) error {
 	c.once.Do(c.setDefaults)
-
-	if c.appPackets != nil && c.OnPacket != nil {
-		return fmt.Errorf("cannot set bot OnPacket and using channel")
-	}
 
 	s, err := url.Parse(c.Server)
 	if err != nil {
@@ -190,20 +184,10 @@ func (c *Client) run(ctx context.Context) error {
 		}
 
 		// finally let the application have it
-		if c.OnPacket != nil {
-			c.OnPacket(ctx, c, p)
-		}
-		if c.appPackets != nil {
-			c.appPackets <- p
-		}
+		c.appPackets <- p
 	}, conn)
 
-	if c.OnEvent != nil {
-		c.OnEvent(ctx, c, EventClientUp)
-	}
-	if c.appEvents != nil {
-		c.appEvents <- EventClientUp
-	}
+	c.appEvents <- EventClientUp
 	return recv.Run(ctx)
 }
 
