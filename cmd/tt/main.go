@@ -115,52 +115,56 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	packets, events := client.Start(ctx)
+	C := client.Start(ctx)
+	var v interface{}
 	for {
 		select {
-		case p := <-packets:
-			switch p := p.(type) {
-			case *mq.ConnAck:
-
-				switch p.ReasonCode() {
-				case mq.Success: // we've connected successfully
-					m := mq.Pub(c.qos, c.topic, c.payload)
-					if err := client.Send(ctx, m); err != nil {
-						return err
-					}
-					if c.qos == 0 {
-						_ = client.Send(ctx, mq.NewDisconnect())
-						cancel() // we are done
-					}
-
-				default:
-					return fmt.Errorf(p.ReasonString())
-				}
-
-			case *mq.PubAck:
-				_ = client.Send(ctx, mq.NewDisconnect())
-				cancel()
-
-			default:
-				return fmt.Errorf("received unexpected packet")
-			}
-
-		case e := <-events:
-			switch e.(type) {
-			case event.ClientUp:
-				// connect
-				p := mq.NewConnect()
-				p.SetClientID(c.clientID)
-				p.SetCleanStart(true)
-				if c.username != "" {
-					p.SetUsername(c.username)
-					p.SetPassword([]byte(c.password))
-				}
-				_ = client.Send(ctx, p)
-			}
-
+		case v = <-C:
 		case <-ctx.Done():
 			return nil
+		}
+
+		switch v := v.(type) {
+		case event.ClientUp:
+			p := mq.NewConnect()
+			p.SetClientID(c.clientID)
+			p.SetCleanStart(true)
+			if c.username != "" {
+				p.SetUsername(c.username)
+				p.SetPassword([]byte(c.password))
+			}
+			_ = client.Send(ctx, p)
+
+		case *mq.ConnAck:
+			switch v.ReasonCode() {
+			case mq.Success: // we've connected successfully
+				m := mq.Pub(c.qos, c.topic, c.payload)
+				if err := client.Send(ctx, m); err != nil {
+					return err
+				}
+				if c.qos == 0 {
+					_ = client.Send(ctx, mq.NewDisconnect())
+					cancel() // we are done
+				}
+
+			default:
+				cancel()
+				return fmt.Errorf(v.ReasonString())
+			}
+
+		case *mq.PubAck:
+			_ = client.Send(ctx, mq.NewDisconnect())
+			cancel()
+
+		case *mq.Disconnect:
+			cancel()
+			if r := v.ReasonCode(); r > 0x80 {
+				return fmt.Errorf(v.String())
+			}
+
+		default:
+			cancel()
+			fmt.Errorf("got unexpected %v", v)
 		}
 	}
 }
@@ -194,45 +198,43 @@ func (c *SubCmd) Run(ctx context.Context) error {
 		Logger:       log.New(os.Stderr, c.clientID+" ", log.Flags()),
 	}
 
-	packets, events := client.Start(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	C := client.Start(ctx)
+	var v interface{}
 	for {
+
 		select {
-		case p := <-packets:
-			switch p := p.(type) {
-			case *mq.ConnAck:
-
-				switch p.ReasonCode() {
-				case mq.Success: // we've connected successfully
-					// subscribe
-					s := mq.NewSubscribe()
-					s.SetSubscriptionID(1)
-					f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
-					s.AddFilters(f)
-					_ = client.Send(ctx, s)
-
-				default:
-					return fmt.Errorf(p.ReasonString())
-				}
-
-			case *mq.Publish:
-				fmt.Fprintln(c.output, "PAYLOAD", string(p.Payload()))
-			}
-
-		case e := <-events:
-			switch e.(type) {
-			case event.ClientUp:
-				p := mq.NewConnect()
-				p.SetClientID(c.clientID)
-				p.SetReceiveMax(1)
-				p.SetKeepAlive(uint16(c.keepAlive.Seconds()))
-				_ = client.Send(ctx, p)
-
-			case event.ClientDown:
-				return nil
-			}
-
+		case v = <-C:
 		case <-ctx.Done():
 			return nil
+		}
+
+		switch v := v.(type) {
+		case event.ClientUp:
+			p := mq.NewConnect()
+			p.SetClientID(c.clientID)
+			p.SetReceiveMax(1)
+			p.SetKeepAlive(uint16(c.keepAlive.Seconds()))
+			_ = client.Send(ctx, p)
+
+		case *mq.ConnAck:
+			switch v.ReasonCode() {
+			case mq.Success:
+				s := mq.NewSubscribe()
+				s.SetSubscriptionID(1)
+				f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
+				s.AddFilters(f)
+				_ = client.Send(ctx, s)
+			default:
+				cancel()
+				return fmt.Errorf(v.ReasonString())
+			}
+
+		case *mq.Publish:
+			fmt.Fprintln(c.output, "PAYLOAD", string(v.Payload()))
+
+		case event.ClientDown:
+			cancel()
 		}
 	}
 }

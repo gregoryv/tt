@@ -40,8 +40,7 @@ type Client struct {
 
 	transmit func(ctx context.Context, p mq.Packet) error // set by Run and used in Send
 
-	appPackets chan mq.Packet
-	appEvents  chan interface{}
+	app chan interface{}
 }
 
 func (c *Client) setDefaults() {
@@ -65,15 +64,14 @@ func (c *Client) setDefaults() {
 
 // Start returns a channel where client pushes incoming packets or
 // events.
-func (c *Client) Start(ctx context.Context) (packets <-chan mq.Packet, events <-chan interface{}) {
-	c.appPackets = make(chan mq.Packet, 1)
-	c.appEvents = make(chan interface{}, 1)
+func (c *Client) Start(ctx context.Context) <-chan interface{} {
+	c.app = make(chan interface{}, 1)
 	go func() {
 		if err := c.run(ctx); err != nil {
-			c.appEvents <- event.ClientDown(0)
+			c.app <- event.ClientDown(0)
 		}
 	}()
-	return c.appPackets, c.appEvents
+	return c.app
 }
 
 func (c *Client) run(ctx context.Context) error {
@@ -181,10 +179,10 @@ func (c *Client) run(ctx context.Context) error {
 		}
 
 		// finally let the application have it
-		c.appPackets <- p
+		c.app <- p
 	}, conn)
 
-	c.appEvents <- event.ClientUp(0)
+	c.app <- event.ClientUp(0)
 	return recv.Run(ctx)
 }
 
