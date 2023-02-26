@@ -14,38 +14,35 @@ func Example_client() {
 		Server: "tcp://localhost:1883",
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	packets, events := client.Start(ctx)
 
 	for {
 		select {
 		case p := <-packets:
-			onPacket(ctx, client, p)
+
+			switch p := p.(type) {
+			case *mq.ConnAck:
+
+				switch p.ReasonCode() {
+				case mq.Success:
+					// do something once you are connected
+					p := mq.Pub(0, "gopher/happy", "yes")
+					_ = client.Send(ctx, p)
+				}
+			}
 
 		case e := <-events:
-			onEvent(ctx, client, e)
+
+			switch e {
+			case tt.EventClientUp:
+				_ = client.Send(ctx, mq.NewConnect())
+			case tt.EventClientDown:
+				cancel()
+			}
 
 		case <-ctx.Done():
 			return
 		}
-	}
-}
-
-func onPacket(ctx context.Context, c *tt.Client, p mq.Packet) {
-	switch p := p.(type) {
-	case *mq.ConnAck:
-
-		switch p.ReasonCode() {
-		case mq.Success:
-			p := mq.Pub(0, "gopher/happy", "yes")
-			_ = c.Send(ctx, p)
-		}
-	}
-}
-
-func onEvent(ctx context.Context, c *tt.Client, e tt.Event) {
-	switch e {
-	case tt.EventClientUp:
-		_ = c.Send(ctx, mq.NewConnect())
 	}
 }
