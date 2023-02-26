@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt/event"
 )
 
 // Client implements a mqtt-v5 client. Public fields should be set
@@ -40,7 +41,7 @@ type Client struct {
 	transmit func(ctx context.Context, p mq.Packet) error // set by Run and used in Send
 
 	appPackets chan mq.Packet
-	appEvents  chan Event
+	appEvents  chan interface{}
 }
 
 func (c *Client) setDefaults() {
@@ -64,19 +65,15 @@ func (c *Client) setDefaults() {
 
 // Start returns a channel where client pushes incoming packets or
 // events.
-func (c *Client) Start(ctx context.Context) (packets <-chan mq.Packet, events <-chan Event) {
+func (c *Client) Start(ctx context.Context) (packets <-chan mq.Packet, events <-chan interface{}) {
 	c.appPackets = make(chan mq.Packet, 1)
-	c.appEvents = make(chan Event, 1)
+	c.appEvents = make(chan interface{}, 1)
 	go func() {
 		if err := c.run(ctx); err != nil {
-			c.appEvents <- EventClientDown
+			c.appEvents <- event.ClientDown(0)
 		}
 	}()
 	return c.appPackets, c.appEvents
-}
-
-func (c *Client) Run(ctx context.Context) error {
-	return c.run(ctx)
 }
 
 func (c *Client) run(ctx context.Context) error {
@@ -187,7 +184,7 @@ func (c *Client) run(ctx context.Context) error {
 		c.appPackets <- p
 	}, conn)
 
-	c.appEvents <- EventClientUp
+	c.appEvents <- event.ClientUp(0)
 	return recv.Run(ctx)
 }
 

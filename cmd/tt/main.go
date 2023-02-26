@@ -15,6 +15,7 @@ import (
 	"github.com/gregoryv/cmdline"
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
+	"github.com/gregoryv/tt/event"
 )
 
 func main() {
@@ -145,8 +146,8 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			}
 
 		case e := <-events:
-			switch e {
-			case tt.EventClientUp:
+			switch e.(type) {
+			case event.ClientUp:
 				// connect
 				p := mq.NewConnect()
 				p.SetClientID(c.clientID)
@@ -218,15 +219,15 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			}
 
 		case e := <-events:
-			switch e {
-			case tt.EventClientUp:
+			switch e.(type) {
+			case event.ClientUp:
 				p := mq.NewConnect()
 				p.SetClientID(c.clientID)
 				p.SetReceiveMax(1)
 				p.SetKeepAlive(uint16(c.keepAlive.Seconds()))
 				_ = client.Send(ctx, p)
 
-			case tt.EventClientDown:
+			case event.ClientDown:
 				return nil
 			}
 

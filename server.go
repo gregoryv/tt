@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt/event"
 )
 
 type Server struct {
@@ -37,7 +38,7 @@ type Server struct {
 	Debug bool
 
 	// optional event handler
-	OnEvent func(context.Context, *Server, Event) `json:"-"`
+	OnEvent func(context.Context, *Server, interface{}) `json:"-"` // todo replace with chan
 
 	ShowSettings bool
 
@@ -120,7 +121,7 @@ func (s *Server) Run(ctx context.Context) error {
 		go f.Run(ctx)
 	}
 	if s.OnEvent != nil {
-		s.OnEvent(ctx, s, EventServerUp)
+		s.OnEvent(ctx, s, event.ServerUp(0))
 	}
 	<-ctx.Done()
 	return nil

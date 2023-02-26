@@ -5,6 +5,7 @@ import (
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
+	"github.com/gregoryv/tt/event"
 )
 
 // Example shows a simple client for connect, publish a QoS 0 and
@@ -34,10 +35,10 @@ func Example_client() {
 
 		case e := <-events:
 
-			switch e {
-			case tt.EventClientUp:
+			switch e.(type) {
+			case event.ClientUp:
 				_ = client.Send(ctx, mq.NewConnect())
-			case tt.EventClientDown:
+			case event.ClientDown:
 				cancel()
 			}
 
