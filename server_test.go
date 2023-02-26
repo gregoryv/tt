@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 	"sync"
@@ -13,23 +12,28 @@ import (
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/testnet"
+	"github.com/gregoryv/tt/event"
 	"github.com/gregoryv/tt/ttx"
 )
 
 // Example shows how to run the provided server.
 func Example_server() {
 	var s Server
-	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
-	if err := s.Run(ctx); err != nil {
-		log.Fatal(err)
-	}
-}
+	ctx, cancel := context.WithCancel(context.Background())
+	c := s.Start(ctx)
 
-func TestServer_Run(t *testing.T) {
-	var s Server
-	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
-	if err := s.Run(ctx); err != nil && !errors.Is(err, context.DeadlineExceeded) {
-		t.Error(err)
+	var v interface{}
+	for {
+		select {
+		case v = <-c:
+		case <-ctx.Done():
+			return
+		}
+
+		switch v.(type) {
+		case event.ServerDown:
+			cancel()
+		}
 	}
 }
 

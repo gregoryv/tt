@@ -253,5 +253,21 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 		ConnectTimeout: c.ConnectTimeout,
 		Binds:          []*tt.Bind{&c.Bind},
 	}
-	return s.Run(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	C := s.Start(ctx)
+
+	var v interface{}
+	for {
+		select {
+		case v = <-C:
+		case <-ctx.Done():
+			return nil
+		}
+
+		switch v.(type) {
+		case event.ServerDown:
+			cancel()
+		}
+	}
+
 }

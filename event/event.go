@@ -6,3 +6,4 @@ type ClientConnectFail string
 type ClientDown uint8
 
 type ServerUp uint8
+type ServerDown uint8

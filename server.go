@@ -37,9 +37,6 @@ type Server struct {
 	// set to true for additional log information
 	Debug bool
 
-	// optional event handler
-	OnEvent func(context.Context, *Server, interface{}) `json:"-"` // todo replace with chan
-
 	ShowSettings bool
 
 	// router routes incoming publish packets to subscribing clients
@@ -49,6 +46,8 @@ type Server struct {
 	stat *serverStats
 
 	once sync.Once
+
+	app chan interface{}
 }
 
 func (s *Server) setDefaults() {
@@ -66,7 +65,7 @@ func (s *Server) setDefaults() {
 		tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
 		s.Binds = append(s.Binds, tcpRandom)
 	}
-	s.router = newRouter()
+	s.router = newRouter() // todo move to Run
 	s.stat = newServerStats()
 
 	if s.ShowSettings {
@@ -79,11 +78,20 @@ func (s *Server) setDefaults() {
 		s.Print(nice.String())
 	}
 }
+func (s *Server) Start(ctx context.Context) <-chan interface{} {
+	s.app = make(chan interface{}, 1)
+	go func() {
+		if err := s.run(ctx); err != nil {
+			s.app <- event.ServerDown(0)
+		}
+	}()
+	return s.app
+}
 
 // Run listens for tcp connections. Blocks until context is cancelled.
 // Accepting new connection can only be interrupted if listener has
 // SetDeadline method.
-func (s *Server) Run(ctx context.Context) error {
+func (s *Server) run(ctx context.Context) error {
 	s.once.Do(s.setDefaults)
 
 	// Each bind feeds the server with connections
@@ -120,10 +128,7 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 		go f.Run(ctx)
 	}
-	if s.OnEvent != nil {
-		s.OnEvent(ctx, s, event.ServerUp(0))
-	}
-	<-ctx.Done()
+	s.app <- event.ServerUp(0)
 	return nil
 }
 
