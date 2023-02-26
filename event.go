@@ -1,7 +1,5 @@
 package tt
 
-import "context"
-
 type Event int
 
 const (
@@ -11,5 +9,3 @@ const (
 
 	EventServerUp
 )
-
-type EventHandler func(context.Context, Event)
