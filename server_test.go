@@ -18,14 +18,14 @@ import (
 
 // Example shows how to run the provided server.
 func Example_server() {
-	var s Server
+	var srv Server
 	ctx, cancel := context.WithCancel(context.Background())
-	c := s.Start(ctx)
+	srv.Start(ctx)
 
-	var v interface{}
 	for {
-		select {
-		case v = <-c:
+		var v interface{}
+		select { // wait for signal from server or
+		case v = <-srv.Signal():
 		case <-ctx.Done():
 			return
 		}

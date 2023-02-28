@@ -245,7 +245,7 @@ func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *SrvCmd) Run(ctx context.Context) error {
-	s := &tt.Server{
+	srv := &tt.Server{
 		Debug:        c.shared.Debug,
 		ShowSettings: c.shared.ShowSettings,
 
@@ -254,12 +254,12 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 		Binds:          []*tt.Bind{&c.Bind},
 	}
 	ctx, cancel := context.WithCancel(ctx)
-	C := s.Start(ctx)
+	srv.Start(ctx)
 
 	var v interface{}
 	for {
 		select {
-		case v = <-C:
+		case v = <-srv.Signal():
 		case <-ctx.Done():
 			return nil
 		}

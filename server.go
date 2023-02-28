@@ -67,6 +67,7 @@ func (s *Server) setDefaults() {
 	}
 	s.router = newRouter()
 	s.stat = newServerStats()
+	s.app = make(chan interface{}, 1)
 
 	if s.ShowSettings {
 		var buf bytes.Buffer
@@ -78,18 +79,25 @@ func (s *Server) setDefaults() {
 		s.Print(nice.String())
 	}
 }
-func (s *Server) Start(ctx context.Context) <-chan interface{} {
-	s.app = make(chan interface{}, 1)
+
+// Start runs the server in a separate go routine. Use [Server.Signal]
+func (s *Server) Start(ctx context.Context) {
+	s.once.Do(s.setDefaults)
+
 	go func() {
 		if err := s.run(ctx); err != nil {
 			s.app <- event.ServerStop{err}
 		}
 	}()
+}
+
+// Signal returns a channel used by server informs the application
+// layer of events. E.g [event.ServerStop]
+func (s *Server) Signal() <-chan interface{} {
 	return s.app
 }
 
 func (s *Server) run(ctx context.Context) error {
-	s.once.Do(s.setDefaults)
 
 	// Each bind feeds the server with connections
 	for _, b := range s.Binds {
