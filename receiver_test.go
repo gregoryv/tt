@@ -13,7 +13,7 @@ import (
 )
 
 func Test_receiver(t *testing.T) {
-	{ // handler is called on packet from server
+	{ // handlerFunc is called on packet from server
 		conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 		called := ttx.NewCalled()
 		go newReceiver(called.Handler, srvconn).Run(context.Background())

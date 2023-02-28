@@ -11,8 +11,8 @@ import (
 )
 
 // newReceiver returns a receiver that reads packets from the reader
-// and calls the handler. Handler can be nil.
-func newReceiver(h Handler, r io.Reader) *receiver {
+// and calls the handler. handlerFunc can be nil.
+func newReceiver(h handlerFunc, r io.Reader) *receiver {
 	return &receiver{
 		wire:     r,
 		handle:   h,
@@ -22,7 +22,7 @@ func newReceiver(h Handler, r io.Reader) *receiver {
 
 type receiver struct {
 	wire     io.Reader
-	handle   Handler
+	handle   handlerFunc
 	deadline time.Duration
 }
 
