@@ -65,7 +65,7 @@ func (s *Server) setDefaults() {
 		tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
 		s.Binds = append(s.Binds, tcpRandom)
 	}
-	s.router = newRouter() // todo move to Run
+	s.router = newRouter()
 	s.stat = newServerStats()
 
 	if s.ShowSettings {
