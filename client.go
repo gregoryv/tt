@@ -64,13 +64,18 @@ func (c *Client) setDefaults() {
 
 // Start returns a channel where client pushes incoming packets or
 // events.
-func (c *Client) Start(ctx context.Context) <-chan interface{} {
+func (c *Client) Start(ctx context.Context) {
 	c.app = make(chan interface{}, 1)
 	go func() {
 		if err := c.run(ctx); err != nil {
 			c.app <- event.ClientStop{err}
 		}
 	}()
+}
+
+// Signal returns a channel used by client to inform application layer
+// of packets and events. E.g. [event.ClientUp]
+func (c *Client) Signal() <-chan interface{} {
 	return c.app
 }
 

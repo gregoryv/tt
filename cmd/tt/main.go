@@ -115,11 +115,11 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	C := client.Start(ctx)
+	client.Start(ctx)
 	var v interface{}
 	for {
 		select {
-		case v = <-C:
+		case v = <-client.Signal():
 		case <-ctx.Done():
 			return nil
 		}
@@ -182,7 +182,6 @@ func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {
-
 	client := &tt.Client{
 		Server:       c.server.String(),
 		Debug:        c.shared.Debug,
@@ -192,12 +191,12 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	C := client.Start(ctx)
+	client.Start(ctx)
 	var v interface{}
 	for {
 
 		select {
-		case v = <-C:
+		case v = <-client.Signal():
 		case <-ctx.Done():
 			return nil
 		}

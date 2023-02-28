@@ -91,7 +91,7 @@ func (s *Server) Start(ctx context.Context) {
 	}()
 }
 
-// Signal returns a channel used by server informs the application
+// Signal returns a channel used by server to inform the application
 // layer of events. E.g [event.ServerStop]
 func (s *Server) Signal() <-chan interface{} {
 	return s.app

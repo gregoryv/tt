@@ -16,13 +16,13 @@ func Example_client() {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	in := client.Start(ctx)
+	client.Start(ctx)
 
-	// v is either an packet type or a event type
+	// v is either an packet or a event type
 	var v interface{}
 	for {
 		select {
-		case v = <-in:
+		case v = <-client.Signal():
 		case <-ctx.Done():
 			return
 		}
