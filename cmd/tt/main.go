@@ -214,6 +214,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 
 		case event.ClientStop:
 			cancel()
+			return v.Err
 		}
 	}
 	return ctx.Err()
