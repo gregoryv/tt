@@ -186,15 +186,8 @@ func (c *SubCmd) Run(ctx context.Context) error {
 
 	ctx, cancel := context.WithCancel(ctx)
 	client.Start(ctx)
-	var v interface{}
-	for {
 
-		select {
-		case v = <-client.Signal():
-		case <-ctx.Done():
-			return nil
-		}
-
+	for v := range client.Signal() {
 		switch v := v.(type) {
 		case event.ClientUp:
 			p := mq.NewConnect()
@@ -223,6 +216,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			cancel()
 		}
 	}
+	return ctx.Err()
 }
 
 type SrvCmd struct {
