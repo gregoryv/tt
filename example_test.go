@@ -43,14 +43,7 @@ func Example_server() {
 	ctx, cancel := context.WithCancel(context.Background())
 	srv.Start(ctx)
 
-	for {
-		var v interface{}
-		select { // wait for signal from server or
-		case v = <-srv.Signal():
-		case <-ctx.Done():
-			return
-		}
-
+	for v := range srv.Signal() {
 		switch v.(type) {
 		case event.ServerStop:
 			cancel()
