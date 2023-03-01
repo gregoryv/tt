@@ -16,27 +16,6 @@ import (
 	"github.com/gregoryv/tt/ttx"
 )
 
-// Example shows how to run the provided server.
-func Example_server() {
-	var srv Server
-	ctx, cancel := context.WithCancel(context.Background())
-	srv.Start(ctx)
-
-	for {
-		var v interface{}
-		select { // wait for signal from server or
-		case v = <-srv.Signal():
-		case <-ctx.Done():
-			return
-		}
-
-		switch v.(type) {
-		case event.ServerStop:
-			cancel()
-		}
-	}
-}
-
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
 	var s Server
