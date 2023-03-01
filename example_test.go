@@ -14,19 +14,11 @@ func Example_client() {
 	client := tt.Client{
 		Server: "tcp://localhost:1883",
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx := context.Background()
 	client.Start(ctx)
 
 	// v is either an packet or a event type
-	var v interface{}
-	for {
-		select {
-		case v = <-client.Signal():
-		case <-ctx.Done():
-			return
-		}
-
+	for v := range client.Signal() {
 		switch v := v.(type) {
 		case event.ClientUp:
 			_ = client.Send(ctx, mq.NewConnect())
@@ -40,7 +32,7 @@ func Example_client() {
 			_ = v // do something the received packet
 
 		case event.ClientStop:
-			cancel()
+			// do some clean up maybe
 		}
 	}
 }

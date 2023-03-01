@@ -70,6 +70,7 @@ func (c *Client) Start(ctx context.Context) {
 		if err := c.run(ctx); err != nil {
 			c.app <- event.ClientStop{err}
 		}
+		close(c.app)
 	}()
 }
 

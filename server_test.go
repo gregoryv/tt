@@ -12,7 +12,6 @@ import (
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/testnet"
-	"github.com/gregoryv/tt/event"
 	"github.com/gregoryv/tt/ttx"
 )
 
