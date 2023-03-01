@@ -67,9 +67,8 @@ func (c *Client) setDefaults() {
 func (c *Client) Start(ctx context.Context) {
 	c.app = make(chan interface{}, 1)
 	go func() {
-		if err := c.run(ctx); err != nil {
-			c.app <- event.ClientStop{err}
-		}
+		err := c.run(ctx)
+		c.app <- event.ClientStop{err}
 		close(c.app)
 	}()
 }
