@@ -237,10 +237,10 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 		Debug:        c.shared.Debug,
 		ShowSettings: c.shared.ShowSettings,
 
-		Logger:         log.New(os.Stderr, "ttsrv ", log.Flags()),
 		ConnectTimeout: c.ConnectTimeout,
 		Binds:          []*tt.Bind{&c.Bind},
 	}
+	srv.SetLogger(log.New(os.Stderr, "ttsrv ", log.Flags()))
 	ctx, cancel := context.WithCancel(ctx)
 	srv.Start(ctx)
 

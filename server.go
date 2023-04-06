@@ -32,7 +32,7 @@ type Server struct {
 	ConnectTimeout time.Duration
 
 	// if nil, log output is discarded
-	*log.Logger `json:"-"`
+	log *log.Logger
 
 	// set to true for additional log information
 	Debug bool
@@ -47,16 +47,32 @@ type Server struct {
 
 	once sync.Once
 
+	// app receives server events, see Server.Signal()
 	app chan interface{}
+}
+
+func (s *Server) SetLogger(v *log.Logger) {
+	s.log = v
+}
+
+// Start runs the server in a separate go routine. Use [Server.Signal]
+func (s *Server) Start(ctx context.Context) {
+	s.once.Do(s.setDefaults)
+
+	go func() {
+		if err := s.run(ctx); err != nil {
+			s.app <- event.ServerStop{err}
+		}
+	}()
 }
 
 func (s *Server) setDefaults() {
 	// no logging if logger not set
-	if s.Logger == nil {
-		s.Logger = log.New(ioutil.Discard, "", 0)
+	if s.log == nil {
+		s.log = log.New(ioutil.Discard, "", 0)
 	}
 	if s.Debug {
-		s.SetFlags(s.Flags() | log.Lshortfile)
+		s.log.SetFlags(s.log.Flags() | log.Lshortfile)
 	}
 	if s.ConnectTimeout == 0 {
 		s.ConnectTimeout = 200 * time.Millisecond
@@ -72,23 +88,12 @@ func (s *Server) setDefaults() {
 	if s.ShowSettings {
 		var buf bytes.Buffer
 		if err := json.NewEncoder(&buf).Encode(s); err != nil {
-			s.Fatal(err)
+			s.log.Fatal(err)
 		}
 		var nice bytes.Buffer
 		json.Indent(&nice, buf.Bytes(), "", "  ")
-		s.Print(nice.String())
+		s.log.Print(nice.String())
 	}
-}
-
-// Start runs the server in a separate go routine. Use [Server.Signal]
-func (s *Server) Start(ctx context.Context) {
-	s.once.Do(s.setDefaults)
-
-	go func() {
-		if err := s.run(ctx); err != nil {
-			s.app <- event.ServerStop{err}
-		}
-	}()
 }
 
 // Signal returns a channel used by server to inform the application
@@ -115,9 +120,9 @@ func (s *Server) run(ctx context.Context) error {
 		tmp := *u
 		tmp.Host = ln.Addr().String()
 		if u.Port() != tmp.Port() {
-			s.Printf("bind %s (configured as %s)", tmp.String(), u.String())
+			s.log.Printf("bind %s (configured as %s)", tmp.String(), u.String())
 		} else {
-			s.Println("bind", u.String())
+			s.log.Println("bind", u.String())
 		}
 
 		t, err := time.ParseDuration(b.AcceptTimeout)
@@ -146,10 +151,10 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 	addr := conn.RemoteAddr()
 	a := includePort(addr.String(), s.Debug)
 	connstr := fmt.Sprintf("conn %s://%s", addr.Network(), a)
-	s.Println("new", connstr)
+	s.log.Println("new", connstr)
 	s.stat.AddConn()
 	defer func() {
-		s.Println("del", connstr)
+		s.log.Println("del", connstr)
 		s.stat.RemoveConn()
 	}()
 
@@ -163,6 +168,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 		remote   = includePort(conn.RemoteAddr().String(), s.Debug)
 	)
 
+	// transmit packets to the connected client
 	transmit := func(ctx context.Context, p mq.Packet) error {
 		m.Lock()
 		defer m.Unlock()
@@ -172,7 +178,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 			p.SetMaxQoS(maxQoS)
 		}
 
-		s.Printf("out %v -> %s@%s%s", p, shortID, remote, dump(s.Debug, p))
+		s.log.Printf("out %v -> %s@%s%s", p, shortID, remote, dump(s.Debug, p))
 
 		if _, err := p.WriteTo(conn); err != nil {
 			return err
@@ -197,7 +203,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 			shortID = trimID(clientID, maxIDLen)
 		}
 
-		s.Printf("in %v <- %s@%s%s", p, shortID, remote, dump(s.Debug, p))
+		s.log.Printf("in %v <- %s@%s%s", p, shortID, remote, dump(s.Debug, p))
 
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 			if err := p.WellFormed(); err != nil {
