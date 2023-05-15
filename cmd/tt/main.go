@@ -244,11 +244,15 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	srv.Start(ctx)
 
-	for v := range srv.Signal() {
-		switch v.(type) {
-		case event.ServerStop:
-			cancel()
+	for {
+		select {
+		case v := <-srv.Signal():
+			switch v.(type) {
+			case event.ServerStop:
+				cancel()
+			}
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
-	return ctx.Err()
 }
