@@ -229,24 +229,28 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 		case *mq.Subscribe:
 			a := mq.NewSubAck()
 			a.SetPacketID(p.PacketID())
+			sub := newSubscription(func(ctx context.Context, p *mq.Publish) error {
+				return transmit(ctx, p)
+			})
+			sub.subscriptionID = p.SubscriptionID()
+
+			// check all filters
 			for _, f := range p.Filters() {
 				tf, err := parseTopicFilter(f.Filter())
 				if err != nil {
 					p := mq.NewDisconnect()
 					p.SetReasonCode(mq.MalformedPacket)
 					_ = transmit(ctx, p)
+					return
 				}
+				sub.addTopicFilter(tf)
 
-				r := newSubscription(tf, func(ctx context.Context, p *mq.Publish) error {
-					return transmit(ctx, p)
-
-				})
-				s.router.AddRoute(r)
-				// todo Subscribe.WellFormed fails if for any reason, though
-				// here we want to set a reason code for each filter.
-				// 3.9.3 SUBACK Payload
+				// Subscribe.WellFormed fails if for any reason,
+				// though here we want to set a reason code for each
+				// filter.  3.9.3 SUBACK Payload
 				a.AddReasonCode(mq.Success)
 			}
+			s.router.AddRoute(sub)
 			_ = transmit(ctx, a)
 
 		case *mq.Publish:
@@ -278,6 +282,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 
 	// ignore error here, the connection is done
 	_ = newReceiver(in, conn).Run(ctx)
+	// wip remove subscriptions
 }
 
 func includePort(addr string, yes bool) string {
@@ -381,6 +386,8 @@ func (r *router) AddRoute(v *subscription) {
 	r.subs = append(r.subs, v)
 }
 
+// wip remove route when client disconnects
+
 // In forwards routes mq.Publish packets by topic name.
 func (r *router) Handle(ctx context.Context, p mq.Packet) error {
 	switch p := p.(type) {
@@ -388,14 +395,16 @@ func (r *router) Handle(ctx context.Context, p mq.Packet) error {
 		// naive implementation looping over each route, improve at
 		// some point
 		for _, s := range r.subs {
-			if _, ok := s.Match(p.TopicName()); ok {
-				for _, h := range s.handlers {
-					// maybe we'll have to have a different routing mechanism for
-					// client side handling subscriptions compared to server side.
-					// As server may have to adapt packages before sending and
-					// there will be a QoS on each subscription that we need to consider.
-					if err := h(ctx, p); err != nil {
-						r.log.Println("handle", p, err)
+			for _, f := range s.filters {
+				if _, ok := f.Match(p.TopicName()); ok {
+					for _, h := range s.handlers {
+						// maybe we'll have to have a different routing mechanism for
+						// client side handling subscriptions compared to server side.
+						// As server may have to adapt packages before sending and
+						// there will be a QoS on each subscription that we need to consider.
+						if err := h(ctx, p); err != nil {
+							r.log.Println("handle", p, err)
+						}
 					}
 				}
 			}
@@ -437,25 +446,41 @@ func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
 	if err != nil {
 		panic(err.Error())
 	}
-	return newSubscription(tf, handlers...)
+	sub := newSubscription(handlers...)
+	sub.addTopicFilter(tf)
+	return sub
 }
 
-func newSubscription(filter *topicFilter, handlers ...pubHandler) *subscription {
+func newSubscription(handlers ...pubHandler) *subscription {
 	r := &subscription{
-		topicFilter: filter,
-		handlers:    handlers,
+		handlers: handlers,
 	}
 	return r
 }
 
 type subscription struct {
-	*topicFilter
+	subscriptionID int
+
+	filters []*topicFilter // todo multiple filters for one subscription and
+	// multiple clients can share a subscription
 
 	handlers []pubHandler
 }
 
 func (r *subscription) String() string {
-	return r.Filter()
+	switch len(r.filters) {
+	case 0:
+		return fmt.Sprintf("sub %v", r.subscriptionID)
+	case 1:
+		return fmt.Sprintf("sub %v: %s", r.subscriptionID, r.filters[0].filter)
+	default:
+		return fmt.Sprintf("sub %v: %s...", r.subscriptionID, r.filters[0].filter)
+	}
+
+}
+
+func (s *subscription) addTopicFilter(f *topicFilter) {
+	s.filters = append(s.filters, f)
 }
 
 // ----------------------------------------

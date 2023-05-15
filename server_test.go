@@ -139,7 +139,7 @@ func Test_connFeed(t *testing.T) {
 
 func TestSubscription_String(t *testing.T) {
 	sub := mustNewSubscription("all/gophers/#", ttx.NoopPub)
-	if v := sub.String(); v != "all/gophers/#" {
+	if v := sub.String(); v != "sub 0: all/gophers/#" {
 		t.Errorf("unexpected subscription string %q", sub)
 	}
 }
