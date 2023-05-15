@@ -1,0 +1,17 @@
+[Unit]
+Description=MQTT broker - tt srv
+After=auditd.service systemd-user-sessions.service time-sync.target
+
+[Service]
+User=gregory
+TimeoutStartSec=0
+Type=simple
+KillMode=process
+WorkingDirectory=/tmp/
+ExecStart=/home/gregory/bin/tt srv --bind-tcp=tcp://localhost:11883
+Restart=always
+RestartSec=2
+LimitNOFILE=5555
+
+[Install]
+WantedBy=multi-user.target
