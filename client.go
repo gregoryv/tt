@@ -109,7 +109,7 @@ func (c *Client) run(ctx context.Context) error {
 		m.Lock()
 		defer m.Unlock()
 
-		// set packet id if needed, only fails if pool is exhausted
+		// set packet id if needed, blocks if pool is exhausted
 		if err := pool.SetPacketID(ctx, p); err != nil {
 			cancel()
 			return err

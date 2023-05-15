@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Add flag tt pub --repeat 
 - Fix timeout for tt srv
 - Add flag --log-timestamp
 - tt pub sends disconnect when done
