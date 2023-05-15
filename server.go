@@ -357,7 +357,7 @@ loop:
 	}
 }
 
-// gomerge src: router.go
+// ----------------------------------------
 
 // NewRouter returns a router for handling the given subscriptions.
 func newRouter(v ...*subscription) *router {
@@ -411,7 +411,7 @@ func plural(v int, word string) string {
 	return fmt.Sprintf("%v %s", v, word)
 }
 
-// gomerge src: srvstats.go
+// ----------------------------------------
 
 func newServerStats() *serverStats {
 	return &serverStats{}
@@ -458,7 +458,7 @@ func (r *subscription) String() string {
 	return r.Filter()
 }
 
-// gomerge src: topicfilter.go
+// ----------------------------------------
 
 func mustParseTopicFilter(v string) *topicFilter {
 	re, err := parseTopicFilter(v)
