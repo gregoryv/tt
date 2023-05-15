@@ -28,7 +28,6 @@ type receiver struct {
 
 // Run continuously handles next packet until context is cancelled
 func (r *receiver) Run(ctx context.Context) error {
-	type hasReadDeadline interface{ SetReadDeadline(time.Time) error }
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -45,4 +44,8 @@ func (r *receiver) Run(ctx context.Context) error {
 		}
 		r.handle(ctx, p)
 	}
+}
+
+type hasReadDeadline interface {
+	SetReadDeadline(time.Time) error
 }
