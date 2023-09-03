@@ -25,20 +25,21 @@ type Client struct {
 	// Set to true to include more log output
 	Debug bool
 
+	// optional logger, leave empty for no logging
+	*log.Logger `json:-`
+
 	// Outgoing packets use ids from 1..MaxPacketID, this limits the
 	// number of packets in flight.
 	MaxPacketID uint16
 
-	// show settings once client runs
+	// show settings on client.Run
 	ShowSettings bool
 
 	// for setting defaults
 	once sync.Once
 
-	// optional logger, leave empty for no logging
-	*log.Logger `json:-`
-
-	transmit func(ctx context.Context, p mq.Packet) error // set by Run and used in Send
+	// set by Run and used in Send
+	transmit func(ctx context.Context, p mq.Packet) error
 
 	app chan interface{}
 }
