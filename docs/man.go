@@ -83,6 +83,7 @@ func Manual() *Element {
 			Div(Class("figure"),
 				// diagram showing package flow, maybe just dump the output
 				func() *design.SequenceDiagram {
+					log.Print("Publish QoS 0 diagram")
 					var (
 						d = design.NewSequenceDiagram()
 						c = d.Add("client")
@@ -145,6 +146,7 @@ func Manual() *Element {
 				ref("_Toc3901235", "4.3.1"),
 			),
 			func() interface{} {
+				log.Print("QoS 0: At most once deliveryQoS 0")
 				var buf, a, b bytes.Buffer
 				server := "tcp://localhost:9983"
 				{ // start server
@@ -187,6 +189,7 @@ func Manual() *Element {
 
 			P(`Server responds to ping requests.`),
 			func() interface{} {
+				log.Print("ping pong")
 				var buf, a bytes.Buffer
 				server := "tcp://localhost:9983"
 				{ // start server
@@ -201,14 +204,14 @@ func Manual() *Element {
 				}
 				{ // start sub client
 					<-time.After(3 * time.Millisecond)
-					cmd := exec.Command("tt", "sub", "-s", server, "--keep-alive", "2s")
+					cmd := exec.Command("tt", "sub", "-s", server, "--keep-alive", "1s")
 					cmd.Stdout = &a
 					cmd.Stderr = &a
 					tidyGobin(&a, cmd, "&")
 					if err := cmd.Start(); err != nil {
 						log.Println(cmd, err)
 					}
-					<-time.After(2 * time.Second)
+					<-time.After(3 * time.Second)
 					defer cmd.Process.Signal(os.Interrupt)
 				}
 				return Pre(Class("cmd"), buf.String(), "\n", a.String())
