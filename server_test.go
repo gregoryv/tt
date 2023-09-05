@@ -190,9 +190,10 @@ func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 		r.Handle(mustNewSubscription("gopher/+", ttx.NoopPub))
 	}
 
+	ctx := context.Background()
+	p := mq.Pub(0, "gopher/pink", "hi")
 	for i := 0; i < b.N; i++ {
-		ctx := context.Background()
-		if err := r.Route(ctx, mq.Pub(0, "gopher/pink", "hi")); err != nil {
+		if err := r.Route(ctx, p); err != nil {
 			b.Error(err)
 		}
 	}
@@ -204,9 +205,10 @@ func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 		r.Handle(mustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub))
 	}
 
+	ctx := context.Background()
+	p := mq.Pub(0, "gopher/5", "hi")
 	for i := 0; i < b.N; i++ {
-		ctx := context.Background()
-		if err := r.Route(ctx, mq.Pub(0, "gopher/5", "hi")); err != nil {
+		if err := r.Route(ctx, p); err != nil {
 			b.Error(err)
 		}
 	}
@@ -218,9 +220,10 @@ func BenchmarkRouter_10routesEndMatch(b *testing.B) {
 		r.Handle(mustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub))
 	}
 
+	ctx := context.Background()
+	p := mq.Pub(0, "gopher/9", "hi")
 	for i := 0; i < b.N; i++ {
-		ctx := context.Background()
-		if err := r.Route(ctx, mq.Pub(0, "gopher/9", "hi")); err != nil {
+		if err := r.Route(ctx, p); err != nil {
 			b.Error(err)
 		}
 	}
