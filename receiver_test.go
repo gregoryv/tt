@@ -8,13 +8,12 @@ import (
 	"time"
 
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/testnet"
 	"github.com/gregoryv/tt/ttx"
 )
 
 func Test_receiver(t *testing.T) {
 	{ // handlerFunc is called on packet from server
-		conn, srvconn := testnet.Dial("tcp", "someserver:1234")
+		conn, srvconn := net.Pipe()
 		called := ttx.NewCalled()
 		go newReceiver(called.Handler, srvconn).Run(context.Background())
 

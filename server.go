@@ -388,7 +388,7 @@ func (r *router) AddRoute(v *subscription) {
 
 // wip remove route when client disconnects
 
-// In forwards routes mq.Publish packets by topic name.
+// Handle routes mq.Publish packets by topic name.
 func (r *router) Handle(ctx context.Context, p mq.Packet) error {
 	switch p := p.(type) {
 	case *mq.Publish:

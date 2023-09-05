@@ -11,12 +11,11 @@ import (
 	"time"
 
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/testnet"
 	"github.com/gregoryv/tt/ttx"
 )
 
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
-	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
+	conn, srvconn := net.Pipe()
 	var s Server
 	go s.serveConn(context.Background(), srvconn)
 
@@ -40,7 +39,7 @@ func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 // If a client connects without any id set the server should assign
 // one in the returning ConnAck.
 func TestServer_AssignsID(t *testing.T) {
-	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
+	conn, srvconn := net.Pipe()
 	defer conn.Close()
 	var s Server
 	go s.serveConn(context.Background(), srvconn)
@@ -56,7 +55,7 @@ func TestServer_AssignsID(t *testing.T) {
 // If a client sends Disconnect, the server should close the network
 // connection.
 func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
-	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
+	conn, srvconn := net.Pipe()
 	var s Server
 	go s.serveConn(context.Background(), srvconn)
 
@@ -77,7 +76,7 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 // If server gets a malformed packet it should disconnect with the
 // reason code MalformedPacket 0x81
 func TestServer_DisconnectOnMalformed(t *testing.T) {
-	conn, srvconn := testnet.Dial("tcp", "someserver:1234")
+	conn, srvconn := net.Pipe()
 	var s Server
 	go s.serveConn(context.Background(), srvconn)
 	{ // initiate connect sequence
