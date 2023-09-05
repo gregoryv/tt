@@ -250,7 +250,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 				// filter.  3.9.3 SUBACK Payload
 				a.AddReasonCode(mq.Success)
 			}
-			s.router.AddRoute(sub)
+			s.router.Handle(sub)
 			_ = transmit(ctx, a)
 
 		case *mq.Publish:
@@ -382,7 +382,7 @@ func (r *router) String() string {
 	return plural(len(r.subs), "subscription")
 }
 
-func (r *router) AddRoute(v *subscription) {
+func (r *router) Handle(v *subscription) {
 	r.subs = append(r.subs, v)
 }
 
