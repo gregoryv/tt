@@ -365,9 +365,9 @@ loop:
 // ----------------------------------------
 
 // NewRouter returns a router for handling the given subscriptions.
-func newRouter(v ...*subscription) *router {
+func newRouter() *router {
 	return &router{
-		subs: v,
+		subs: make([]*subscription, 0),
 		log:  log.New(log.Writer(), "router ", log.Flags()),
 	}
 }
@@ -382,8 +382,8 @@ func (r *router) String() string {
 	return plural(len(r.subs), "subscription")
 }
 
-func (r *router) Handle(v *subscription) {
-	r.subs = append(r.subs, v)
+func (r *router) Handle(v ...*subscription) {
+	r.subs = append(r.subs, v...)
 }
 
 // wip remove route when client disconnects
