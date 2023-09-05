@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net"
 	"strings"
 	"sync"
@@ -160,6 +162,7 @@ func Test_router(t *testing.T) {
 		wg.Done()
 		return nil
 	}
+	log.SetOutput(ioutil.Discard)
 	r := newRouter()
 	r.Handle(
 		mustNewSubscription("gopher/pink", handle),
