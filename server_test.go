@@ -173,7 +173,7 @@ func Test_router(t *testing.T) {
 	// number of handle routes that should be triggered by below Pub
 	wg.Add(2)
 	ctx := context.Background()
-	if err := r.Handle(ctx, mq.Pub(0, "gopher/pink", "hi")); err != nil {
+	if err := r.Route(ctx, mq.Pub(0, "gopher/pink", "hi")); err != nil {
 		t.Error(err)
 	}
 	wg.Wait()
@@ -193,7 +193,7 @@ func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
-		if err := r.Handle(ctx, mq.Pub(0, "gopher/pink", "hi")); err != nil {
+		if err := r.Route(ctx, mq.Pub(0, "gopher/pink", "hi")); err != nil {
 			b.Error(err)
 		}
 	}
@@ -208,7 +208,7 @@ func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
-		if err := r.Handle(ctx, mq.Pub(0, "gopher/5", "hi")); err != nil {
+		if err := r.Route(ctx, mq.Pub(0, "gopher/5", "hi")); err != nil {
 			b.Error(err)
 		}
 	}
@@ -223,7 +223,7 @@ func BenchmarkRouter_10routesEndMatch(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		ctx := context.Background()
-		if err := r.Handle(ctx, mq.Pub(0, "gopher/9", "hi")); err != nil {
+		if err := r.Route(ctx, mq.Pub(0, "gopher/9", "hi")); err != nil {
 			b.Error(err)
 		}
 	}

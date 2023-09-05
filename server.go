@@ -264,11 +264,11 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 
 			switch p.QoS() {
 			case 0:
-				_ = s.router.Handle(ctx, p)
+				_ = s.router.Route(ctx, p)
 			case 1:
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
-				_ = s.router.Handle(ctx, p)
+				_ = s.router.Route(ctx, p)
 				_ = transmit(ctx, ack)
 
 			case 2: // wip implement server support for QoS 2
@@ -388,8 +388,8 @@ func (r *router) AddRoute(v *subscription) {
 
 // wip remove route when client disconnects
 
-// Handle routes mq.Publish packets by topic name.
-func (r *router) Handle(ctx context.Context, p mq.Packet) error {
+// Route routes mq.Publish packets by topic name.
+func (r *router) Route(ctx context.Context, p mq.Packet) error {
 	switch p := p.(type) {
 	case *mq.Publish:
 		// naive implementation looping over each route, improve at
