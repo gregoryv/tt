@@ -45,7 +45,8 @@ type Server struct {
 	// statistics
 	stat *serverStats
 
-	once sync.Once
+	// used to sync initial setup
+	startup sync.Once
 
 	// app receives server events, see Server.Signal()
 	app chan interface{}
@@ -57,7 +58,7 @@ func (s *Server) SetLogger(v *log.Logger) {
 
 // Start runs the server in a separate go routine. Use [Server.Signal]
 func (s *Server) Start(ctx context.Context) {
-	s.once.Do(s.setDefaults)
+	s.startup.Do(s.setDefaults)
 
 	go func() {
 		if err := s.run(ctx); err != nil {
@@ -145,8 +146,6 @@ func (s *Server) run(ctx context.Context) error {
 // serveConn handles the given remote connection. Blocks until
 // receiver is done. Usually called in go routine.
 func (s *Server) serveConn(ctx context.Context, conn connection) {
-	s.once.Do(s.setDefaults)
-
 	// the server tracks active connections
 	addr := conn.RemoteAddr()
 	a := includePort(addr.String(), s.Debug)
@@ -364,7 +363,7 @@ loop:
 
 // ----------------------------------------
 
-// NewRouter returns a router for handling the given subscriptions.
+// newRouter returns a router for handling the given subscriptions.
 func newRouter() *router {
 	return &router{
 		subs: make([]*subscription, 0),

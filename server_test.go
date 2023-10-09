@@ -19,7 +19,9 @@ import (
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	var s Server
-	go s.serveConn(context.Background(), srvconn)
+	ctx := context.Background()
+	s.Start(ctx)
+	go s.serveConn(ctx, srvconn)
 
 	// initiate connect sequence
 	mq.NewConnect().WriteTo(conn)
@@ -44,7 +46,9 @@ func TestServer_AssignsID(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	defer conn.Close()
 	var s Server
-	go s.serveConn(context.Background(), srvconn)
+	ctx := context.Background()
+	s.Start(ctx)
+	go s.serveConn(ctx, srvconn)
 
 	// initiate connect sequence
 	mq.NewConnect().WriteTo(conn)
@@ -59,7 +63,9 @@ func TestServer_AssignsID(t *testing.T) {
 func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	var s Server
-	go s.serveConn(context.Background(), srvconn)
+	ctx := context.Background()
+	s.Start(ctx)
+	go s.serveConn(ctx, srvconn)
 
 	{ // initiate connect sequence
 		p := mq.NewConnect()
@@ -80,7 +86,9 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 func TestServer_DisconnectOnMalformed(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	var s Server
-	go s.serveConn(context.Background(), srvconn)
+	ctx := context.Background()
+	s.Start(ctx)
+	go s.serveConn(ctx, srvconn)
 	{ // initiate connect sequence
 		p := mq.NewConnect()
 		p.WriteTo(conn)
