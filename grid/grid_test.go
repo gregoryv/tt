@@ -40,17 +40,16 @@ func BenchmarkWindow(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		for _, topic := range topics {
-			match(0, win, filters, topic)
+			match(0, win[:len(filters)], filters, topic)
 		}
 	}
 	windows.Put(win)
 }
 
-func match(k int, window []int, subscriptions []string, topic string) {
-	for i, sub := range subscriptions {
-		// todo match first letter of subscription
-		if sub[0] != topic[0] {
-			window[i] = -1 //  no match
-		}
+// ----------------------------------------
+
+func match(k int, window []int, filters []string, topic string) {
+	for _, v := range topic {
+		_ = v
 	}
 }
