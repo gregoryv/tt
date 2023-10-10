@@ -1,8 +1,19 @@
 package grid
 
-import "testing"
+import (
+	"sync"
+	"testing"
+)
 
 func BenchmarkWindow(b *testing.B) {
+	var windows = sync.Pool{
+		New: func() any {
+			// The Pool's New function should generally only return pointer
+			// types, since a pointer can be put into the return interface
+			// value without an allocation:
+			return make([]int, 1000)
+		},
+	}
 	// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 	topics := []string{
 		"sport/tennis/player1",
@@ -20,14 +31,26 @@ func BenchmarkWindow(b *testing.B) {
 		"tennis/player1/#",
 		"sport/tennis#",
 	}
+	win := windows.Get().([]int)
+
+	// reset
+	for i := 0; i < len(win); i++ {
+		win[i] = i
+	}
 
 	for i := 0; i < b.N; i++ {
 		for _, topic := range topics {
-			match(filters, topic)
+			match(0, win, filters, topic)
 		}
 	}
+	windows.Put(win)
 }
 
-func match(subscriptions []string, topic string) {
-	_ = topic
+func match(k int, window []int, subscriptions []string, topic string) {
+	for i, sub := range subscriptions {
+		// todo match first letter of subscription
+		if sub[0] != topic[0] {
+			window[i] = -1 //  no match
+		}
+	}
 }
