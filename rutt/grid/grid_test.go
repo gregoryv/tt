@@ -50,6 +50,12 @@ func BenchmarkWindow(b *testing.B) {
 
 func match(k int, window []int, filters []string, topic string) {
 	for _, v := range topic {
-		_ = v
+		for j, filter := range filters {
+			if window[j] == -1 {
+				continue
+			}
+			_ = v
+			_ = filter
+		}
 	}
 }
