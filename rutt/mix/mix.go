@@ -29,10 +29,21 @@ func (m *Fmux) Handle(f Filter, fwd ForwardFunc) {
 	m.tex.Lock()
 	defer m.tex.Unlock()
 	if f.HasHashSuffix() {
-		// remove hash before storing
-		prefix := f[:len(f)-1]
+		// remove /# before storing
+		prefix := f[:len(f)-2]
 		m.hashEnd[prefix] = append(m.hashEnd[prefix], fwd)
 	}
+}
+
+func (m *Fmux) Route(topic string) (n int) {
+	m.tex.RLock()
+	defer m.tex.RUnlock()
+	for filter, _ := range m.hashEnd {
+		if strings.HasPrefix(topic, string(filter)) {
+			n++
+		}
+	}
+	return
 }
 
 type ForwardFunc func(context.Context, *mq.Publish) error
