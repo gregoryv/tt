@@ -14,12 +14,8 @@ func NewFmux() *Fmux {
 	}
 }
 
-/*
-
-Fmux is a mq.Publish packet router which groups topics for improved
-performance.
-
-*/
+// Fmux is a mq.Publish packet router which groups topics for improved
+// performance.
 type Fmux struct {
 	tex     sync.RWMutex
 	hashEnd map[Filter][]ForwardFunc
@@ -35,11 +31,12 @@ func (m *Fmux) Handle(f Filter, fwd ForwardFunc) {
 	}
 }
 
-func (m *Fmux) Route(topic string) (n int) {
+// todo this should route a *mq.Publish packet
+func (m *Fmux) Route(pub *mq.Publish) (n int) {
 	m.tex.RLock()
 	defer m.tex.RUnlock()
 	for filter, _ := range m.hashEnd {
-		if strings.HasPrefix(topic, string(filter)) {
+		if strings.HasPrefix(pub.TopicName(), string(filter)) {
 			n++
 		}
 	}
