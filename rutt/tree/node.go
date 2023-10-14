@@ -3,20 +3,7 @@ package tree
 import (
 	"bytes"
 	"fmt"
-	"strings"
 )
-
-func (n *Node) route(topic string) int {
-	if topic == "" && n.part == "" {
-		return 0
-	}
-	i := strings.Index(topic, "/")
-	if i > 0 {
-		part := topic[:i]
-		_ = part // todo
-	}
-	return 0
-}
 
 func NewNode(part string) *Node {
 	return &Node{
@@ -26,16 +13,20 @@ func NewNode(part string) *Node {
 
 type Node struct {
 	part     string
-	Children []*Node
+	children []*Node
 }
 
-func (n *Node) Find(part string) *Node {
-	for _, next := range n.Children {
-		if next.part == part {
-			return next
+func (n *Node) FindChild(part string) *Node {
+	for _, child := range n.children {
+		if child.part == part {
+			return child
 		}
 	}
 	return nil
+}
+
+func (n *Node) AddChild(c *Node) {
+	n.children = append(n.children, c)
 }
 
 func (n *Node) String() string {
@@ -46,7 +37,7 @@ func (n *Node) String() string {
 
 func (n *Node) sprint(buf *bytes.Buffer, indent string) {
 	fmt.Fprintln(buf, indent, n.part)
-	for _, n := range n.Children {
+	for _, n := range n.children {
 		n.sprint(buf, indent+"  ")
 	}
 }

@@ -21,33 +21,24 @@ func (t *Tree) String() string {
 }
 
 func (t *Tree) AddFilter(filter string) {
-	t.m.Lock()
-	defer t.m.Unlock()
-	t.handle(filter, t.root)
-}
-
-func (t *Tree) handle(filter string, n *Node) {
 	if filter == "" {
 		return
 	}
-	i := strings.Index(filter, "/")
-	if i > 0 {
-		part := filter[:i]
-		x := n.Find(part)
-		if x == nil {
-			x = NewNode(part)
-		}
-		n.Children = append(n.Children, x)
-		t.handle(filter[i+1:], x)
-		return
-	}
-	x := n.Find(filter)
-	if x == nil {
-		x = NewNode(filter)
-	}
-	n.Children = append(n.Children, x)
+	t.m.Lock()
+	defer t.m.Unlock()
+	parts := strings.Split(filter, "/")
+	t.addParts(t.root, parts)
 }
 
-func (t *Tree) Route(topic string) int {
-	return t.root.route(topic)
+func (t *Tree) addParts(n *Node, parts []string) {
+	if len(parts) == 0 {
+		return
+	}
+	parent := n.FindChild(parts[0])
+	if parent == nil {
+		parent = NewNode(parts[0])
+		n.AddChild(parent)
+	}
+	// add rest
+	t.addParts(parent, parts[1:])
 }

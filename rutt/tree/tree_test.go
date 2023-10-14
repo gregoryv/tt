@@ -23,6 +23,7 @@ import (
 
 func TestTree(t *testing.T) {
 	x := NewTree()
+	x.AddFilter("")
 	x.AddFilter("#")
 	x.AddFilter("+/tennis/#")
 	x.AddFilter("sport/#")
