@@ -20,7 +20,7 @@ func (t *Tree) String() string {
 	return t.root.String()
 }
 
-func (t *Tree) Handle(filter string) {
+func (t *Tree) AddFilter(filter string) {
 	t.m.Lock()
 	defer t.m.Unlock()
 	t.handle(filter, t.root)
