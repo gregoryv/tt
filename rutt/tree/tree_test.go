@@ -18,15 +18,65 @@ package tree
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 )
 
-func TestTree(t *testing.T) {
+func TestTree_AddFilter(t *testing.T) {
+	x := newTestTree()
+	if testing.Verbose() {
+		fmt.Println(x)
+	}
+}
+
+func newTestTree() *Tree {
 	x := NewTree()
-	x.AddFilter("")
+	x.AddFilter("") // should result in a noop
 	x.AddFilter("#")
 	x.AddFilter("+/tennis/#")
 	x.AddFilter("sport/#")
 	x.AddFilter("sport/tennis/player1/#")
-	fmt.Println(x)
+	return x
+}
+
+func TestRouter(t *testing.T) {
+	t.Run("Tree", func(t *testing.T) {
+		testRouter(t, NewTree())
+	})
+}
+
+func testRouter(t *testing.T, r Router) {
+	t.Helper()
+	exp := []string{
+		"#",
+		"+/tennis/#",
+		"sport/#",
+		"sport/tennis/player1/#",
+	}
+	for _, filter := range exp {
+		r.AddFilter(filter)
+	}
+
+	topics := []string{
+		"sport/tennis/player1",
+		"sport/tennis/player1/ranking",
+		"sport/tennis/player1/score/wimbledon",
+	}
+	for _, topic := range topics {
+		t.Run(topic, func(t *testing.T) {
+			var filters []string
+			for _, n := range r.Match(topic) {
+				filters = append(filters, n.Filter())
+			}
+			if !reflect.DeepEqual(filters, exp) {
+				t.Log(r)
+				t.Error("\ntopic: ", topic, "matched by\n", filters, "\nexpected\n", exp)
+			}
+		})
+	}
+}
+
+type Router interface {
+	AddFilter(string)
+	Match(topic string) []*Node
 }

@@ -16,6 +16,17 @@ type Tree struct {
 	root *Node
 }
 
+func (t *Tree) Match(topic string) []*Node {
+	parts := strings.Split(topic, "/")
+
+	var filters []*Node
+	for _, child := range t.root.children {
+		filters = append(filters, child.Match(parts, 0)...)
+	}
+
+	return filters
+}
+
 func (t *Tree) String() string {
 	return t.root.String()
 }
@@ -28,6 +39,10 @@ func (t *Tree) AddFilter(filter string) {
 	defer t.m.Unlock()
 	parts := strings.Split(filter, "/")
 	t.addParts(t.root, parts)
+	// t.root is just a virtual parent
+	for _, top := range t.root.children {
+		top.parent = nil
+	}
 }
 
 func (t *Tree) addParts(n *Node, parts []string) {

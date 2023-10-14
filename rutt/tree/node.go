@@ -13,7 +13,28 @@ func NewNode(part string) *Node {
 
 type Node struct {
 	part     string
+	parent   *Node
 	children []*Node
+}
+
+func (n *Node) Match(parts []string, i int) []*Node {
+	var filters []*Node
+	switch {
+	case i > len(parts)-1:
+		return append(filters, n)
+
+	case n.part == "#":
+		return append(filters, n)
+
+	case n.part != "+" && n.part != parts[i]:
+		return nil
+	}
+
+	for _, child := range n.children {
+		filters = append(filters, child.Match(parts, i+1)...)
+	}
+
+	return filters
 }
 
 func (n *Node) FindChild(part string) *Node {
@@ -26,7 +47,15 @@ func (n *Node) FindChild(part string) *Node {
 }
 
 func (n *Node) AddChild(c *Node) {
+	c.parent = n
 	n.children = append(n.children, c)
+}
+
+func (n *Node) Filter() string {
+	if n.parent == nil {
+		return n.part
+	}
+	return n.parent.Filter() + "/" + n.part
 }
 
 func (n *Node) String() string {
