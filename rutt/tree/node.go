@@ -1,10 +1,5 @@
 package tree
 
-import (
-	"bytes"
-	"fmt"
-)
-
 func NewNode(part string) *Node {
 	return &Node{
 		part: part,
@@ -56,17 +51,4 @@ func (n *Node) Filter() string {
 		return n.part
 	}
 	return n.parent.Filter() + "/" + n.part
-}
-
-func (n *Node) String() string {
-	var buf bytes.Buffer
-	n.sprint(&buf, "")
-	return buf.String()
-}
-
-func (n *Node) sprint(buf *bytes.Buffer, indent string) {
-	fmt.Fprintln(buf, indent, n.part)
-	for _, n := range n.children {
-		n.sprint(buf, indent+"  ")
-	}
 }

@@ -27,10 +27,6 @@ func (t *Tree) Match(topic string) []*Node {
 	return filters
 }
 
-func (t *Tree) String() string {
-	return t.root.String()
-}
-
 func (t *Tree) AddFilter(filter string) {
 	if filter == "" {
 		return

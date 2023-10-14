@@ -41,11 +41,11 @@ func newTestTree() *Tree {
 
 func TestRouter(t *testing.T) {
 	t.Run("Tree", func(t *testing.T) {
-		testRouter(t, NewTree())
+		testRouterMatch(t, NewTree())
 	})
 }
 
-func testRouter(t *testing.T, r Router) {
+func testRouterMatch(t *testing.T, r Router) {
 	t.Helper()
 	exp := []string{
 		"#",
