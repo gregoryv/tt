@@ -25,12 +25,12 @@ func NewNode(part string) *Node {
 }
 
 type Node struct {
-	part string
-	Next []*Node
+	part     string
+	Children []*Node
 }
 
 func (n *Node) Find(part string) *Node {
-	for _, next := range n.Next {
+	for _, next := range n.Children {
 		if next.part == part {
 			return next
 		}
@@ -46,7 +46,7 @@ func (n *Node) String() string {
 
 func (n *Node) sprint(buf *bytes.Buffer, indent string) {
 	fmt.Fprintln(buf, indent, n.part)
-	for _, n := range n.Next {
+	for _, n := range n.Children {
 		n.sprint(buf, indent+"  ")
 	}
 }

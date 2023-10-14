@@ -37,7 +37,7 @@ func (t *Tree) handle(filter string, n *Node) {
 		if x == nil {
 			x = NewNode(part)
 		}
-		n.Next = append(n.Next, x)
+		n.Children = append(n.Children, x)
 		t.handle(filter[i+1:], x)
 		return
 	}
@@ -45,7 +45,7 @@ func (t *Tree) handle(filter string, n *Node) {
 	if x == nil {
 		x = NewNode(filter)
 	}
-	n.Next = append(n.Next, x)
+	n.Children = append(n.Children, x)
 }
 
 func (t *Tree) Route(topic string) int {
