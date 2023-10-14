@@ -27,6 +27,18 @@ func (t *Tree) Match(topic string) []*Node {
 	return filters
 }
 
+func (t *Tree) Filters() []string {
+	var filters []string
+	for _, l := range t.leafs() {
+		filters = append(filters, l.Filter())
+	}
+	return filters
+}
+
+func (t *Tree) leafs() []*Node {
+	return t.root.Leafs()
+}
+
 func (t *Tree) AddFilter(filter string) {
 	if filter == "" {
 		return

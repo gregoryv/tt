@@ -52,3 +52,19 @@ func (n *Node) Filter() string {
 	}
 	return n.parent.Filter() + "/" + n.part
 }
+
+func (n *Node) Leafs() []*Node {
+	var leafs []*Node
+	for _, c := range n.children {
+		if c.IsLeaf() {
+			leafs = append(leafs, c)
+			continue
+		}
+		leafs = append(leafs, c.Leafs()...)
+	}
+	return leafs
+}
+
+func (n *Node) IsLeaf() bool {
+	return len(n.children) == 0
+}

@@ -17,15 +17,24 @@ https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 package tree
 
 import (
-	"fmt"
+	"bytes"
 	"reflect"
+	"strings"
 	"testing"
 )
 
-func TestTree_AddFilter(t *testing.T) {
+func TestTree(t *testing.T) {
 	x := newTestTree()
-	if testing.Verbose() {
-		fmt.Println(x)
+
+	var buf bytes.Buffer
+	for _, f := range x.Filters() {
+		buf.WriteString(f)
+		buf.WriteString("\n")
+	}
+	got := buf.String()
+	if !strings.Contains(got, "+/tennis/#") {
+
+		t.Fatal(got, "\nunexpected filters")
 	}
 }
 
