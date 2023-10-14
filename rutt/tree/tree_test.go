@@ -80,3 +80,30 @@ type Router interface {
 	AddFilter(string)
 	Match(topic string) []*Node
 }
+
+func BenchmarkTree_Match(b *testing.B) {
+	benchmarkRouterMatch(b, NewTree())
+}
+
+func benchmarkRouterMatch(b *testing.B, r Router) {
+	b.Helper()
+	exp := []string{
+		"#",
+		"+/tennis/#",
+		"sport/#",
+		"sport/tennis/player1/#",
+	}
+	for _, filter := range exp {
+		r.AddFilter(filter)
+	}
+	topics := []string{
+		"sport/tennis/player1",
+		"sport/tennis/player1/ranking",
+		"sport/tennis/player1/score/wimbledon",
+	}
+	for i := 0; i < b.N; i++ {
+		for _, topic := range topics {
+			r.Match(topic)
+		}
+	}
+}
