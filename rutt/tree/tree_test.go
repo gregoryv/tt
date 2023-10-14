@@ -19,23 +19,19 @@ package tree
 import (
 	"bytes"
 	"reflect"
-	"strings"
 	"testing"
+
+	"github.com/gregoryv/golden"
 )
 
-func TestTree(t *testing.T) {
+func TestTree_Filters(t *testing.T) {
 	x := newTestTree()
-
 	var buf bytes.Buffer
 	for _, f := range x.Filters() {
 		buf.WriteString(f)
 		buf.WriteString("\n")
 	}
-	got := buf.String()
-	if !strings.Contains(got, "+/tennis/#") {
-
-		t.Fatal(got, "\nunexpected filters")
-	}
+	golden.Assert(t, buf.String())
 }
 
 func newTestTree() *Tree {
