@@ -32,6 +32,10 @@ func (t *Tree) Filters() []string {
 	return filters
 }
 
+func (t *Tree) Leafs() []*Node {
+	return t.root.Leafs()
+}
+
 func (t *Tree) AddFilter(filter string) *Node {
 	if filter == "" {
 		return nil

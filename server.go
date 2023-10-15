@@ -367,21 +367,18 @@ loop:
 // newRouter returns a router for handling the given subscriptions.
 func newRouter() *router {
 	return &router{
-		subs: make([]*subscription, 0),
-		rut:  arn.NewTree(),
-		log:  log.New(log.Writer(), "router ", log.Flags()),
+		rut: arn.NewTree(),
+		log: log.New(log.Writer(), "router ", log.Flags()),
 	}
 }
 
 type router struct {
-	subs []*subscription
-
 	rut *arn.Tree
 	log *log.Logger
 }
 
 func (r *router) String() string {
-	return plural(len(r.subs), "subscription")
+	return plural(len(r.rut.Leafs()), "subscription")
 }
 
 func (r *router) Handle(v ...*subscription) {
@@ -395,8 +392,6 @@ func (r *router) Handle(v ...*subscription) {
 			}
 		}
 	}
-
-	r.subs = append(r.subs, v...)
 }
 
 // wip remove route when client disconnects
@@ -405,8 +400,7 @@ func (r *router) Handle(v ...*subscription) {
 func (r *router) Route(ctx context.Context, p mq.Packet) error {
 	switch p := p.(type) {
 	case *mq.Publish:
-		// naive implementation looping over each route, improve at
-		// some point
+		// optimization opportunity by pooling a set of results
 		var result []*arn.Node
 		r.rut.Match(&result, p.TopicName())
 		for _, n := range result {

@@ -188,7 +188,7 @@ func Test_router(t *testing.T) {
 		t.Error(err)
 	}
 	wg.Wait()
-	if v := r.String(); !strings.Contains(v, "4 subscriptions") {
+	if v := r.String(); !strings.Contains(v, "3 subscriptions") {
 		t.Error(v)
 	}
 
