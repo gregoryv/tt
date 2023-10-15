@@ -1,4 +1,4 @@
-package tree
+package ftree
 
 import (
 	"strings"

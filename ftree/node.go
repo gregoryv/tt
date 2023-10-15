@@ -1,4 +1,4 @@
-package tree
+package ftree
 
 func NewNode(txt string) *Node {
 	return &Node{
