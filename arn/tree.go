@@ -32,19 +32,21 @@ func (t *Tree) Filters() []string {
 	return filters
 }
 
-func (t *Tree) AddFilter(filter string, v any) {
+func (t *Tree) AddFilter(filter string, v any) *Node {
 	if filter == "" {
-		return
+		return nil
 	}
 	t.m.Lock()
 	defer t.m.Unlock()
 	parts := strings.Split(filter, "/")
-	t.addParts(t.root, parts, v)
+	n := t.addParts(t.root, parts, v)
 	// t.root is just a virtual parent
 	for _, top := range t.root.children {
 		top.parent = nil
 	}
+	return n
 }
+
 func (t *Tree) Find(filter string) (*Node, bool) {
 	if filter == "" {
 		return nil, false
@@ -55,9 +57,9 @@ func (t *Tree) Find(filter string) (*Node, bool) {
 	return t.root.Find(parts)
 }
 
-func (t *Tree) addParts(n *Node, parts []string, v any) {
+func (t *Tree) addParts(n *Node, parts []string, v any) *Node {
 	if len(parts) == 0 {
-		return
+		return n
 	}
 	parent := n.FindChild(parts[0])
 	if parent == nil {
@@ -65,5 +67,5 @@ func (t *Tree) addParts(n *Node, parts []string, v any) {
 		n.AddChild(parent)
 	}
 	// add rest
-	t.addParts(parent, parts[1:], v)
+	return t.addParts(parent, parts[1:], v)
 }

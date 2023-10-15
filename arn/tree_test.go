@@ -114,7 +114,7 @@ func testRouterMatch(t *testing.T, r Router) {
 }
 
 type Router interface {
-	AddFilter(string, any)
+	AddFilter(string, any) *Node
 	Match(result *[]*Node, topic string)
 }
 
