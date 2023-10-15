@@ -26,14 +26,10 @@ func (t *Tree) Match(result *[]*Node, topic string) {
 
 func (t *Tree) Filters() []string {
 	var filters []string
-	for _, l := range t.leafs() {
+	for _, l := range t.root.Leafs() {
 		filters = append(filters, l.Filter())
 	}
 	return filters
-}
-
-func (t *Tree) leafs() []*Node {
-	return t.root.Leafs()
 }
 
 func (t *Tree) AddFilter(filter string) {
