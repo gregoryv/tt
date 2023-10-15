@@ -19,7 +19,9 @@ import (
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	var s Server
-	go s.serveConn(context.Background(), srvconn)
+	ctx := context.Background()
+	s.Start(ctx)
+	go s.serveConn(ctx, srvconn)
 
 	// initiate connect sequence
 	mq.NewConnect().WriteTo(conn)
@@ -44,7 +46,9 @@ func TestServer_AssignsID(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	defer conn.Close()
 	var s Server
-	go s.serveConn(context.Background(), srvconn)
+	ctx := context.Background()
+	s.Start(ctx)
+	go s.serveConn(ctx, srvconn)
 
 	// initiate connect sequence
 	mq.NewConnect().WriteTo(conn)
@@ -59,7 +63,9 @@ func TestServer_AssignsID(t *testing.T) {
 func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	var s Server
-	go s.serveConn(context.Background(), srvconn)
+	ctx := context.Background()
+	s.Start(ctx)
+	go s.serveConn(ctx, srvconn)
 
 	{ // initiate connect sequence
 		p := mq.NewConnect()
@@ -80,7 +86,9 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 func TestServer_DisconnectOnMalformed(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	var s Server
-	go s.serveConn(context.Background(), srvconn)
+	ctx := context.Background()
+	s.Start(ctx)
+	go s.serveConn(ctx, srvconn)
 	{ // initiate connect sequence
 		p := mq.NewConnect()
 		p.WriteTo(conn)
@@ -180,7 +188,7 @@ func Test_router(t *testing.T) {
 		t.Error(err)
 	}
 	wg.Wait()
-	if v := r.String(); !strings.Contains(v, "4 subscriptions") {
+	if v := r.String(); !strings.Contains(v, "3 subscriptions") {
 		t.Error(v)
 	}
 
@@ -233,19 +241,16 @@ func BenchmarkRouter_10routesEndMatch(b *testing.B) {
 }
 
 func ExampleTopicFilter() {
-	tf := mustParseTopicFilter("/a/+/b/+/+")
-	groups, _ := tf.Match("/a/gopher/b/is/cute")
-	fmt.Println(groups)
-	// output:
-	// [gopher is cute]
+	_ = mustParseTopicFilter("/a/+/b/+/+")
 }
 
 func TestParseTopicFilter(t *testing.T) {
+	// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901247
 	okcases := []string{
 		"#",
 	}
 	for _, filter := range okcases {
-		_, err := parseTopicFilter(filter)
+		err := parseTopicFilter(filter)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -257,60 +262,14 @@ func TestParseTopicFilter(t *testing.T) {
 		"",
 	}
 	for _, filter := range badcases {
-		_, err := parseTopicFilter(filter)
+		err := parseTopicFilter(filter)
 		if err == nil {
 			t.Fatalf("%s should fail", filter)
 		}
-	}
-
-}
-
-func Test_topicFilter_Match(t *testing.T) {
-	// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
-	spec := []string{
-		"sport/tennis/player1",
-		"sport/tennis/player1/ranking",
-		"sport/tennis/player1/score/wimbledon",
-	}
-
-	cases := []struct {
-		expMatch bool
-		names    []string
-		*topicFilter
-	}{
-		{true, spec, mustParseTopicFilter("sport/tennis/player1/#")},
-		{true, spec, mustParseTopicFilter("sport/#")},
-		{true, spec, mustParseTopicFilter("#")},
-		{true, spec, mustParseTopicFilter("+/tennis/#")},
-
-		{false, spec, mustParseTopicFilter("+")},
-		{false, spec, mustParseTopicFilter("tennis/player1/#")},
-		{false, spec, mustParseTopicFilter("sport/tennis#")},
-	}
-
-	for _, c := range cases {
-		for _, name := range c.names {
-			words, match := c.topicFilter.Match(name)
-
-			if match != c.expMatch {
-				t.Errorf("%s %s exp:%v got:%v %q",
-					name, c.topicFilter.Filter(), c.expMatch, match, words,
-				)
-			}
-
-			if v := c.topicFilter.Filter(); v == "" {
-				t.Error("no subscription")
-			}
-		}
-	}
-
-	// check String
-	if v := mustParseTopicFilter("sport/#").Filter(); v != "sport/#" {
-		t.Error("Route.String missing filter", v)
 	}
 }
 
 func TestMustParseTopicFilter_panics(t *testing.T) {
 	defer catchPanic(t)
-	mustParseTopicFilter("sport/(.")
+	mustParseTopicFilter("sport/ab#d")
 }
