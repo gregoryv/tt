@@ -45,6 +45,15 @@ func (t *Tree) AddFilter(filter string, v any) {
 		top.parent = nil
 	}
 }
+func (t *Tree) Find(filter string) (*Node, bool) {
+	if filter == "" {
+		return nil, false
+	}
+	t.m.Lock()
+	defer t.m.Unlock()
+	parts := strings.Split(filter, "/")
+	return t.root.Find(parts)
+}
 
 func (t *Tree) addParts(n *Node, parts []string, v any) {
 	if len(parts) == 0 {

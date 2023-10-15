@@ -24,6 +24,21 @@ import (
 	"github.com/gregoryv/golden"
 )
 
+func TestTree_Find(t *testing.T) {
+	x := NewTree()
+	n, found := x.Find("no/such/filter")
+	if found || n != nil {
+		t.Error("Find returned", n, found)
+	}
+
+	filter := "store/candy/door/#"
+	x.AddFilter(filter, nil)
+	n, found = x.Find(filter)
+	if !found || n == nil {
+		t.Error("Find returned", n, found)
+	}
+}
+
 func TestTree_NoMatch(t *testing.T) {
 	x := newTestTree()
 	x.AddFilter("garage/+", nil)

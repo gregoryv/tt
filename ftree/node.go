@@ -34,6 +34,17 @@ func (n *Node) Match(filters *[]*Node, parts []string, i int) {
 	}
 }
 
+func (n *Node) Find(parts []string) (*Node, bool) {
+	if len(parts) == 0 {
+		return n, true
+	}
+	c := n.FindChild(parts[0])
+	if c == nil {
+		return nil, false
+	}
+	return c.Find(parts[1:])
+}
+
 func (n *Node) FindChild(txt string) *Node {
 	for _, child := range n.children {
 		if child.txt == txt {
