@@ -116,6 +116,16 @@ func testRouterMatch(t *testing.T, r Router) {
 			}
 		})
 	}
+
+	t.Run("$sys", func(t *testing.T) {
+		var result []*Node
+		topic := "$sys/health"
+		r.Match(&result, topic)
+		if len(result) > 0 {
+			t.Error("$sys should not match", r.(*Tree).Filters())
+		}
+	})
+
 }
 
 type Router interface {

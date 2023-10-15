@@ -24,7 +24,7 @@ func (t *Tree) Match(result *[]*Node, topic string) {
 	defer t.m.RUnlock()
 	parts := strings.Split(topic, "/")
 	for _, child := range t.root.children {
-		child.Match(result, parts, 0)
+		child.match(result, parts, 0)
 	}
 }
 

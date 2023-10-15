@@ -1,5 +1,7 @@
 package arn
 
+// NewNode returns a new node using txt as level value. E.g. +, # or a
+// word.
 func NewNode(txt string) *Node {
 	return &Node{
 		txt: txt,
@@ -7,6 +9,7 @@ func NewNode(txt string) *Node {
 }
 
 type Node struct {
+	// Value is controlled by the caller.
 	Value any
 
 	txt      string
@@ -14,14 +17,17 @@ type Node struct {
 	children []*Node
 }
 
-func (n *Node) Match(filters *[]*Node, parts []string, i int) {
+func (n *Node) match(result *[]*Node, parts []string, i int) {
 	switch {
 	case i > len(parts)-1:
-		*filters = append(*filters, n)
+		*result = append(*result, n)
 		return
 
 	case n.txt == "#":
-		*filters = append(*filters, n)
+		if parts[0][0] != '$' {
+			// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901246
+			*result = append(*result, n)
+		}
 		return
 
 	case n.txt != "+" && n.txt != parts[i]:
@@ -29,7 +35,7 @@ func (n *Node) Match(filters *[]*Node, parts []string, i int) {
 	}
 
 	for _, child := range n.children {
-		child.Match(filters, parts, i+1)
+		child.match(result, parts, i+1)
 	}
 }
 
