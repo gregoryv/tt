@@ -12,7 +12,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -500,6 +499,7 @@ func mustParseTopicFilter(v string) *topicFilter {
 	return re
 }
 
+// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901247
 func parseTopicFilter(v string) (*topicFilter, error) {
 	if len(v) == 0 {
 		return nil, fmt.Errorf("empty filter")
@@ -509,22 +509,7 @@ func parseTopicFilter(v string) (*topicFilter, error) {
 		return nil, fmt.Errorf("%q # not allowed there", v)
 	}
 
-	// build regexp
-	var expr string
-	if v == "#" {
-		expr = "^(.*)$"
-	} else {
-		expr = strings.ReplaceAll(v, "+", `([\w\s]+)`)
-		expr = strings.ReplaceAll(expr, "/#", `(.*)`)
-		expr = "^" + expr + "$"
-	}
-	re, err := regexp.Compile(expr)
-	if err != nil {
-		return nil, err
-	}
-
 	tf := &topicFilter{
-		re:     re,
 		filter: v,
 	}
 	return tf, nil
@@ -535,18 +520,7 @@ func parseTopicFilter(v string) (*topicFilter, error) {
 //
 // [4.7 Topic Names and Topic Filters]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 type topicFilter struct {
-	re     *regexp.Regexp
 	filter string
-}
-
-// Match topic name and return any wildcard words.
-func (r *topicFilter) Match(name string) ([]string, bool) {
-	res := r.re.FindAllStringSubmatch(name, -1)
-	if len(res) == 0 {
-		return nil, false
-	}
-	// skip the entire match, ie. the first element
-	return res[0][1:], true
 }
 
 func (r *topicFilter) Filter() string {
