@@ -24,6 +24,19 @@ import (
 	"github.com/gregoryv/golden"
 )
 
+func TestTree_NoMatch(t *testing.T) {
+	x := newTestTree()
+	x.AddFilter("garage/+")
+
+	var result []*Node
+	topic := "store/fruit/apple"
+	x.Match(&result, topic)
+	if len(result) != 1 {
+		t.Log("filters: ", x.Filters())
+		t.Errorf("%s should only match one filter", topic)
+	}
+}
+
 func TestTree_Filters(t *testing.T) {
 	x := newTestTree()
 	var buf bytes.Buffer
