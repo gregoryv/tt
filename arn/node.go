@@ -1,9 +1,8 @@
 package arn
 
-func NewNode(txt string, v any) *Node {
+func NewNode(txt string) *Node {
 	return &Node{
-		Value: v,
-		txt:   txt,
+		txt: txt,
 	}
 }
 

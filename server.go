@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt/arn"
 	"github.com/gregoryv/tt/event"
 )
 
@@ -367,6 +368,7 @@ loop:
 func newRouter() *router {
 	return &router{
 		subs: make([]*subscription, 0),
+		rut:  arn.NewTree(),
 		log:  log.New(log.Writer(), "router ", log.Flags()),
 	}
 }
@@ -374,6 +376,7 @@ func newRouter() *router {
 type router struct {
 	subs []*subscription
 
+	rut *arn.Tree
 	log *log.Logger
 }
 
@@ -382,6 +385,17 @@ func (r *router) String() string {
 }
 
 func (r *router) Handle(v ...*subscription) {
+	for _, s := range v {
+		for _, f := range s.filters {
+			n := r.rut.AddFilter(f.Filter())
+			if n.Value == nil {
+				n.Value = v
+			} else {
+				n.Value = append(n.Value.([]*subscription), v...)
+			}
+		}
+	}
+
 	r.subs = append(r.subs, v...)
 }
 

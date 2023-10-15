@@ -7,7 +7,7 @@ import (
 
 func NewTree() *Tree {
 	return &Tree{
-		root: NewNode("", nil),
+		root: NewNode(""),
 	}
 }
 
@@ -32,14 +32,14 @@ func (t *Tree) Filters() []string {
 	return filters
 }
 
-func (t *Tree) AddFilter(filter string, v any) *Node {
+func (t *Tree) AddFilter(filter string) *Node {
 	if filter == "" {
 		return nil
 	}
 	t.m.Lock()
 	defer t.m.Unlock()
 	parts := strings.Split(filter, "/")
-	n := t.addParts(t.root, parts, v)
+	n := t.addParts(t.root, parts)
 	// t.root is just a virtual parent
 	for _, top := range t.root.children {
 		top.parent = nil
@@ -57,15 +57,15 @@ func (t *Tree) Find(filter string) (*Node, bool) {
 	return t.root.Find(parts)
 }
 
-func (t *Tree) addParts(n *Node, parts []string, v any) *Node {
+func (t *Tree) addParts(n *Node, parts []string) *Node {
 	if len(parts) == 0 {
 		return n
 	}
 	parent := n.FindChild(parts[0])
 	if parent == nil {
-		parent = NewNode(parts[0], v)
+		parent = NewNode(parts[0])
 		n.AddChild(parent)
 	}
 	// add rest
-	return t.addParts(parent, parts[1:], v)
+	return t.addParts(parent, parts[1:])
 }

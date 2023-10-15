@@ -32,7 +32,7 @@ func TestTree_Find(t *testing.T) {
 	}
 
 	filter := "store/candy/door/#"
-	x.AddFilter(filter, nil)
+	x.AddFilter(filter)
 	n, found = x.Find(filter)
 	if !found || n == nil {
 		t.Error("Find returned", n, found)
@@ -41,7 +41,7 @@ func TestTree_Find(t *testing.T) {
 
 func TestTree_NoMatch(t *testing.T) {
 	x := newTestTree()
-	x.AddFilter("garage/+", nil)
+	x.AddFilter("garage/+")
 
 	var result []*Node
 	topic := "store/fruit/apple"
@@ -64,11 +64,11 @@ func TestTree_Filters(t *testing.T) {
 
 func newTestTree() *Tree {
 	x := NewTree()
-	x.AddFilter("", nil) // should result in a noop
-	x.AddFilter("#", nil)
-	x.AddFilter("+/tennis/#", nil)
-	x.AddFilter("sport/#", nil)
-	x.AddFilter("sport/tennis/player1/#", nil)
+	x.AddFilter("") // should result in a noop
+	x.AddFilter("#")
+	x.AddFilter("+/tennis/#")
+	x.AddFilter("sport/#")
+	x.AddFilter("sport/tennis/player1/#")
 	return x
 }
 
@@ -87,7 +87,7 @@ func testRouterMatch(t *testing.T, r Router) {
 		"sport/tennis/player1/#",
 	}
 	for _, filter := range exp {
-		r.AddFilter(filter, nil)
+		r.AddFilter(filter)
 	}
 
 	topics := []string{
@@ -114,7 +114,7 @@ func testRouterMatch(t *testing.T, r Router) {
 }
 
 type Router interface {
-	AddFilter(string, any) *Node
+	AddFilter(string) *Node
 	Match(result *[]*Node, topic string)
 }
 
@@ -131,7 +131,7 @@ func benchmarkRouterMatch(b *testing.B, r Router) {
 		"sport/tennis/player1/#",
 	}
 	for _, filter := range exp {
-		r.AddFilter(filter, nil)
+		r.AddFilter(filter)
 	}
 	topics := []string{
 		"sport/tennis/player1",
