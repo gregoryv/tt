@@ -1,12 +1,15 @@
 package ftree
 
-func NewNode(txt string) *Node {
+func NewNode(txt string, v any) *Node {
 	return &Node{
-		txt: txt,
+		Value: v,
+		txt:   txt,
 	}
 }
 
 type Node struct {
+	Value any
+
 	txt      string
 	parent   *Node
 	children []*Node
