@@ -3,7 +3,7 @@ module github.com/gregoryv/tt
 go 1.19
 
 require (
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/gregoryv/cmdline v0.13.1-0.20230406035842-c8407e250fa8
 	github.com/gregoryv/draw v0.26.0
 	github.com/gregoryv/golden v0.6.1
@@ -15,5 +15,5 @@ require (
 	github.com/gregoryv/find v0.6.0 // indirect
 	github.com/gregoryv/nexus v0.6.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
 )
