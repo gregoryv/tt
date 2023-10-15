@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Optimize message routing using arn.Tree
 - Support multiple topic filters in subscription
 - Add flag tt pub --repeat 
 - Fix timeout for tt srv

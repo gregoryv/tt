@@ -12,7 +12,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -20,6 +19,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gregoryv/mq"
+	"github.com/gregoryv/tt/arn"
 	"github.com/gregoryv/tt/event"
 )
 
@@ -235,14 +235,15 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 
 			// check all filters
 			for _, f := range p.Filters() {
-				tf, err := parseTopicFilter(f.Filter())
+				filter := f.Filter()
+				err := parseTopicFilter(filter)
 				if err != nil {
 					p := mq.NewDisconnect()
 					p.SetReasonCode(mq.MalformedPacket)
 					_ = transmit(ctx, p)
 					return
 				}
-				sub.addTopicFilter(tf)
+				sub.addTopicFilter(filter)
 
 				// Subscribe.WellFormed fails if for any reason,
 				// though here we want to set a reason code for each
@@ -366,23 +367,31 @@ loop:
 // newRouter returns a router for handling the given subscriptions.
 func newRouter() *router {
 	return &router{
-		subs: make([]*subscription, 0),
-		log:  log.New(log.Writer(), "router ", log.Flags()),
+		rut: arn.NewTree(),
+		log: log.New(log.Writer(), "router ", log.Flags()),
 	}
 }
 
 type router struct {
-	subs []*subscription
-
+	rut *arn.Tree
 	log *log.Logger
 }
 
 func (r *router) String() string {
-	return plural(len(r.subs), "subscription")
+	return plural(len(r.rut.Leafs()), "subscription")
 }
 
 func (r *router) Handle(v ...*subscription) {
-	r.subs = append(r.subs, v...)
+	for _, s := range v {
+		for _, f := range s.filters {
+			n := r.rut.AddFilter(f)
+			if n.Value == nil {
+				n.Value = v
+			} else {
+				n.Value = append(n.Value.([]*subscription), s)
+			}
+		}
+	}
 }
 
 // wip remove route when client disconnects
@@ -391,19 +400,18 @@ func (r *router) Handle(v ...*subscription) {
 func (r *router) Route(ctx context.Context, p mq.Packet) error {
 	switch p := p.(type) {
 	case *mq.Publish:
-		// naive implementation looping over each route, improve at
-		// some point
-		for _, s := range r.subs {
-			for _, f := range s.filters {
-				if _, ok := f.Match(p.TopicName()); ok {
-					for _, h := range s.handlers {
-						// maybe we'll have to have a different routing mechanism for
-						// client side handling subscriptions compared to server side.
-						// As server may have to adapt packages before sending and
-						// there will be a QoS on each subscription that we need to consider.
-						if err := h(ctx, p); err != nil {
-							r.log.Println("handle", p, err)
-						}
+		// optimization opportunity by pooling a set of results
+		var result []*arn.Node
+		r.rut.Match(&result, p.TopicName())
+		for _, n := range result {
+			for _, s := range n.Value.([]*subscription) {
+				for _, h := range s.handlers {
+					// maybe we'll have to have a different routing mechanism for
+					// client side handling subscriptions compared to server side.
+					// As server may have to adapt packages before sending and
+					// there will be a QoS on each subscription that we need to consider.
+					if err := h(ctx, p); err != nil {
+						r.log.Println("handle", p, err)
 					}
 				}
 			}
@@ -441,12 +449,12 @@ func (s *serverStats) RemoveConn() {
 
 // MustNewSubscription panics on bad filter
 func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
-	tf, err := parseTopicFilter(filter)
+	err := parseTopicFilter(filter)
 	if err != nil {
 		panic(err.Error())
 	}
 	sub := newSubscription(handlers...)
-	sub.addTopicFilter(tf)
+	sub.addTopicFilter(filter)
 	return sub
 }
 
@@ -460,8 +468,8 @@ func newSubscription(handlers ...pubHandler) *subscription {
 type subscription struct {
 	subscriptionID int
 
-	filters []*topicFilter // todo multiple filters for one subscription and
-	// multiple clients can share a subscription
+	filters []string
+	// todo multiple clients can share a subscription
 
 	handlers []pubHandler
 }
@@ -471,76 +479,36 @@ func (r *subscription) String() string {
 	case 0:
 		return fmt.Sprintf("sub %v", r.subscriptionID)
 	case 1:
-		return fmt.Sprintf("sub %v: %s", r.subscriptionID, r.filters[0].filter)
+		return fmt.Sprintf("sub %v: %s", r.subscriptionID, r.filters[0])
 	default:
-		return fmt.Sprintf("sub %v: %s...", r.subscriptionID, r.filters[0].filter)
+		return fmt.Sprintf("sub %v: %s...", r.subscriptionID, r.filters[0])
 	}
 
 }
 
-func (s *subscription) addTopicFilter(f *topicFilter) {
+func (s *subscription) addTopicFilter(f string) {
 	s.filters = append(s.filters, f)
 }
 
 // ----------------------------------------
 
-func mustParseTopicFilter(v string) *topicFilter {
-	re, err := parseTopicFilter(v)
+func mustParseTopicFilter(v string) string {
+	err := parseTopicFilter(v)
 	if err != nil {
 		panic(err.Error())
 	}
-	return re
+	return v
 }
 
-func parseTopicFilter(v string) (*topicFilter, error) {
+// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901247
+func parseTopicFilter(v string) error {
 	if len(v) == 0 {
-		return nil, fmt.Errorf("empty filter")
+		return fmt.Errorf("empty filter")
 	}
 	if i := strings.Index(v, "#"); i >= 0 && i < len(v)-1 {
 		// i.e. /a/#/b
-		return nil, fmt.Errorf("%q # not allowed there", v)
+		return fmt.Errorf("%q # not allowed there", v)
 	}
 
-	// build regexp
-	var expr string
-	if v == "#" {
-		expr = "^(.*)$"
-	} else {
-		expr = strings.ReplaceAll(v, "+", `([\w\s]+)`)
-		expr = strings.ReplaceAll(expr, "/#", `(.*)`)
-		expr = "^" + expr + "$"
-	}
-	re, err := regexp.Compile(expr)
-	if err != nil {
-		return nil, err
-	}
-
-	tf := &topicFilter{
-		re:     re,
-		filter: v,
-	}
-	return tf, nil
-}
-
-// topicFilter is used to match topic names as specified in [4.7 Topic
-// Names and Topic Filters]
-//
-// [4.7 Topic Names and Topic Filters]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
-type topicFilter struct {
-	re     *regexp.Regexp
-	filter string
-}
-
-// Match topic name and return any wildcard words.
-func (r *topicFilter) Match(name string) ([]string, bool) {
-	res := r.re.FindAllStringSubmatch(name, -1)
-	if len(res) == 0 {
-		return nil, false
-	}
-	// skip the entire match, ie. the first element
-	return res[0][1:], true
-}
-
-func (r *topicFilter) Filter() string {
-	return r.filter
+	return nil
 }
