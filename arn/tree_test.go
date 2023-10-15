@@ -26,7 +26,12 @@ import (
 
 func TestTree_Find(t *testing.T) {
 	x := NewTree()
-	n, found := x.Find("no/such/filter")
+	n, found := x.Find("")
+	if found || n != nil {
+		t.Error("Find returned", n, found)
+	}
+
+	n, found = x.Find("no/such/filter")
 	if found || n != nil {
 		t.Error("Find returned", n, found)
 	}

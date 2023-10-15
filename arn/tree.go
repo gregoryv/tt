@@ -12,13 +12,14 @@ func NewTree() *Tree {
 }
 
 type Tree struct {
-	m    sync.Mutex
+	m    sync.RWMutex
 	root *Node
 }
 
 func (t *Tree) Match(result *[]*Node, topic string) {
+	t.m.RLock()
+	defer t.m.RUnlock()
 	parts := strings.Split(topic, "/")
-
 	for _, child := range t.root.children {
 		child.Match(result, parts, 0)
 	}
@@ -26,13 +27,15 @@ func (t *Tree) Match(result *[]*Node, topic string) {
 
 func (t *Tree) Filters() []string {
 	var filters []string
-	for _, l := range t.root.Leafs() {
+	for _, l := range t.Leafs() {
 		filters = append(filters, l.Filter())
 	}
 	return filters
 }
 
 func (t *Tree) Leafs() []*Node {
+	t.m.RLock()
+	defer t.m.RUnlock()
 	return t.root.Leafs()
 }
 
