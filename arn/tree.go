@@ -5,6 +5,7 @@ import (
 	"sync"
 )
 
+// NewTree returns a new empty topic filter tree.
 func NewTree() *Tree {
 	return &Tree{
 		root: NewNode(""),
@@ -16,6 +17,8 @@ type Tree struct {
 	root *Node
 }
 
+// Match populates result with leaf nodes matching the given topic
+// name.
 func (t *Tree) Match(result *[]*Node, topic string) {
 	t.m.RLock()
 	defer t.m.RUnlock()
@@ -25,6 +28,7 @@ func (t *Tree) Match(result *[]*Node, topic string) {
 	}
 }
 
+// Filters returns all topic filters in the tree
 func (t *Tree) Filters() []string {
 	var filters []string
 	for _, l := range t.Leafs() {
@@ -33,12 +37,15 @@ func (t *Tree) Filters() []string {
 	return filters
 }
 
+// Leafs returns all topic filters in the tree as nodes.
 func (t *Tree) Leafs() []*Node {
 	t.m.RLock()
 	defer t.m.RUnlock()
 	return t.root.Leafs()
 }
 
+// AddFilter adds the topic filter to the tree. Returns existing or
+// new node for that filter. Returns nil on empty filter.
 func (t *Tree) AddFilter(filter string) *Node {
 	if filter == "" {
 		return nil
@@ -54,6 +61,8 @@ func (t *Tree) AddFilter(filter string) *Node {
 	return n
 }
 
+// Find returns node matching the given filter. If not found, nil and
+// false is returned.
 func (t *Tree) Find(filter string) (*Node, bool) {
 	if filter == "" {
 		return nil, false
