@@ -16,15 +16,12 @@ type Tree struct {
 	root *Node
 }
 
-func (t *Tree) Match(topic string) []*Node {
+func (t *Tree) Match(result *[]*Node, topic string) {
 	parts := strings.Split(topic, "/")
 
-	var filters []*Node
 	for _, child := range t.root.children {
-		filters = append(filters, child.Match(parts, 0)...)
+		child.Match(result, parts, 0)
 	}
-
-	return filters
 }
 
 func (t *Tree) Filters() []string {

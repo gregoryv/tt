@@ -67,10 +67,14 @@ func testRouterMatch(t *testing.T, r Router) {
 		"sport/tennis/player1/ranking",
 		"sport/tennis/player1/score/wimbledon",
 	}
+	var filters []string
+	var result []*Node
 	for _, topic := range topics {
 		t.Run(topic, func(t *testing.T) {
-			var filters []string
-			for _, n := range r.Match(topic) {
+			result = result[:0] // reset
+			r.Match(&result, topic)
+			filters = filters[:0] // reset
+			for _, n := range result {
 				filters = append(filters, n.Filter())
 			}
 			if !reflect.DeepEqual(filters, exp) {
@@ -83,7 +87,7 @@ func testRouterMatch(t *testing.T, r Router) {
 
 type Router interface {
 	AddFilter(string)
-	Match(topic string) []*Node
+	Match(result *[]*Node, topic string)
 }
 
 func BenchmarkTree_Match(b *testing.B) {
@@ -106,9 +110,11 @@ func benchmarkRouterMatch(b *testing.B, r Router) {
 		"sport/tennis/player1/ranking",
 		"sport/tennis/player1/score/wimbledon",
 	}
+	var result []*Node // could make result pooled
 	for i := 0; i < b.N; i++ {
 		for _, topic := range topics {
-			r.Match(topic)
+			result = result[:0] // reset
+			r.Match(&result, topic)
 		}
 	}
 }
