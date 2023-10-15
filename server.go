@@ -391,7 +391,7 @@ func (r *router) Handle(v ...*subscription) {
 			if n.Value == nil {
 				n.Value = v
 			} else {
-				n.Value = append(n.Value.([]*subscription), v...)
+				n.Value = append(n.Value.([]*subscription), s)
 			}
 		}
 	}
@@ -407,17 +407,17 @@ func (r *router) Route(ctx context.Context, p mq.Packet) error {
 	case *mq.Publish:
 		// naive implementation looping over each route, improve at
 		// some point
-		for _, s := range r.subs {
-			for _, f := range s.filters {
-				if _, ok := f.Match(p.TopicName()); ok {
-					for _, h := range s.handlers {
-						// maybe we'll have to have a different routing mechanism for
-						// client side handling subscriptions compared to server side.
-						// As server may have to adapt packages before sending and
-						// there will be a QoS on each subscription that we need to consider.
-						if err := h(ctx, p); err != nil {
-							r.log.Println("handle", p, err)
-						}
+		var result []*arn.Node
+		r.rut.Match(&result, p.TopicName())
+		for _, n := range result {
+			for _, s := range n.Value.([]*subscription) {
+				for _, h := range s.handlers {
+					// maybe we'll have to have a different routing mechanism for
+					// client side handling subscriptions compared to server side.
+					// As server may have to adapt packages before sending and
+					// there will be a QoS on each subscription that we need to consider.
+					if err := h(ctx, p); err != nil {
+						r.log.Println("handle", p, err)
 					}
 				}
 			}
