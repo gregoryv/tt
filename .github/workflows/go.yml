@@ -22,4 +22,6 @@ jobs:
       run: go install -v ./cmd/tt
 
     - name: Test
-      run: go test -v ./...
+      run: |
+        go install github.com/gregoryv/gocolor/cmd/gocolor@latest
+        go test -v ./... | gocolor
