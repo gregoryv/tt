@@ -250,7 +250,7 @@ func TestParseTopicFilter(t *testing.T) {
 		"#",
 	}
 	for _, filter := range okcases {
-		_, err := parseTopicFilter(filter)
+		err := parseTopicFilter(filter)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -262,7 +262,7 @@ func TestParseTopicFilter(t *testing.T) {
 		"",
 	}
 	for _, filter := range badcases {
-		_, err := parseTopicFilter(filter)
+		err := parseTopicFilter(filter)
 		if err == nil {
 			t.Fatalf("%s should fail", filter)
 		}

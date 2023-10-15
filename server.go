@@ -235,14 +235,15 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 
 			// check all filters
 			for _, f := range p.Filters() {
-				tf, err := parseTopicFilter(f.Filter())
+				filter := f.Filter()
+				err := parseTopicFilter(filter)
 				if err != nil {
 					p := mq.NewDisconnect()
 					p.SetReasonCode(mq.MalformedPacket)
 					_ = transmit(ctx, p)
 					return
 				}
-				sub.addTopicFilter(tf)
+				sub.addTopicFilter(filter)
 
 				// Subscribe.WellFormed fails if for any reason,
 				// though here we want to set a reason code for each
@@ -383,7 +384,7 @@ func (r *router) String() string {
 func (r *router) Handle(v ...*subscription) {
 	for _, s := range v {
 		for _, f := range s.filters {
-			n := r.rut.AddFilter(f.Filter())
+			n := r.rut.AddFilter(f)
 			if n.Value == nil {
 				n.Value = v
 			} else {
@@ -448,12 +449,12 @@ func (s *serverStats) RemoveConn() {
 
 // MustNewSubscription panics on bad filter
 func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
-	tf, err := parseTopicFilter(filter)
+	err := parseTopicFilter(filter)
 	if err != nil {
 		panic(err.Error())
 	}
 	sub := newSubscription(handlers...)
-	sub.addTopicFilter(tf)
+	sub.addTopicFilter(filter)
 	return sub
 }
 
@@ -467,8 +468,8 @@ func newSubscription(handlers ...pubHandler) *subscription {
 type subscription struct {
 	subscriptionID int
 
-	filters []*topicFilter // todo multiple filters for one subscription and
-	// multiple clients can share a subscription
+	filters []string
+	// todo multiple clients can share a subscription
 
 	handlers []pubHandler
 }
@@ -478,51 +479,36 @@ func (r *subscription) String() string {
 	case 0:
 		return fmt.Sprintf("sub %v", r.subscriptionID)
 	case 1:
-		return fmt.Sprintf("sub %v: %s", r.subscriptionID, r.filters[0].filter)
+		return fmt.Sprintf("sub %v: %s", r.subscriptionID, r.filters[0])
 	default:
-		return fmt.Sprintf("sub %v: %s...", r.subscriptionID, r.filters[0].filter)
+		return fmt.Sprintf("sub %v: %s...", r.subscriptionID, r.filters[0])
 	}
 
 }
 
-func (s *subscription) addTopicFilter(f *topicFilter) {
+func (s *subscription) addTopicFilter(f string) {
 	s.filters = append(s.filters, f)
 }
 
 // ----------------------------------------
 
-func mustParseTopicFilter(v string) *topicFilter {
-	re, err := parseTopicFilter(v)
+func mustParseTopicFilter(v string) string {
+	err := parseTopicFilter(v)
 	if err != nil {
 		panic(err.Error())
 	}
-	return re
+	return v
 }
 
 // https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901247
-func parseTopicFilter(v string) (*topicFilter, error) {
+func parseTopicFilter(v string) error {
 	if len(v) == 0 {
-		return nil, fmt.Errorf("empty filter")
+		return fmt.Errorf("empty filter")
 	}
 	if i := strings.Index(v, "#"); i >= 0 && i < len(v)-1 {
 		// i.e. /a/#/b
-		return nil, fmt.Errorf("%q # not allowed there", v)
+		return fmt.Errorf("%q # not allowed there", v)
 	}
 
-	tf := &topicFilter{
-		filter: v,
-	}
-	return tf, nil
-}
-
-// topicFilter is used to match topic names as specified in [4.7 Topic
-// Names and Topic Filters]
-//
-// [4.7 Topic Names and Topic Filters]: https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
-type topicFilter struct {
-	filter string
-}
-
-func (r *topicFilter) Filter() string {
-	return r.filter
+	return nil
 }
