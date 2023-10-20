@@ -172,7 +172,7 @@ func Test_router(t *testing.T) {
 	}
 	log.SetOutput(ioutil.Discard)
 	r := newRouter()
-	r.Handle(
+	r.AddSubscriptions(
 		mustNewSubscription("gopher/pink", handle),
 		mustNewSubscription("gopher/blue", ttx.NoopPub),
 		mustNewSubscription("#", handle),
@@ -198,7 +198,7 @@ func Test_router(t *testing.T) {
 func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 	r := newRouter()
 	for i := 0; i < 10; i++ {
-		r.Handle(mustNewSubscription("gopher/+", ttx.NoopPub))
+		r.AddSubscriptions(mustNewSubscription("gopher/+", ttx.NoopPub))
 	}
 
 	ctx := context.Background()
@@ -213,7 +213,7 @@ func BenchmarkRouter_10routesAllMatch(b *testing.B) {
 func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 	r := newRouter()
 	for i := 0; i < 10; i++ {
-		r.Handle(mustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub))
+		r.AddSubscriptions(mustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub))
 	}
 
 	ctx := context.Background()
@@ -228,7 +228,7 @@ func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
 func BenchmarkRouter_10routesEndMatch(b *testing.B) {
 	r := newRouter()
 	for i := 0; i < 10; i++ {
-		r.Handle(mustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub))
+		r.AddSubscriptions(mustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub))
 	}
 
 	ctx := context.Background()
