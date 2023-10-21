@@ -1,6 +1,8 @@
 module github.com/gregoryv/tt
 
-go 1.19
+go 1.21
+
+toolchain go1.21.1
 
 require (
 	github.com/google/uuid v1.3.1
@@ -8,12 +10,10 @@ require (
 	github.com/gregoryv/draw v0.26.0
 	github.com/gregoryv/golden v0.6.1
 	github.com/gregoryv/mq v0.27.0
-	github.com/gregoryv/web v0.24.0
+	github.com/gregoryv/web v0.25.0
 )
 
 require (
-	github.com/gregoryv/find v0.6.0 // indirect
 	github.com/gregoryv/nexus v0.6.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
 )
