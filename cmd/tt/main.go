@@ -241,7 +241,7 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 	srv.Debug = c.shared.Debug
 	srv.ShowSettings = c.shared.ShowSettings
 	srv.ConnectTimeout = c.ConnectTimeout
-	srv.Binds = []*tt.Bind{&c.Bind}
+	srv.AddBind(&c.Bind)
 	srv.SetLogger(log.New(os.Stderr, "ttsrv ", log.Flags()))
 	ctx, cancel := context.WithCancel(ctx)
 	go srv.Run(ctx)

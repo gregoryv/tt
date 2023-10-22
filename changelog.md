@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Hide Server.Binds, use Server.AddBind
 - Rename Server.Start to Run
 
 ## [0.10.0] 2023-10-15

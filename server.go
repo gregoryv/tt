@@ -36,7 +36,7 @@ func NewServer() *Server {
 type Server struct {
 	// bind configuration where server listens for connections, empty
 	// defaults to random port on localhost
-	Binds []*Bind
+	binds []*Bind
 
 	// client has to send the initial connect packet, default 200ms
 	ConnectTimeout time.Duration
@@ -60,6 +60,10 @@ type Server struct {
 
 	// app receives server events, see Server.Signal()
 	app chan interface{}
+}
+
+func (s *Server) AddBind(b *Bind) {
+	s.binds = append(s.binds, b)
 }
 
 func (s *Server) SetLogger(v *log.Logger) {
@@ -86,9 +90,9 @@ func (s *Server) setDefaults() {
 	if s.ConnectTimeout == 0 {
 		s.ConnectTimeout = 200 * time.Millisecond
 	}
-	if len(s.Binds) == 0 {
+	if len(s.binds) == 0 {
 		tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
-		s.Binds = append(s.Binds, tcpRandom)
+		s.AddBind(tcpRandom)
 	}
 
 	if s.ShowSettings {
@@ -110,7 +114,7 @@ func (s *Server) Signal() <-chan interface{} {
 
 func (s *Server) run(ctx context.Context) error {
 	// Each bind feeds the server with connections
-	for _, b := range s.Binds {
+	for _, b := range s.binds {
 		u, err := url.Parse(b.URL)
 		if err != nil {
 			return err
