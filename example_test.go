@@ -11,9 +11,9 @@ import (
 // Example shows a simple client for connect, publish a QoS 0 and
 // disconnect.
 func Example_client() {
-	client := tt.Client{
-		Server: "tcp://localhost:1883",
-	}
+	client := tt.NewClient()
+	client.SetServer("tcp://localhost:1883")
+
 	ctx := context.Background()
 	client.Start(ctx)
 

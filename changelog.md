@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Add client settings, hiding fields
 - Remove flag -S and ShowSettings in client and server
 - Hide Server.ConnectTimeout, use Server.SetConnectTimeout
 - Hide Server.Binds, use Server.AddBind

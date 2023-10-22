@@ -14,21 +14,25 @@ import (
 	"github.com/gregoryv/tt/event"
 )
 
+func NewClient() *Client {
+	return &Client{}
+}
+
 // Client implements a mqtt-v5 client. Public fields should be set
 // before calling Run.
 type Client struct {
 	// Server to connect to, defaults to tcp://localhost:1883
-	Server string
+	server string
 
 	// Set to true to include more log output
-	Debug bool
+	debug bool
 
 	// optional logger, leave empty for no logging
-	*log.Logger `json:-`
+	logger *log.Logger
 
 	// Outgoing packets use ids from 1..MaxPacketID, this limits the
 	// number of packets in flight.
-	MaxPacketID uint16
+	maxPacketID uint16
 
 	// for setting defaults
 	once sync.Once
@@ -39,12 +43,17 @@ type Client struct {
 	app chan interface{}
 }
 
+func (c *Client) SetServer(v string)      { c.server = v }
+func (c *Client) SetDebug(v bool)         { c.debug = v }
+func (c *Client) SetMaxPacketID(v uint16) { c.maxPacketID = v }
+func (c *Client) SetLogger(v *log.Logger) { c.logger = v }
+
 func (c *Client) setDefaults() {
-	if c.Logger == nil {
-		c.Logger = log.New(ioutil.Discard, "", log.Flags())
+	if c.logger == nil {
+		c.logger = log.New(ioutil.Discard, "", log.Flags())
 	}
-	if c.Server == "" {
-		c.Server = "tcp://127.0.0.1:1883"
+	if c.server == "" {
+		c.server = "tcp://127.0.0.1:1883"
 	}
 }
 
@@ -68,14 +77,14 @@ func (c *Client) Signal() <-chan interface{} {
 func (c *Client) run(ctx context.Context) error {
 	c.once.Do(c.setDefaults)
 
-	s, err := url.Parse(c.Server)
+	s, err := url.Parse(c.server)
 	if err != nil {
 		return err
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	log := c.Logger
-	debug := c.Debug
+	log := c.logger
+	debug := c.debug
 	maxIDLen := uint(11)
 
 	// dial server
@@ -86,7 +95,7 @@ func (c *Client) run(ctx context.Context) error {
 	}
 
 	// pool of packet ids for reuse
-	pool := newIDPool(c.MaxPacketID)
+	pool := newIDPool(c.maxPacketID)
 	ping := newKeepAlive()
 
 	var m sync.Mutex

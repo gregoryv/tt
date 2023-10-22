@@ -106,12 +106,11 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *PubCmd) Run(ctx context.Context) error {
-	client := &tt.Client{
-		Server:      c.server.String(),
-		Debug:       c.shared.Debug,
-		MaxPacketID: 10,
-		Logger:      log.New(os.Stderr, c.clientID+" ", log.Flags()),
-	}
+	client := tt.NewClient()
+	client.SetServer(c.server.String())
+	client.SetDebug(c.shared.Debug)
+	client.SetMaxPacketID(10)
+	client.SetLogger(log.New(os.Stderr, c.clientID+" ", log.Flags()))
 
 	ctx, cancel := context.WithCancel(ctx)
 	client.Start(ctx)
@@ -177,12 +176,11 @@ func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {
-	client := &tt.Client{
-		Server:      c.server.String(),
-		Debug:       c.shared.Debug,
-		MaxPacketID: 10,
-		Logger:      log.New(os.Stderr, c.clientID+" ", log.Flags()),
-	}
+	client := tt.NewClient()
+	client.SetServer(c.server.String())
+	client.SetDebug(c.shared.Debug)
+	client.SetMaxPacketID(10)
+	client.SetLogger(log.New(os.Stderr, c.clientID+" ", log.Flags()))
 
 	ctx, cancel := context.WithCancel(ctx)
 	client.Start(ctx)

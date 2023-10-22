@@ -10,9 +10,8 @@ import (
 )
 
 func TestClient(t *testing.T) {
-	client := Client{
-		Server: "tcp://localhost:1883",
-	}
+	client := NewClient()
+	client.SetServer("tcp://localhost:1883")
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
 	client.Start(ctx)
