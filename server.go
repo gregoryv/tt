@@ -39,7 +39,7 @@ type Server struct {
 	binds []*Bind
 
 	// client has to send the initial connect packet, default 200ms
-	ConnectTimeout time.Duration
+	connectTimeout time.Duration
 
 	// if nil, log output is discarded
 	log *log.Logger
@@ -65,6 +65,7 @@ type Server struct {
 func (s *Server) AddBind(b *Bind) {
 	s.binds = append(s.binds, b)
 }
+func (s *Server) SetConnectTimeout(v time.Duration) { s.connectTimeout = v }
 
 func (s *Server) SetLogger(v *log.Logger) {
 	s.log = v
@@ -87,8 +88,8 @@ func (s *Server) setDefaults() {
 	if s.Debug {
 		s.log.SetFlags(s.log.Flags() | log.Lshortfile)
 	}
-	if s.ConnectTimeout == 0 {
-		s.ConnectTimeout = 200 * time.Millisecond
+	if s.connectTimeout == 0 {
+		s.connectTimeout = 200 * time.Millisecond
 	}
 	if len(s.binds) == 0 {
 		tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")

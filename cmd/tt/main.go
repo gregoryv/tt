@@ -240,7 +240,7 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 	srv := tt.NewServer()
 	srv.Debug = c.shared.Debug
 	srv.ShowSettings = c.shared.ShowSettings
-	srv.ConnectTimeout = c.ConnectTimeout
+	srv.SetConnectTimeout(c.ConnectTimeout)
 	srv.AddBind(&c.Bind)
 	srv.SetLogger(log.New(os.Stderr, "ttsrv ", log.Flags()))
 	ctx, cancel := context.WithCancel(ctx)

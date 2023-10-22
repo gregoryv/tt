@@ -3,7 +3,6 @@ Package arn provides an MQTT topic filter matcher.
 
 Topic filters are stored in a tree where each node represents one
 level in a topic.
-
 */
 package arn
 

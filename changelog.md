@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Hide Server.ConnectTimeout, use Server.SetConnectTimeout
 - Hide Server.Binds, use Server.AddBind
 - Rename Server.Start to Run
 
