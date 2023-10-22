@@ -155,11 +155,12 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 	defer func() {
 		s.log.Println("del", connstr)
 		s.stat.RemoveConn()
+		// todo handle closed connection
 	}()
 
 	var (
 		m        sync.Mutex
-		maxQoS   uint8 = 1 // wip support QoS 2
+		maxQoS   uint8 = 1 // todo support QoS 2
 		maxIDLen uint  = 11
 
 		clientID string
@@ -253,6 +254,19 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 			s.router.AddSubscriptions(sub)
 			_ = transmit(ctx, a)
 
+		case *mq.Unsubscribe:
+			// wip remove subscriptions when client disconnects or unsubscribes
+			// check all filters
+			for _, filter := range p.Filters() {
+				err := parseTopicFilter(filter)
+				if err != nil {
+					p := mq.NewDisconnect()
+					p.SetReasonCode(mq.MalformedPacket)
+					_ = transmit(ctx, p)
+					return
+				}
+			}
+
 		case *mq.Publish:
 			// Disconnect any attempts to publish exceeding qos.
 			// Specified in section 3.3.1.2 QoS
@@ -271,7 +285,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 				_ = s.router.Route(ctx, p)
 				_ = transmit(ctx, ack)
 
-			case 2: // wip implement server support for QoS 2
+			case 2: // todo implement server support for QoS 2
 
 			}
 
@@ -282,7 +296,6 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 
 	// ignore error here, the connection is done
 	_ = newReceiver(in, conn).Run(ctx)
-	// wip remove subscriptions
 }
 
 func includePort(addr string, yes bool) string {
@@ -396,8 +409,6 @@ func (r *router) AddSubscriptions(v ...*subscription) {
 		}
 	}
 }
-
-// wip remove route when client disconnects
 
 // Route routes mq.Publish packets by topic name.
 func (r *router) Route(ctx context.Context, p mq.Packet) error {
