@@ -24,6 +24,17 @@ type Tree struct {
 	root *Node
 }
 
+func (t *Tree) Modify(filter string, mod func(*Node)) {
+	t.m.Lock()
+	defer t.m.Unlock()
+	parts := strings.Split(filter, "/")
+	n, found := t.root.Find(parts)
+	if !found {
+		return
+	}
+	mod(n)
+}
+
 // Match populates result with leaf nodes matching the given topic
 // name.
 func (t *Tree) Match(result *[]*Node, topic string) {

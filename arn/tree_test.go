@@ -24,6 +24,27 @@ import (
 	"github.com/gregoryv/golden"
 )
 
+func TestTree_Modify(t *testing.T) {
+	x := NewTree()
+	x.AddFilter("sport/#")
+	x.Modify("a/b/c", func(n *Node) {
+		t.Error("modify called on", n)
+	})
+
+	x.Modify("sport/golf", func(n *Node) {
+		t.Error("modify called on", n)
+	})
+
+	var called bool
+	filter := "sport/#"
+	x.Modify(filter, func(n *Node) {
+		called = true
+	})
+	if !called {
+		t.Error("modify not called for", filter)
+	}
+}
+
 func TestTree_Find(t *testing.T) {
 	x := NewTree()
 	n, found := x.Find("")
