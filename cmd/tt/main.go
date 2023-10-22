@@ -27,7 +27,6 @@ func main() {
 		shared = opts{
 			Debug:        cli.Flag("-d, --debug"),
 			LogTimestamp: cli.Flag("-T, --log-timestamp"),
-			ShowSettings: cli.Flag("-S, --show-settings"),
 			Timeout:      cli.Option("--timeout", "0 means never").Duration("0"),
 		}
 
@@ -73,7 +72,6 @@ func main() {
 type opts struct {
 	Debug        bool
 	LogTimestamp bool
-	ShowSettings bool
 	Timeout      time.Duration
 }
 
@@ -109,11 +107,10 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 
 func (c *PubCmd) Run(ctx context.Context) error {
 	client := &tt.Client{
-		Server:       c.server.String(),
-		Debug:        c.shared.Debug,
-		ShowSettings: c.shared.ShowSettings,
-		MaxPacketID:  10,
-		Logger:       log.New(os.Stderr, c.clientID+" ", log.Flags()),
+		Server:      c.server.String(),
+		Debug:       c.shared.Debug,
+		MaxPacketID: 10,
+		Logger:      log.New(os.Stderr, c.clientID+" ", log.Flags()),
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -181,11 +178,10 @@ func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 
 func (c *SubCmd) Run(ctx context.Context) error {
 	client := &tt.Client{
-		Server:       c.server.String(),
-		Debug:        c.shared.Debug,
-		ShowSettings: c.shared.ShowSettings,
-		MaxPacketID:  10,
-		Logger:       log.New(os.Stderr, c.clientID+" ", log.Flags()),
+		Server:      c.server.String(),
+		Debug:       c.shared.Debug,
+		MaxPacketID: 10,
+		Logger:      log.New(os.Stderr, c.clientID+" ", log.Flags()),
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -239,7 +235,6 @@ func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 func (c *SrvCmd) Run(ctx context.Context) error {
 	srv := tt.NewServer()
 	srv.SetDebug(c.shared.Debug)
-	srv.ShowSettings = c.shared.ShowSettings
 	srv.SetConnectTimeout(c.ConnectTimeout)
 	srv.AddBind(&c.Bind)
 	srv.SetLogger(log.New(os.Stderr, "ttsrv ", log.Flags()))

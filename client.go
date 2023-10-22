@@ -1,9 +1,7 @@
 package tt
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -32,9 +30,6 @@ type Client struct {
 	// number of packets in flight.
 	MaxPacketID uint16
 
-	// show settings on client.Run
-	ShowSettings bool
-
 	// for setting defaults
 	once sync.Once
 
@@ -50,16 +45,6 @@ func (c *Client) setDefaults() {
 	}
 	if c.Server == "" {
 		c.Server = "tcp://127.0.0.1:1883"
-	}
-
-	if c.ShowSettings {
-		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(c); err != nil {
-			c.Fatal(err)
-		}
-		var nice bytes.Buffer
-		json.Indent(&nice, buf.Bytes(), "", "  ")
-		c.Print(nice.String())
 	}
 }
 

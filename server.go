@@ -1,9 +1,7 @@
 package tt
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -47,8 +45,6 @@ type Server struct {
 	// set to true for additional log information
 	debug bool
 
-	ShowSettings bool
-
 	// router routes incoming publish packets to subscribing clients
 	router *router
 
@@ -90,16 +86,6 @@ func (s *Server) setDefaults() {
 	if len(s.binds) == 0 {
 		tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
 		s.AddBind(tcpRandom)
-	}
-
-	if s.ShowSettings {
-		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(s); err != nil {
-			s.log.Fatal(err)
-		}
-		var nice bytes.Buffer
-		json.Indent(&nice, buf.Bytes(), "", "  ")
-		s.log.Print(nice.String())
 	}
 }
 
