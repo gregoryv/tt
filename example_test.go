@@ -39,8 +39,9 @@ func Example_client() {
 
 // Example shows how to run the provided server.
 func Example_server() {
-	var srv tt.Server
-	ctx, cancel := context.WithCancel(context.Background())
+	srv := tt.NewServer()
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
 	go srv.Run(ctx)
 
 	for v := range srv.Signal() {
