@@ -1,0 +1,49 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  font-family="Arial,Helvetica,sans-serif" width="421" height="331">
+<path stroke="#d3d3d3" d="M32,24 L32,277" />
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="10" y="18">tt.Server</text>
+<path stroke="#d3d3d3" d="M152,24 L152,277" />
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="120" y="18">net.Listener</text>
+<path stroke="#d3d3d3" d="M272,24 L272,277" />
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="240" y="18">tt.connFeed</text>
+<path stroke="#d3d3d3" d="M392,24 L392,277" />
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="366" y="18">tt.receiver</text>
+<path stroke="black" d="M32,57 L47,57" />
+
+<path stroke="black" d="M47,57 L47,89" />
+
+<path stroke="black" d="M47,89 L32,89" />
+<g transform="rotate(270 32 89)"><path stroke="black" fill="#ffffff" d="M28,97 l4,-8 l 4,8 Z" /></g>
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="53" y="76">once.setDefaults</text>
+<path stroke="black" d="M32,112 L47,112" />
+
+<path stroke="black" d="M47,112 L47,144" />
+
+<path stroke="black" d="M47,144 L32,144" />
+<g transform="rotate(270 32 144)"><path stroke="black" fill="#ffffff" d="M28,152 l4,-8 l 4,8 Z" /></g>
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="53" y="131">go run</text>
+<path stroke="black" d="M32,167 L152,167" />
+<g transform="rotate(90 152 167)"><path stroke="black" fill="#ffffff" d="M148,175 l4,-8 l 4,8 Z" /></g>
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="71" y="164">new : ln</text>
+<path stroke="black" d="M32,200 L272,200" />
+<g transform="rotate(90 272 200)"><path stroke="black" fill="#ffffff" d="M268,208 l4,-8 l 4,8 Z" /></g>
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="131" y="197">new(ln)</text>
+<path stroke="black" d="M32,233 L272,233" />
+<g transform="rotate(90 272 233)"><path stroke="black" fill="#ffffff" d="M268,241 l4,-8 l 4,8 Z" /></g>
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="129" y="230">Run(ctx)</text>
+<path stroke="black" d="M32,266 L392,266" />
+<g transform="rotate(90 392 266)"><path stroke="black" fill="#ffffff" d="M388,274 l4,-8 l 4,8 Z" /></g>
+
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="207" y="263">...</text>
+<text font-family="Arial,Helvetica,sans-serif" font-size="12px" x="111" y="324">Figure 1. Showing tt.Server.Start(ctx)</text></svg>
