@@ -23,6 +23,16 @@ import (
 	"github.com/gregoryv/tt/event"
 )
 
+// NewServer returns a server ready to run. Configure any settings
+// before calling Run.
+func NewServer() *Server {
+	return &Server{
+		app:    make(chan interface{}, 1),
+		router: newRouter(),
+		stat:   newServerStats(),
+	}
+}
+
 type Server struct {
 	// bind configuration where server listens for connections, empty
 	// defaults to random port on localhost
@@ -80,9 +90,6 @@ func (s *Server) setDefaults() {
 		tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
 		s.Binds = append(s.Binds, tcpRandom)
 	}
-	s.router = newRouter()
-	s.stat = newServerStats()
-	s.app = make(chan interface{}, 1)
 
 	if s.ShowSettings {
 		var buf bytes.Buffer
@@ -98,7 +105,6 @@ func (s *Server) setDefaults() {
 // Signal returns a channel used by server to inform the application
 // layer of events. E.g [event.ServerStop]
 func (s *Server) Signal() <-chan interface{} {
-	s.startup.Do(s.setDefaults)
 	return s.app
 }
 

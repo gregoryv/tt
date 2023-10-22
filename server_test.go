@@ -18,7 +18,7 @@ import (
 
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 	conn, srvconn := net.Pipe()
-	var s Server
+	s := NewServer()
 	ctx := context.Background()
 	go s.Run(ctx)
 	<-s.Signal() // first one is ServerUp
@@ -46,7 +46,7 @@ func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 func TestServer_AssignsID(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	defer conn.Close()
-	var s Server
+	s := NewServer()
 	ctx := context.Background()
 	go s.Run(ctx)
 	<-s.Signal()
@@ -64,7 +64,7 @@ func TestServer_AssignsID(t *testing.T) {
 // connection.
 func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 	conn, srvconn := net.Pipe()
-	var s Server
+	s := NewServer()
 	ctx := context.Background()
 	go s.Run(ctx)
 	<-s.Signal()
@@ -88,10 +88,10 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 // reason code MalformedPacket 0x81
 func TestServer_DisconnectOnMalformed(t *testing.T) {
 	conn, srvconn := net.Pipe()
-	var s Server
+	s := NewServer()
 	ctx := context.Background()
 	go s.Run(ctx)
-	s.Signal()
+	<-s.Signal()
 	go s.serveConn(ctx, srvconn)
 	{ // initiate connect sequence
 		p := mq.NewConnect()
