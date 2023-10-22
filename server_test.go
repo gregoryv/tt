@@ -20,7 +20,8 @@ func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	var s Server
 	ctx := context.Background()
-	s.Start(ctx)
+	go s.Run(ctx)
+	<-s.Signal() // first one is ServerUp
 	go s.serveConn(ctx, srvconn)
 
 	// initiate connect sequence
@@ -47,7 +48,8 @@ func TestServer_AssignsID(t *testing.T) {
 	defer conn.Close()
 	var s Server
 	ctx := context.Background()
-	s.Start(ctx)
+	go s.Run(ctx)
+	<-s.Signal()
 	go s.serveConn(ctx, srvconn)
 
 	// initiate connect sequence
@@ -64,7 +66,8 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	var s Server
 	ctx := context.Background()
-	s.Start(ctx)
+	go s.Run(ctx)
+	<-s.Signal()
 	go s.serveConn(ctx, srvconn)
 
 	{ // initiate connect sequence
@@ -87,7 +90,8 @@ func TestServer_DisconnectOnMalformed(t *testing.T) {
 	conn, srvconn := net.Pipe()
 	var s Server
 	ctx := context.Background()
-	s.Start(ctx)
+	go s.Run(ctx)
+	s.Signal()
 	go s.serveConn(ctx, srvconn)
 	{ // initiate connect sequence
 		p := mq.NewConnect()

@@ -41,7 +41,7 @@ func Example_client() {
 func Example_server() {
 	var srv tt.Server
 	ctx, cancel := context.WithCancel(context.Background())
-	srv.Start(ctx)
+	go srv.Run(ctx)
 
 	for v := range srv.Signal() {
 		switch v.(type) {

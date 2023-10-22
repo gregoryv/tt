@@ -3,6 +3,10 @@
 This project adheres to semantic versioning and all notable
 changes will be documented in this file.
 
+## [unreleased]
+
+- Rename Server.Start to Run
+
 ## [0.10.0] 2023-10-15
 
 - Optimize message routing using arn.Tree

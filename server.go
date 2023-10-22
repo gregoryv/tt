@@ -57,14 +57,12 @@ func (s *Server) SetLogger(v *log.Logger) {
 }
 
 // Start runs the server in a separate go routine. Use [Server.Signal]
-func (s *Server) Start(ctx context.Context) {
+func (s *Server) Run(ctx context.Context) {
 	s.startup.Do(s.setDefaults)
 
-	go func() {
-		if err := s.run(ctx); err != nil {
-			s.app <- event.ServerStop{err}
-		}
-	}()
+	if err := s.run(ctx); err != nil {
+		s.app <- event.ServerStop{err}
+	}
 }
 
 func (s *Server) setDefaults() {
@@ -100,11 +98,11 @@ func (s *Server) setDefaults() {
 // Signal returns a channel used by server to inform the application
 // layer of events. E.g [event.ServerStop]
 func (s *Server) Signal() <-chan interface{} {
+	s.startup.Do(s.setDefaults)
 	return s.app
 }
 
 func (s *Server) run(ctx context.Context) error {
-
 	// Each bind feeds the server with connections
 	for _, b := range s.Binds {
 		u, err := url.Parse(b.URL)
