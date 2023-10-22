@@ -15,11 +15,13 @@ import (
 )
 
 func NewClient() *Client {
-	return &Client{}
+	return &Client{
+		logger: log.New(ioutil.Discard, "", log.Flags()),
+		server: "tcp://127.0.0.1:1883",
+	}
 }
 
-// Client implements a mqtt-v5 client. Public fields should be set
-// before calling Run.
+// Client implements a mqtt-v5 client.
 type Client struct {
 	// Server to connect to, defaults to tcp://localhost:1883
 	server string
@@ -34,9 +36,6 @@ type Client struct {
 	// number of packets in flight.
 	maxPacketID uint16
 
-	// for setting defaults
-	once sync.Once
-
 	// set by Run and used in Send
 	transmit func(ctx context.Context, p mq.Packet) error
 
@@ -47,15 +46,6 @@ func (c *Client) SetServer(v string)      { c.server = v }
 func (c *Client) SetDebug(v bool)         { c.debug = v }
 func (c *Client) SetMaxPacketID(v uint16) { c.maxPacketID = v }
 func (c *Client) SetLogger(v *log.Logger) { c.logger = v }
-
-func (c *Client) setDefaults() {
-	if c.logger == nil {
-		c.logger = log.New(ioutil.Discard, "", log.Flags())
-	}
-	if c.server == "" {
-		c.server = "tcp://127.0.0.1:1883"
-	}
-}
 
 // Start returns a channel where client pushes incoming packets or
 // events.
@@ -75,7 +65,6 @@ func (c *Client) Signal() <-chan interface{} {
 }
 
 func (c *Client) run(ctx context.Context) error {
-	c.once.Do(c.setDefaults)
 
 	s, err := url.Parse(c.server)
 	if err != nil {
