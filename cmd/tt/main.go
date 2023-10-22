@@ -238,7 +238,7 @@ func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 
 func (c *SrvCmd) Run(ctx context.Context) error {
 	srv := tt.NewServer()
-	srv.Debug = c.shared.Debug
+	srv.SetDebug(c.shared.Debug)
 	srv.ShowSettings = c.shared.ShowSettings
 	srv.SetConnectTimeout(c.ConnectTimeout)
 	srv.AddBind(&c.Bind)

@@ -45,7 +45,7 @@ type Server struct {
 	log *log.Logger
 
 	// set to true for additional log information
-	Debug bool
+	debug bool
 
 	ShowSettings bool
 
@@ -62,14 +62,10 @@ type Server struct {
 	app chan interface{}
 }
 
-func (s *Server) AddBind(b *Bind) {
-	s.binds = append(s.binds, b)
-}
+func (s *Server) AddBind(b *Bind)                   { s.binds = append(s.binds, b) }
 func (s *Server) SetConnectTimeout(v time.Duration) { s.connectTimeout = v }
-
-func (s *Server) SetLogger(v *log.Logger) {
-	s.log = v
-}
+func (s *Server) SetDebug(v bool)                   { s.debug = v }
+func (s *Server) SetLogger(v *log.Logger)           { s.log = v }
 
 // Start runs the server in a separate go routine. Use [Server.Signal]
 func (s *Server) Run(ctx context.Context) {
@@ -85,7 +81,7 @@ func (s *Server) setDefaults() {
 	if s.log == nil {
 		s.log = log.New(ioutil.Discard, "", 0)
 	}
-	if s.Debug {
+	if s.debug {
 		s.log.SetFlags(s.log.Flags() | log.Lshortfile)
 	}
 	if s.connectTimeout == 0 {
@@ -157,7 +153,7 @@ func (s *Server) run(ctx context.Context) error {
 func (s *Server) serveConn(ctx context.Context, conn connection) {
 	// the server tracks active connections
 	addr := conn.RemoteAddr()
-	a := includePort(addr.String(), s.Debug)
+	a := includePort(addr.String(), s.debug)
 	connstr := fmt.Sprintf("conn %s://%s", addr.Network(), a)
 	s.log.Println("new", connstr)
 	s.stat.AddConn()
@@ -174,7 +170,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 
 		clientID string
 		shortID  string
-		remote   = includePort(conn.RemoteAddr().String(), s.Debug)
+		remote   = includePort(conn.RemoteAddr().String(), s.debug)
 	)
 
 	// transmit packets to the connected client
@@ -187,7 +183,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 			p.SetMaxQoS(maxQoS)
 		}
 
-		s.log.Printf("out %v -> %s@%s%s", p, shortID, remote, dump(s.Debug, p))
+		s.log.Printf("out %v -> %s@%s%s", p, shortID, remote, dump(s.debug, p))
 
 		if _, err := p.WriteTo(conn); err != nil {
 			return err
@@ -212,7 +208,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 			shortID = trimID(clientID, maxIDLen)
 		}
 
-		s.log.Printf("in %v <- %s@%s%s", p, shortID, remote, dump(s.Debug, p))
+		s.log.Printf("in %v <- %s@%s%s", p, shortID, remote, dump(s.debug, p))
 
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 			if err := p.WellFormed(); err != nil {
