@@ -18,6 +18,7 @@ func NewClient() *Client {
 	return &Client{
 		logger: log.New(ioutil.Discard, "", log.Flags()),
 		server: "tcp://127.0.0.1:1883",
+		app:    make(chan interface{}, 1),
 	}
 }
 
@@ -47,15 +48,11 @@ func (c *Client) SetDebug(v bool)         { c.debug = v }
 func (c *Client) SetMaxPacketID(v uint16) { c.maxPacketID = v }
 func (c *Client) SetLogger(v *log.Logger) { c.logger = v }
 
-// Start returns a channel where client pushes incoming packets or
-// events.
-func (c *Client) Start(ctx context.Context) {
-	c.app = make(chan interface{}, 1)
-	go func() {
-		err := c.run(ctx)
-		c.app <- event.ClientStop{err}
-		close(c.app)
-	}()
+func (c *Client) Run(ctx context.Context) error {
+	err := c.run(ctx)
+	c.app <- event.ClientStop{err}
+	close(c.app)
+	return err
 }
 
 // Signal returns a channel used by client to inform application layer

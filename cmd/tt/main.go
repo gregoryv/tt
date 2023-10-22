@@ -113,7 +113,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	client.SetLogger(log.New(os.Stderr, c.clientID+" ", log.Flags()))
 
 	ctx, cancel := context.WithCancel(ctx)
-	client.Start(ctx)
+	go client.Run(ctx)
 	for v := range client.Signal() {
 		switch v := v.(type) {
 		case event.ClientUp:
@@ -183,7 +183,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	client.SetLogger(log.New(os.Stderr, c.clientID+" ", log.Flags()))
 
 	ctx, cancel := context.WithCancel(ctx)
-	client.Start(ctx)
+	go client.Run(ctx)
 
 	for v := range client.Signal() {
 		switch v := v.(type) {

@@ -13,8 +13,9 @@ func TestClient(t *testing.T) {
 	client := NewClient()
 	client.SetServer("tcp://localhost:1883")
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
-	client.Start(ctx)
+	ctx := context.Background()
+	ctx, _ = context.WithTimeout(ctx, time.Millisecond)
+	go client.Run(ctx)
 
 	for v := range client.Signal() {
 		switch v := v.(type) {

@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Rename Client.Start to Run
 - Add client settings, hiding fields
 - Remove flag -S and ShowSettings in client and server
 - Hide Server.ConnectTimeout, use Server.SetConnectTimeout

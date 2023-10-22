@@ -15,7 +15,7 @@ func Example_client() {
 	client.SetServer("tcp://localhost:1883")
 
 	ctx := context.Background()
-	client.Start(ctx)
+	go client.Run(ctx)
 
 	// v is either an packet or a event type
 	for v := range client.Signal() {
