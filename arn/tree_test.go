@@ -90,7 +90,6 @@ func TestTree_Filters(t *testing.T) {
 
 func newTestTree() *Tree {
 	x := NewTree()
-	x.AddFilter("") // should result in a noop
 	x.AddFilter("#")
 	x.AddFilter("+/tennis/#")
 	x.AddFilter("sport/#")

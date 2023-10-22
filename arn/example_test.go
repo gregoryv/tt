@@ -8,7 +8,6 @@ import (
 
 func Example_tree() {
 	x := arn.NewTree()
-	x.AddFilter("") // noop
 	x.AddFilter("#")
 	x.AddFilter("#")
 	x.AddFilter("#")

@@ -9,10 +9,10 @@ package arn
 
 import (
 	"strings"
-	"sync"
 )
 
-// NewTree returns a new empty topic filter tree.
+// NewTree returns a new empty topic filter tree. Methods are Not
+// safe to call from multiple go routines.
 func NewTree() *Tree {
 	return &Tree{
 		root: NewNode(""),
@@ -20,13 +20,10 @@ func NewTree() *Tree {
 }
 
 type Tree struct {
-	m    sync.RWMutex
 	root *Node
 }
 
 func (t *Tree) Modify(filter string, mod func(*Node)) {
-	t.m.Lock()
-	defer t.m.Unlock()
 	parts := strings.Split(filter, "/")
 	n, found := t.root.Find(parts)
 	if !found {
@@ -38,8 +35,6 @@ func (t *Tree) Modify(filter string, mod func(*Node)) {
 // Match populates result with leaf nodes matching the given topic
 // name.
 func (t *Tree) Match(result *[]*Node, topic string) {
-	t.m.RLock()
-	defer t.m.RUnlock()
 	parts := strings.Split(topic, "/")
 	for _, child := range t.root.children {
 		child.match(result, parts, 0)
@@ -57,19 +52,13 @@ func (t *Tree) Filters() []string {
 
 // Leafs returns all topic filters in the tree as nodes.
 func (t *Tree) Leafs() []*Node {
-	t.m.RLock()
-	defer t.m.RUnlock()
 	return t.root.Leafs()
 }
 
 // AddFilter adds the topic filter to the tree. Returns existing or
 // new node for that filter. Returns nil on empty filter.
+// Argument filter must be a valid filter.
 func (t *Tree) AddFilter(filter string) *Node {
-	if filter == "" {
-		return nil
-	}
-	t.m.Lock()
-	defer t.m.Unlock()
 	parts := strings.Split(filter, "/")
 	n := t.addParts(t.root, parts)
 	// t.root is just a virtual parent
@@ -82,11 +71,6 @@ func (t *Tree) AddFilter(filter string) *Node {
 // Find returns node matching the given filter. If not found, nil and
 // false is returned.
 func (t *Tree) Find(filter string) (*Node, bool) {
-	if filter == "" {
-		return nil, false
-	}
-	t.m.Lock()
-	defer t.m.Unlock()
 	parts := strings.Split(filter, "/")
 	return t.root.Find(parts)
 }

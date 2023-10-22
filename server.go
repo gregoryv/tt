@@ -373,6 +373,7 @@ func newRouter() *router {
 }
 
 type router struct {
+	m   sync.Mutex
 	rut *arn.Tree
 	log *log.Logger
 }
@@ -382,6 +383,8 @@ func (r *router) String() string {
 }
 
 func (r *router) AddSubscriptions(v ...*subscription) {
+	r.m.Lock()
+	defer r.m.Unlock()
 	for _, s := range v {
 		for _, f := range s.filters {
 			n := r.rut.AddFilter(f)
