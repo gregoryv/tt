@@ -58,10 +58,27 @@ type Server struct {
 	app chan interface{}
 }
 
-func (s *Server) AddBind(b *Bind)                   { s.binds = append(s.binds, b) }
-func (s *Server) SetConnectTimeout(v time.Duration) { s.connectTimeout = v }
-func (s *Server) SetDebug(v bool)                   { s.debug = v }
-func (s *Server) SetLogger(v *log.Logger)           { s.log = v }
+// AddBind which to listen on for connections, defaults to
+// tcp://localhost:, ie. random port on localhost.
+func (s *Server) AddBind(b *Bind) {
+	s.binds = append(s.binds, b)
+}
+
+// Timeout for the initial connect packet from a client before
+// disconnecting, default 200ms.
+func (s *Server) SetConnectTimeout(v time.Duration) {
+	s.connectTimeout = v
+}
+
+// SetDebug increases log information, default false.
+func (s *Server) SetDebug(v bool) {
+	s.debug = v
+}
+
+// SetLogger to use for this server, defaults to no logging.
+func (s *Server) SetLogger(v *log.Logger) {
+	s.log = v
+}
 
 // Start runs the server in a separate go routine. Use [Server.Signal]
 func (s *Server) Run(ctx context.Context) {
@@ -159,6 +176,8 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 		remote   = includePort(conn.RemoteAddr().String(), s.debug)
 	)
 
+	// wip create an abstraction for server side client
+
 	// transmit packets to the connected client
 	transmit := func(ctx context.Context, p mq.Packet) error {
 		m.Lock()
@@ -224,6 +243,9 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 				return transmit(ctx, p)
 			})
 			sub.subscriptionID = p.SubscriptionID()
+			// wip subscription must be coupled with connection so
+			// when it's time to unsubscribe we know which ones to
+			// remove
 
 			// check all filters
 			for _, f := range p.Filters() {
@@ -246,9 +268,9 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 			_ = transmit(ctx, a)
 
 		case *mq.Unsubscribe:
-			// wip remove subscriptions when client disconnects or unsubscribes
 			// check all filters
-			for _, filter := range p.Filters() {
+			filters := p.Filters()
+			for _, filter := range filters {
 				err := parseTopicFilter(filter)
 				if err != nil {
 					p := mq.NewDisconnect()
@@ -257,6 +279,8 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 					return
 				}
 			}
+			// wip remove subscriptions when client disconnects or unsubscribes
+			//s.router.RemoveSubscription(filters)
 
 		case *mq.Publish:
 			// Disconnect any attempts to publish exceeding qos.
@@ -317,7 +341,7 @@ func newBindConf(uri, acceptTimeout string) (*Bind, error) {
 
 // Bind holds server listening settings
 type Bind struct {
-	// eg. tcp://localhost:
+	// eg. tcp://localhost[:port]
 	URL string
 
 	// eg. 500ms
