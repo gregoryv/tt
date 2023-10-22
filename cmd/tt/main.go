@@ -237,16 +237,14 @@ func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 }
 
 func (c *SrvCmd) Run(ctx context.Context) error {
-	srv := &tt.Server{
-		Debug:        c.shared.Debug,
-		ShowSettings: c.shared.ShowSettings,
-
-		ConnectTimeout: c.ConnectTimeout,
-		Binds:          []*tt.Bind{&c.Bind},
-	}
+	srv := tt.NewServer()
+	srv.Debug = c.shared.Debug
+	srv.ShowSettings = c.shared.ShowSettings
+	srv.ConnectTimeout = c.ConnectTimeout
+	srv.Binds = []*tt.Bind{&c.Bind}
 	srv.SetLogger(log.New(os.Stderr, "ttsrv ", log.Flags()))
 	ctx, cancel := context.WithCancel(ctx)
-	srv.Start(ctx)
+	go srv.Run(ctx)
 
 	for {
 		select {
