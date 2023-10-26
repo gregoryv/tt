@@ -32,29 +32,25 @@ func NewServer() *Server {
 }
 
 type Server struct {
-	// bind configuration where server listens for connections, empty
-	// defaults to random port on localhost
+	// where server listens for connections
 	binds []*Bind
 
-	// client has to send the initial connect packet, default 200ms
+	// before initial connect packet
 	connectTimeout time.Duration
 
-	// if nil, log output is discarded
-	log *log.Logger
-
-	// set to true for additional log information
 	debug bool
+	log   *log.Logger
 
-	// router routes incoming publish packets to subscribing clients
+	// routes publish packets to subscribing clients
 	router *router
 
 	// statistics
 	stat *serverStats
 
-	// used to sync initial setup
+	// sync server initial setup
 	startup sync.Once
 
-	// app receives server events, see Server.Signal()
+	// application server events, see Server.Signal()
 	app chan interface{}
 }
 
@@ -80,6 +76,12 @@ func (s *Server) SetLogger(v *log.Logger) {
 	s.log = v
 }
 
+// Signal returns a channel used by server to inform the application
+// layer of events. E.g [event.ServerStop]
+func (s *Server) Signal() <-chan interface{} {
+	return s.app
+}
+
 // Start runs the server in a separate go routine. Use [Server.Signal]
 func (s *Server) Run(ctx context.Context) {
 	s.startup.Do(s.setDefaults)
@@ -101,15 +103,11 @@ func (s *Server) setDefaults() {
 		s.connectTimeout = 200 * time.Millisecond
 	}
 	if len(s.binds) == 0 {
-		tcpRandom, _ := newBindConf("tcp://localhost:", "500ms")
-		s.AddBind(tcpRandom)
+		s.AddBind(&Bind{
+			URL:           "tcp://localhost:",
+			AcceptTimeout: "500ms",
+		})
 	}
-}
-
-// Signal returns a channel used by server to inform the application
-// layer of events. E.g [event.ServerStop]
-func (s *Server) Signal() <-chan interface{} {
-	return s.app
 }
 
 func (s *Server) run(ctx context.Context) error {
@@ -152,7 +150,8 @@ func (s *Server) run(ctx context.Context) error {
 }
 
 // serveConn handles the given remote connection. Blocks until
-// receiver is done. Usually called in go routine.
+// receiver is done. Blocks until connection is closed or context
+// cancelled.
 func (s *Server) serveConn(ctx context.Context, conn connection) {
 	// the server tracks active connections
 	addr := conn.RemoteAddr()
@@ -330,14 +329,7 @@ type connection interface {
 	RemoteAddr() net.Addr
 }
 
-// gomerge src: bindconf.go
-
-func newBindConf(uri, acceptTimeout string) (*Bind, error) {
-	return &Bind{
-		URL:           uri,
-		AcceptTimeout: acceptTimeout,
-	}, nil
-}
+// ----------------------------------------
 
 // Bind holds server listening settings
 type Bind struct {
@@ -347,6 +339,8 @@ type Bind struct {
 	// eg. 500ms
 	AcceptTimeout string
 }
+
+// ----------------------------------------
 
 type connFeed struct {
 	// Listener to watch
@@ -475,6 +469,8 @@ func (s *serverStats) AddConn() {
 func (s *serverStats) RemoveConn() {
 	atomic.AddInt64(&s.ConnActive, -1)
 }
+
+// ----------------------------------------
 
 // MustNewSubscription panics on bad filter
 func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
