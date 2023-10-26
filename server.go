@@ -25,9 +25,10 @@ import (
 // before calling Run.
 func NewServer() *Server {
 	return &Server{
-		app:    make(chan interface{}, 1),
-		router: newRouter(),
-		stat:   newServerStats(),
+		app:      make(chan interface{}, 1),
+		router:   newRouter(),
+		stat:     newServerStats(),
+		incoming: make(chan connection, 1),
 	}
 }
 
@@ -52,6 +53,9 @@ type Server struct {
 
 	// application server events, see Server.Signal()
 	app chan interface{}
+
+	// listeners feed new connections here
+	incoming chan connection
 }
 
 // AddBind which to listen on for connections, defaults to
@@ -86,9 +90,8 @@ func (s *Server) Signal() <-chan interface{} {
 func (s *Server) Run(ctx context.Context) {
 	s.startup.Do(s.setDefaults)
 
-	if err := s.run(ctx); err != nil {
-		s.app <- event.ServerStop{err}
-	}
+	err := s.run(ctx)
+	s.app <- event.ServerStop{err}
 }
 
 func (s *Server) setDefaults() {
@@ -139,13 +142,16 @@ func (s *Server) run(ctx context.Context) error {
 
 		// run the connection feed
 		f := connFeed{
-			serveConn:     s.serveConn,
+			feed:          s.incoming,
 			Listener:      ln,
 			AcceptTimeout: t,
 		}
 		go f.Run(ctx)
 	}
 	s.app <- event.ServerUp(0)
+	for conn := range s.incoming {
+		go s.serveConn(ctx, conn)
+	}
 	return nil
 }
 
@@ -349,16 +355,13 @@ type connFeed struct {
 	AcceptTimeout time.Duration
 
 	// serveConn handles new remote connections
-	serveConn func(context.Context, connection)
+	feed chan<- connection
 }
 
 // Run blocks until context is cancelled or accepting a connection
 // fails. Accepting new connection can only be interrupted if listener
 // has SetDeadline method.
 func (f *connFeed) Run(ctx context.Context) error {
-	if f.serveConn == nil {
-		panic("connFeed.serveConn is nil")
-	}
 	l := f.Listener
 
 loop:
@@ -380,7 +383,7 @@ loop:
 		if err != nil {
 			return err
 		}
-		go f.serveConn(ctx, conn)
+		f.feed <- conn
 	}
 }
 

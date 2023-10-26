@@ -130,7 +130,7 @@ func Test_connFeed(t *testing.T) {
 		f := connFeed{
 			Listener:      ln,
 			AcceptTimeout: time.Millisecond,
-			serveConn:     func(context.Context, connection) { /*noop*/ },
+			feed:          make(chan connection, 1),
 		}
 		f.Run(ctx)
 	}
@@ -140,7 +140,7 @@ func Test_connFeed(t *testing.T) {
 		f := connFeed{
 			Listener:      ln,
 			AcceptTimeout: time.Millisecond,
-			serveConn:     func(context.Context, connection) { /*noop*/ },
+			feed:          make(chan connection, 1),
 		}
 
 		err := f.Run(context.Background())
