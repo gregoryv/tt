@@ -55,9 +55,9 @@ func (c *Client) Run(ctx context.Context) error {
 	return err
 }
 
-// Signal returns a channel used by client to inform application layer
+// Events returns a channel used by client to inform application layer
 // of packets and events. E.g. [event.ClientUp]
-func (c *Client) Signal() <-chan interface{} {
+func (c *Client) Events() <-chan interface{} {
 	return c.app
 }
 

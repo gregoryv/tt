@@ -80,9 +80,9 @@ func (s *Server) SetLogger(v *log.Logger) {
 	s.log = v
 }
 
-// Signal returns a channel used by server to inform the application
+// Events returns a channel used by server to inform the application
 // layer of events. E.g [event.ServerStop]
-func (s *Server) Signal() <-chan interface{} {
+func (s *Server) Events() <-chan interface{} {
 	return s.app
 }
 
@@ -187,8 +187,6 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 		remote   = includePort(conn.RemoteAddr().String(), s.debug)
 	)
 
-	// wip create an abstraction for server side client
-
 	// transmit packets to the connected client
 	transmit := func(ctx context.Context, p mq.Packet) error {
 		m.Lock()
@@ -254,9 +252,6 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 				return transmit(ctx, p)
 			})
 			sub.subscriptionID = p.SubscriptionID()
-			// wip subscription must be coupled with connection so
-			// when it's time to unsubscribe we know which ones to
-			// remove
 
 			// check all filters
 			for _, f := range p.Filters() {

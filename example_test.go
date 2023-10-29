@@ -19,7 +19,7 @@ func Example_client() {
 	go client.Run(ctx)
 
 	// v is either an packet or a event type
-	for v := range client.Signal() {
+	for v := range client.Events() {
 		switch v := v.(type) {
 		case event.ClientUp:
 			_ = client.Send(ctx, mq.NewConnect())
@@ -44,7 +44,7 @@ func Example_server() {
 	ctx := context.Background()
 	go srv.Run(ctx)
 
-	for v := range srv.Signal() {
+	for v := range srv.Events() {
 		switch v := v.(type) {
 		case event.ServerStop:
 			if v.Err != nil {

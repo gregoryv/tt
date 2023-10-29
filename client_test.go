@@ -17,7 +17,7 @@ func TestClient(t *testing.T) {
 	ctx, _ = context.WithTimeout(ctx, time.Millisecond)
 	go client.Run(ctx)
 
-	for v := range client.Signal() {
+	for v := range client.Events() {
 		switch v := v.(type) {
 		case event.ClientUp:
 			_ = client.Send(ctx, mq.NewConnect())

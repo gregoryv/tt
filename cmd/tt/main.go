@@ -114,7 +114,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 
 	ctx, cancel := context.WithCancel(ctx)
 	go client.Run(ctx)
-	for v := range client.Signal() {
+	for v := range client.Events() {
 		switch v := v.(type) {
 		case event.ClientUp:
 			p := mq.NewConnect()
@@ -185,7 +185,7 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	go client.Run(ctx)
 
-	for v := range client.Signal() {
+	for v := range client.Events() {
 		switch v := v.(type) {
 		case event.ClientUp:
 			p := mq.NewConnect()
@@ -241,7 +241,7 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 
 	for {
 		select {
-		case v := <-srv.Signal():
+		case v := <-srv.Events():
 			switch v.(type) {
 			case event.ServerStop:
 				cancel()
