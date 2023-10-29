@@ -86,7 +86,7 @@ func (s *Server) Signal() <-chan interface{} {
 	return s.app
 }
 
-// Start runs the server in a separate go routine. Use [Server.Signal]
+// Run the server. Use [Server.Signal] to listen for progress.
 func (s *Server) Run(ctx context.Context) {
 	s.startup.Do(s.setDefaults)
 
@@ -121,6 +121,8 @@ func (s *Server) setDefaults() {
 	}
 }
 
+// startConnectionFeeds creates listeners for configured binds
+// and runs them.
 func (s *Server) startConnectionFeeds(ctx context.Context) error {
 	// Each bind feeds the server with connections
 	for _, b := range s.binds {

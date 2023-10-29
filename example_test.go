@@ -2,6 +2,7 @@ package tt_test
 
 import (
 	"context"
+	"log"
 
 	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt"
@@ -41,13 +42,14 @@ func Example_client() {
 func Example_server() {
 	srv := tt.NewServer()
 	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
 	go srv.Run(ctx)
 
 	for v := range srv.Signal() {
-		switch v.(type) {
+		switch v := v.(type) {
 		case event.ServerStop:
-			cancel()
+			if v.Err != nil {
+				log.Println(v.Err)
+			}
 		}
 	}
 }
