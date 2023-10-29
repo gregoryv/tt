@@ -25,13 +25,17 @@ func TestClient(t *testing.T) {
 		case event.ClientConnect:
 			// do something once you are connected
 			p := mq.Pub(0, "gopher/happy", "yes")
-			_ = client.Send(ctx, p)
+			err := client.Send(ctx, p)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 		case *mq.Publish:
 			_ = v // do something the received packet
 
 		case event.ClientStop:
 			// do some clean up maybe
+
 		}
 	}
 }
