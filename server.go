@@ -90,8 +90,16 @@ func (s *Server) Signal() <-chan interface{} {
 func (s *Server) Run(ctx context.Context) {
 	s.startup.Do(s.setDefaults)
 
-	err := s.run(ctx)
-	s.app <- event.ServerStop{err}
+	if err := s.startConnectionFeeds(ctx); err != nil {
+		s.app <- event.ServerStop{err}
+		return
+	}
+
+	s.app <- event.ServerUp(0)
+	for conn := range s.incoming {
+		go s.serveConn(ctx, conn)
+	}
+	s.app <- event.ServerStop{nil}
 }
 
 func (s *Server) setDefaults() {
@@ -113,7 +121,7 @@ func (s *Server) setDefaults() {
 	}
 }
 
-func (s *Server) run(ctx context.Context) error {
+func (s *Server) startConnectionFeeds(ctx context.Context) error {
 	// Each bind feeds the server with connections
 	for _, b := range s.binds {
 		u, err := url.Parse(b.URL)
@@ -147,10 +155,6 @@ func (s *Server) run(ctx context.Context) error {
 			AcceptTimeout: t,
 		}
 		go f.Run(ctx)
-	}
-	s.app <- event.ServerUp(0)
-	for conn := range s.incoming {
-		go s.serveConn(ctx, conn)
 	}
 	return nil
 }
