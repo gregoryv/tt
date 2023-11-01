@@ -24,7 +24,7 @@ func NewServer() *Server {
 		app:      make(chan interface{}, 1),
 		router:   newRouter(),
 		stat:     newServerStats(),
-		incoming: make(chan connection, 1),
+		incoming: make(chan Connection, 1),
 	}
 }
 
@@ -51,7 +51,7 @@ type Server struct {
 	app chan interface{}
 
 	// listeners feed new connections here
-	incoming chan connection
+	incoming chan Connection
 }
 
 // AddBind which to listen on for connections, defaults to
@@ -144,7 +144,7 @@ func (s *Server) runFeeds(ctx context.Context) error {
 			return err
 		}
 
-		// run the connection feed
+		// run the Connection feed
 		f := connFeed{
 			feed:          s.incoming,
 			Listener:      ln,
@@ -175,11 +175,11 @@ type connFeed struct {
 	AcceptTimeout time.Duration
 
 	// serveConn handles new remote connections
-	feed chan<- connection
+	feed chan<- Connection
 }
 
 // Run blocks until context is cancelled or accepting a connection
-// fails. Accepting new connection can only be interrupted if listener
+// fails. Accepting new Connection can only be interrupted if listener
 // has SetDeadline method.
 func (f *connFeed) Run(ctx context.Context) error {
 	l := f.Listener

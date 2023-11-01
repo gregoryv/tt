@@ -78,9 +78,9 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 	{ // client sends disconnect
 		mq.NewDisconnect().WriteTo(conn)
 	}
-	// verify that the connection is
+	// verify that the Connection is
 	if _, err := mq.NewPublish().WriteTo(conn); err == nil {
-		t.Error("network connection still open")
+		t.Error("network Connection still open")
 	}
 }
 
@@ -109,9 +109,9 @@ func TestServer_DisconnectOnMalformed(t *testing.T) {
 			t.Error(p)
 		}
 	}
-	// verify that the connection is also closed
+	// verify that the Connection is also closed
 	if _, err := mq.NewPublish().WriteTo(conn); err == nil {
-		t.Error("network connection still open")
+		t.Error("network Connection still open")
 	}
 }
 
@@ -130,7 +130,7 @@ func Test_connFeed(t *testing.T) {
 		f := connFeed{
 			Listener:      ln,
 			AcceptTimeout: time.Millisecond,
-			feed:          make(chan connection, 1),
+			feed:          make(chan Connection, 1),
 		}
 		f.Run(ctx)
 	}
@@ -140,7 +140,7 @@ func Test_connFeed(t *testing.T) {
 		f := connFeed{
 			Listener:      ln,
 			AcceptTimeout: time.Millisecond,
-			feed:          make(chan connection, 1),
+			feed:          make(chan Connection, 1),
 		}
 
 		err := f.Run(context.Background())

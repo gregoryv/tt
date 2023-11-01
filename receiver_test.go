@@ -51,7 +51,7 @@ func Test_receiver(t *testing.T) {
 	{ // Run is stopped on closed connection
 		recv := newReceiver(nil, &ttx.ClosedConn{})
 		if err := recv.Run(context.Background()); err == nil {
-			t.Errorf("receiver should fail once connection is closed")
+			t.Errorf("receiver should fail once Connection is closed")
 		}
 	}
 

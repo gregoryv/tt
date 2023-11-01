@@ -284,7 +284,7 @@ func newKeepAlive() *keepAlive {
 	}
 }
 
-// keepAlive implements client logic for keeping connection alive.
+// keepAlive implements client logic for keeping Connection alive.
 //
 // See 3.1.2.10 Keep Alive
 type keepAlive struct {

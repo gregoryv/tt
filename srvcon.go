@@ -15,7 +15,7 @@ import (
 
 // serveConn handles the client connection.  Blocks until connection
 // is closed or context cancelled.
-func (s *Server) serveConn(ctx context.Context, conn connection) {
+func (s *Server) serveConn(ctx context.Context, conn Connection) {
 	// the server tracks active connections
 	addr := conn.RemoteAddr()
 	a := includePort(addr.String(), s.debug)
@@ -38,7 +38,7 @@ func (s *Server) serveConn(ctx context.Context, conn connection) {
 		conn:     conn,
 	}
 
-	// ignore error here, the connection is done
+	// ignore error here, the Connection is done
 	_ = newReceiver(sc.receive, conn).Run(ctx)
 }
 
@@ -54,7 +54,7 @@ func includePort(addr string, yes bool) string {
 
 type pubHandler func(context.Context, *mq.Publish) error
 
-type connection interface {
+type Connection interface {
 	io.ReadWriteCloser
 	RemoteAddr() net.Addr
 }
@@ -70,7 +70,7 @@ type sclient struct {
 	debug  bool
 
 	m    sync.Mutex
-	conn connection
+	conn Connection
 
 	srv *Server
 }
@@ -92,7 +92,7 @@ func (sc *sclient) transmit(ctx context.Context, p mq.Packet) error {
 
 	switch p.(type) {
 	case *mq.Disconnect:
-		// close connection after Disconnect is send
+		// close Connection after Disconnect is send
 		sc.conn.Close()
 	}
 	return nil
