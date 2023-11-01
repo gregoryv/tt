@@ -59,6 +59,7 @@ type Connection interface {
 	RemoteAddr() net.Addr
 }
 
+// sclient represents a connected client on the server side.
 type sclient struct {
 	clientID string
 	shortID  string
@@ -69,6 +70,7 @@ type sclient struct {
 	log    *log.Logger
 	debug  bool
 
+	// sync transmitions
 	m    sync.Mutex
 	conn Connection
 
