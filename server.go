@@ -86,7 +86,7 @@ func (s *Server) Events() <-chan interface{} {
 func (s *Server) Run(ctx context.Context) {
 	s.startup.Do(s.setDefaults)
 
-	if err := s.startConnectionFeeds(ctx); err != nil {
+	if err := s.runFeeds(ctx); err != nil {
 		s.app <- event.ServerStop{err}
 		return
 	}
@@ -117,10 +117,8 @@ func (s *Server) setDefaults() {
 	}
 }
 
-// startConnectionFeeds creates listeners for configured binds
-// and runs them.
-func (s *Server) startConnectionFeeds(ctx context.Context) error {
-	// Each bind feeds the server with connections
+// runFeeds creates listeners for configured binds and runs them.
+func (s *Server) runFeeds(ctx context.Context) error {
 	for _, b := range s.binds {
 		u, err := url.Parse(b.URL)
 		if err != nil {
