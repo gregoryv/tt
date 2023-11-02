@@ -44,3 +44,25 @@ func (c *ClosedConn) Read(_ []byte) (int, error) {
 func (c *ClosedConn) Write(_ []byte) (int, error) {
 	return 0, &net.OpError{Op: "write", Err: fmt.Errorf("ttx closed conn")}
 }
+
+func (c *ClosedConn) Close() error {
+	return nil
+}
+
+func (c *ClosedConn) RemoteAddr() net.Addr {
+	return FakeAddr("")
+}
+
+// ----------------------------------------
+
+type FakeAddr string
+
+// String always returns 127.0.0.1:1883
+func (a FakeAddr) String() string {
+	return "127.0.0.1:1883"
+}
+
+// Network always returns tcp
+func (a FakeAddr) Network() string {
+	return "tcp"
+}
