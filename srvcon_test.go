@@ -8,22 +8,17 @@ import (
 	"github.com/gregoryv/mq"
 )
 
+// Server sends a disconnect when a client sends a subscribe
+// containing a malformed topic filter.
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
-	s := NewServer()
 	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go s.Run(ctx)
-	<-s.Events() // first one is ServerUp
+	conn, _ := setupClientServer(ctx, t)
 
-	conn, srvconn := net.Pipe()
-	defer conn.Close()
-	go s.serveConn(ctx, srvconn)
-
-	// initiate connect sequence
-	mq.NewConnect().WriteTo(conn)
-	_, _ = mq.ReadPacket(conn) // ignore ack
-
+	{ // initiate connect sequence
+		mq.NewConnect().WriteTo(conn)
+		// ignore ack
+		_, _ = mq.ReadPacket(conn)
+	}
 	{ // subscribe using malformed topic filter
 		p := mq.NewSubscribe()
 		p.SetPacketID(1)
@@ -41,16 +36,8 @@ func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 // If a client connects without any id set the server should assign
 // one in the returning ConnAck.
 func TestServer_AssignsID(t *testing.T) {
-	s := NewServer()
 	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go s.Run(ctx)
-	<-s.Events()
-
-	conn, srvconn := net.Pipe()
-	defer conn.Close()
-	go s.serveConn(ctx, srvconn)
+	conn, _ := setupClientServer(ctx, t)
 
 	// initiate connect sequence without client id
 	mq.NewConnect().WriteTo(conn)
@@ -65,24 +52,17 @@ func TestServer_AssignsID(t *testing.T) {
 // If a client sends Disconnect, the server should close the network
 // connection.
 func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
-	s := NewServer()
 	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go s.Run(ctx)
-	<-s.Events()
+	conn, _ := setupClientServer(ctx, t)
 
-	conn, srvconn := net.Pipe()
-	go s.serveConn(ctx, srvconn)
+	// initiate connect sequence
+	mq.NewConnect().WriteTo(conn)
+	// ignore ack
+	_, _ = mq.ReadPacket(conn)
 
-	{ // initiate connect sequence
-		p := mq.NewConnect()
-		p.WriteTo(conn)
-		_, _ = mq.ReadPacket(conn) // ignore ack
-	}
-	{ // client sends disconnect
-		mq.NewDisconnect().WriteTo(conn)
-	}
+	// client sends disconnect
+	mq.NewDisconnect().WriteTo(conn)
+
 	// verify the connection is closed
 	if _, err := mq.NewPublish().WriteTo(conn); err == nil {
 		t.Error("network Connection still open")
@@ -92,20 +72,13 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 // If server gets a malformed packet it should disconnect with the
 // reason code MalformedPacket 0x81
 func TestServer_DisconnectOnMalformed(t *testing.T) {
-	s := NewServer()
 	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	go s.Run(ctx)
-	<-s.Events()
-
-	conn, srvconn := net.Pipe()
-	go s.serveConn(ctx, srvconn)
+	conn, _ := setupClientServer(ctx, t)
 
 	{ // initiate connect sequence
-		p := mq.NewConnect()
-		p.WriteTo(conn)
-		_, _ = mq.ReadPacket(conn) // ignore ack
+		mq.NewConnect().WriteTo(conn)
+		// ignore ack
+		_, _ = mq.ReadPacket(conn)
 	}
 	{ // send malformed packet
 		p := mq.NewPublish()
@@ -122,4 +95,16 @@ func TestServer_DisconnectOnMalformed(t *testing.T) {
 	if _, err := mq.NewPublish().WriteTo(conn); err == nil {
 		t.Error("network Connection still open")
 	}
+}
+
+func setupClientServer(ctx context.Context, t *testing.T) (conn, srvconn net.Conn) {
+	s := NewServer()
+	ctx, cancel := context.WithCancel(ctx)
+	t.Cleanup(cancel)
+	go s.Run(ctx)
+	<-s.Events()
+
+	conn, srvconn = net.Pipe()
+	go s.serveConn(ctx, srvconn)
+	return
 }
