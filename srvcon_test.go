@@ -8,6 +8,43 @@ import (
 	"github.com/gregoryv/mq"
 )
 
+// Server accepts subscribe followed by unsubscribe.
+func TestServer_SubscribeThenUnsubscribe(t *testing.T) {
+	ctx := context.Background()
+	conn, _ := setupClientServer(ctx, t)
+
+	{ // initiate connect sequence
+		mq.NewConnect().WriteTo(conn)
+		// ignore ack
+		_, _ = mq.ReadPacket(conn)
+	}
+	{ // subscribe using malformed topic filter
+		p := mq.NewSubscribe()
+		p.SetPacketID(1)
+		p.SetSubscriptionID(1)
+		p.AddFilters(mq.NewTopicFilter("a/b/#", mq.OptQoS1))
+		p.WriteTo(conn)
+	}
+	{ // verify ack
+		p, _ := mq.ReadPacket(conn)
+		if _, ok := p.(*mq.SubAck); !ok {
+			t.Errorf("expected SubAck got %T", p)
+		}
+	}
+	{ // unsubscribe
+		p := mq.NewUnsubscribe()
+		p.SetPacketID(1)
+		p.AddFilter("a/b/#")
+		p.WriteTo(conn)
+	}
+	{ // verify ack
+		p, _ := mq.ReadPacket(conn)
+		if _, ok := p.(*mq.UnsubAck); !ok {
+			t.Errorf("expected UnsubAck got %T", p)
+		}
+	}
+}
+
 // Server sends a disconnect when a client sends a subscribe
 // containing a malformed topic filter.
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {

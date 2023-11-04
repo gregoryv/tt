@@ -175,8 +175,12 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 				return
 			}
 		}
-		// wip remove subscriptions when client disconnects or unsubscribes
 		sc.srv.router.handle(sc, p)
+		{
+			ack := mq.NewUnsubAck()
+			ack.SetPacketID(p.PacketID())
+			sc.transmit(ctx, ack)
+		}
 
 	case *mq.Publish:
 		// Disconnect any attempts to publish exceeding qos.
