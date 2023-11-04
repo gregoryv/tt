@@ -238,17 +238,6 @@ func (s *serverStats) RemoveConn() {
 
 // ----------------------------------------
 
-// MustNewSubscription panics on bad filter
-func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
-	err := parseTopicFilter(filter)
-	if err != nil {
-		panic(err.Error())
-	}
-	sub := newSubscription(handlers...)
-	sub.addTopicFilter(filter)
-	return sub
-}
-
 func newSubscription(handlers ...pubHandler) *subscription {
 	r := &subscription{
 		handlers: handlers,

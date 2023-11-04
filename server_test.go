@@ -178,3 +178,16 @@ func TestMustParseTopicFilter_panics(t *testing.T) {
 	defer catchPanic(t)
 	mustParseTopicFilter("sport/ab#d")
 }
+
+// ----------------------------------------
+
+// mustNewSubscription panics on bad filter
+func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
+	err := parseTopicFilter(filter)
+	if err != nil {
+		panic(err.Error())
+	}
+	sub := newSubscription(handlers...)
+	sub.addTopicFilter(filter)
+	return sub
+}
