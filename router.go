@@ -42,12 +42,11 @@ func (r *router) AddSubscriptions(v ...*subscription) {
 	}
 }
 
-func (r *router) handle(sc *sclient, p mq.Packet) {
-	switch p := p.(type) {
-	case *mq.Unsubscribe:
-		// todo
-		_ = p
-	}
+func (r *router) removeFilters(sc *sclient, filters []string) {
+	r.m.Lock()
+	defer r.m.Unlock()
+
+	// wip remove filters in router
 }
 
 // Route routes mq.Publish packets by topic name.
@@ -60,10 +59,6 @@ func (r *router) Route(ctx context.Context, p mq.Packet) error {
 		for _, n := range result {
 			for _, s := range n.Value.([]*subscription) {
 				for _, h := range s.handlers {
-					// maybe we'll have to have a different routing mechanism for
-					// client side handling subscriptions compared to server side.
-					// As server may have to adapt packages before sending and
-					// there will be a QoS on each subscription that we need to consider.
 					if err := h(ctx, p); err != nil {
 						r.log.Println("handle", p, err)
 					}

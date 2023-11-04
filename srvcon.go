@@ -175,7 +175,7 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 				return
 			}
 		}
-		sc.srv.router.handle(sc, p)
+		sc.srv.router.removeFilters(sc, filters)
 		{
 			ack := mq.NewUnsubAck()
 			ack.SetPacketID(p.PacketID())
