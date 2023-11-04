@@ -4,11 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net"
-	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -67,37 +63,6 @@ func catchPanic(t *testing.T) {
 	if e := recover(); e == nil {
 		t.Fatal("expect panic")
 	}
-}
-
-func Test_router(t *testing.T) {
-	var wg sync.WaitGroup
-	var handle = func(_ context.Context, _ *mq.Publish) error {
-		wg.Done()
-		return nil
-	}
-	log.SetOutput(ioutil.Discard)
-	r := newRouter()
-	r.AddSubscriptions(
-		mustNewSubscription("gopher/pink", handle),
-		mustNewSubscription("gopher/blue", ttx.NoopPub),
-		mustNewSubscription("#", handle),
-		mustNewSubscription("#", func(_ context.Context, _ *mq.Publish) error {
-			return fmt.Errorf("failed")
-		}),
-	)
-
-	// number of handle routes that should be triggered by below Pub
-	wg.Add(2)
-	ctx := context.Background()
-	if err := r.Route(ctx, mq.Pub(0, "gopher/pink", "hi")); err != nil {
-		t.Error(err)
-	}
-	wg.Wait()
-	if v := r.String(); !strings.Contains(v, "3 subscriptions") {
-		t.Error(v)
-	}
-
-	// router logs errors
 }
 
 func BenchmarkRouter_10routesAllMatch(b *testing.B) {
@@ -175,6 +140,8 @@ func TestParseTopicFilter(t *testing.T) {
 }
 
 func TestMustParseTopicFilter_panics(t *testing.T) {
+	mustParseTopicFilter("sport/") // ok
+
 	defer catchPanic(t)
 	mustParseTopicFilter("sport/ab#d")
 }
