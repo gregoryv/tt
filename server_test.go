@@ -55,14 +55,12 @@ func TestSubscription_String(t *testing.T) {
 }
 
 func TestMustNewSubscription(t *testing.T) {
-	defer catchPanic(t)
+	defer func() {
+		if e := recover(); e == nil {
+			t.Fatal("expect panic")
+		}
+	}()
 	mustNewSubscription("")
-}
-
-func catchPanic(t *testing.T) {
-	if e := recover(); e == nil {
-		t.Fatal("expect panic")
-	}
 }
 
 func BenchmarkRouter_10routesAllMatch(b *testing.B) {
@@ -139,22 +137,20 @@ func TestParseTopicFilter(t *testing.T) {
 	}
 }
 
-func TestMustParseTopicFilter_panics(t *testing.T) {
-	mustParseTopicFilter("sport/") // ok
-
-	defer catchPanic(t)
-	mustParseTopicFilter("sport/ab#d")
-}
-
 // ----------------------------------------
 
 // mustNewSubscription panics on bad filter
 func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
-	err := parseTopicFilter(filter)
-	if err != nil {
-		panic(err.Error())
-	}
+	mustParseTopicFilter(filter)
 	sub := newSubscription(handlers...)
 	sub.addTopicFilter(filter)
 	return sub
+}
+
+func mustParseTopicFilter(v string) string {
+	err := parseTopicFilter(v)
+	if err != nil {
+		panic(err.Error())
+	}
+	return v
 }

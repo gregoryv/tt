@@ -272,14 +272,6 @@ func (s *subscription) addTopicFilter(f string) {
 
 // ----------------------------------------
 
-func mustParseTopicFilter(v string) string {
-	err := parseTopicFilter(v)
-	if err != nil {
-		panic(err.Error())
-	}
-	return v
-}
-
 // https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901247
 func parseTopicFilter(v string) error {
 	if len(v) == 0 {
