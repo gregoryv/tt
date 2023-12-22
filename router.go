@@ -24,6 +24,7 @@ type router struct {
 }
 
 func (r *router) String() string {
+	// todo return S subscriptions, F filters
 	return plural(len(r.rut.Leafs()), "subscription")
 }
 

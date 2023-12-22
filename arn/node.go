@@ -17,6 +17,8 @@ type Node struct {
 	children []*Node
 }
 
+// todo match a/+/c AND a/+
+
 func (n *Node) match(result *[]*Node, parts []string, i int) {
 	switch {
 	case i > len(parts)-1:
