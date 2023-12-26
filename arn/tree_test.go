@@ -24,6 +24,18 @@ import (
 	"github.com/gregoryv/golden"
 )
 
+func TestTree_MatchTopicUsedInManual(t *testing.T) {
+	x := NewTree("gopher/+")
+
+	var result []*Node
+	topic := "gopher/pink"
+	// wip Match is incomplete
+	x.Match(&result, topic)
+	if len(result) != 1 {
+		t.Error(x.Filters(), "should match", topic)
+	}
+}
+
 func TestTree_Modify(t *testing.T) {
 	x := NewTree()
 	x.AddFilter("sport/#")
@@ -67,7 +79,6 @@ func TestTree_Find(t *testing.T) {
 
 func TestTree_NoMatch(t *testing.T) {
 	x := newTestTree()
-	x.AddFilter("garage/+")
 
 	var result []*Node
 	topic := "store/fruit/apple"

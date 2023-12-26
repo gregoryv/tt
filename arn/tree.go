@@ -12,10 +12,14 @@ import (
 
 // NewTree returns a new empty topic filter tree. Methods are Not
 // safe to call from multiple go routines.
-func NewTree() *Tree {
-	return &Tree{
+func NewTree(filters ...string) *Tree {
+	tree := &Tree{
 		root: NewNode(""),
 	}
+	for _, f := range filters {
+		tree.AddFilter(f)
+	}
+	return tree
 }
 
 type Tree struct {

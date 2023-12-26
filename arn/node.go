@@ -1,5 +1,7 @@
 package arn
 
+import "log"
+
 // NewNode returns a new node using txt as level value. E.g. +, # or a
 // word.
 func NewNode(txt string) *Node {
@@ -17,9 +19,10 @@ type Node struct {
 	children []*Node
 }
 
-// todo match a/+/c AND a/+
+// wip match a/+/c
 
 func (n *Node) match(result *[]*Node, parts []string, i int) {
+	log.Println(n.txt, parts, i)
 	switch {
 	case i > len(parts)-1:
 		*result = append(*result, n)
@@ -31,6 +34,9 @@ func (n *Node) match(result *[]*Node, parts []string, i int) {
 			*result = append(*result, n)
 		}
 		return
+
+	case n.txt == "+":
+		*result = append(*result, n)
 
 	case n.txt != "+" && n.txt != parts[i]:
 		return
