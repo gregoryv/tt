@@ -2,6 +2,7 @@ package tt
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 
@@ -24,8 +25,14 @@ type router struct {
 }
 
 func (r *router) String() string {
-	// todo return S subscriptions, F filters
 	return plural(len(r.rut.Leafs()), "subscription")
+}
+
+func plural(v int, word string) string {
+	if v > 1 {
+		word = word + "s"
+	}
+	return fmt.Sprintf("%v %s", v, word)
 }
 
 func (r *router) AddSubscriptions(v ...*subscription) {

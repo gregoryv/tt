@@ -209,15 +209,6 @@ loop:
 
 // ----------------------------------------
 
-func plural(v int, word string) string {
-	if v > 1 {
-		word = word + "s"
-	}
-	return fmt.Sprintf("%v %s", v, word)
-}
-
-// ----------------------------------------
-
 func newServerStats() *serverStats {
 	return &serverStats{}
 }
@@ -249,7 +240,7 @@ type subscription struct {
 	subscriptionID int
 
 	filters []string
-	// todo multiple clients can share a subscription
+	// wip multiple clients can share a subscription
 
 	handlers []pubHandler
 }
