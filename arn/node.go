@@ -19,10 +19,9 @@ type Node struct {
 	children []*Node
 }
 
-// wip match a/+/c
-
 func (n *Node) match(result *[]*Node, parts []string, i int) {
-	log.Println(n.txt, parts, i)
+	lastPart := len(parts)-1 == i
+	log.Println(lastPart, parts, i)
 	switch {
 	case i > len(parts)-1:
 		*result = append(*result, n)
@@ -35,8 +34,13 @@ func (n *Node) match(result *[]*Node, parts []string, i int) {
 		}
 		return
 
-	case n.txt == "+":
+	case lastPart && n.txt == "+":
 		*result = append(*result, n)
+		return
+
+	case lastPart && n.txt == parts[i] && n.IsLeaf():
+		*result = append(*result, n)
+		return
 
 	case n.txt != "+" && n.txt != parts[i]:
 		return

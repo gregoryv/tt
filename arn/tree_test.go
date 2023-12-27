@@ -24,12 +24,27 @@ import (
 	"github.com/gregoryv/golden"
 )
 
+func TestTree_MatchMiddlePlus(t *testing.T) {
+	filter := "gopher/+/hat"
+	x := NewTree(filter)
+
+	var result []*Node
+	topic := "gopher/pink/hat"
+	x.Match(&result, topic)
+	if len(result) == 0 {
+		t.Fatal(filter, "should match", topic)
+	}
+	got := result[0].Filter()
+	if got != filter {
+		t.Error(x.Filters(), "should match", topic)
+	}
+}
+
 func TestTree_MatchTopicUsedInManual(t *testing.T) {
 	x := NewTree("gopher/+")
 
 	var result []*Node
 	topic := "gopher/pink"
-	// wip Match is incomplete
 	x.Match(&result, topic)
 	if len(result) != 1 {
 		t.Error(x.Filters(), "should match", topic)
@@ -142,8 +157,7 @@ func testRouterMatch(t *testing.T, r Router) {
 				filters = append(filters, n.Filter())
 			}
 			if !reflect.DeepEqual(filters, exp) {
-				t.Log(r)
-				t.Error("\ntopic: ", topic, "matched by\n", filters, "\nexpected\n", exp)
+				t.Error("\ntopic: ", topic, "\nmatch: ", filters, "\nexpect:", exp)
 			}
 		})
 	}
