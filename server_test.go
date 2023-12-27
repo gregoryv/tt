@@ -3,12 +3,10 @@ package tt
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"testing"
 	"time"
 
-	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt/ttx"
 )
 
@@ -61,51 +59,6 @@ func TestMustNewSubscription(t *testing.T) {
 		}
 	}()
 	mustNewSubscription("")
-}
-
-func BenchmarkRouter_10routesAllMatch(b *testing.B) {
-	r := newRouter()
-	for i := 0; i < 10; i++ {
-		r.AddSubscriptions(mustNewSubscription("gopher/+", ttx.NoopPub))
-	}
-
-	ctx := context.Background()
-	p := mq.Pub(0, "gopher/pink", "hi")
-	for i := 0; i < b.N; i++ {
-		if err := r.Route(ctx, p); err != nil {
-			b.Error(err)
-		}
-	}
-}
-
-func BenchmarkRouter_10routesMiddleMatch(b *testing.B) {
-	r := newRouter()
-	for i := 0; i < 10; i++ {
-		r.AddSubscriptions(mustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub))
-	}
-
-	ctx := context.Background()
-	p := mq.Pub(0, "gopher/5", "hi")
-	for i := 0; i < b.N; i++ {
-		if err := r.Route(ctx, p); err != nil {
-			b.Error(err)
-		}
-	}
-}
-
-func BenchmarkRouter_10routesEndMatch(b *testing.B) {
-	r := newRouter()
-	for i := 0; i < 10; i++ {
-		r.AddSubscriptions(mustNewSubscription(fmt.Sprintf("gopher/%v", i), ttx.NoopPub))
-	}
-
-	ctx := context.Background()
-	p := mq.Pub(0, "gopher/9", "hi")
-	for i := 0; i < b.N; i++ {
-		if err := r.Route(ctx, p); err != nil {
-			b.Error(err)
-		}
-	}
 }
 
 func ExampleTopicFilter() {

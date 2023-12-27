@@ -5,15 +5,15 @@ import (
 	"fmt"
 )
 
-// VerifyFilterMatching verifies the given implementation against the
-// given rules. If no rules are given, default set of rules is used.
-func VerifyFilterMatching(impl MatchFunc, rules ...RuleTopic) error {
+// VerifyFilterMatching verifies match func against the given
+// rules. If no rules are given, default set of rules is used.
+func VerifyFilterMatching(fn MatchFunc, rules ...RuleTopic) error {
 	var all []error
 	if len(rules) == 0 {
 		rules = RulesTopic
 	}
 	for _, topic := range rules {
-		if err := topic.Verify(impl); err != nil {
+		if err := topic.Verify(fn); err != nil {
 			all = append(all, err)
 		}
 	}
