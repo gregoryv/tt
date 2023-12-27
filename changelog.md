@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Use simpler but more correct filter matching over arn.Tree
 - Rename Client.Start to Run
 - Add client settings, hiding fields
 - Remove flag -S and ShowSettings in client and server
