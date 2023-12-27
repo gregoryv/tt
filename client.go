@@ -167,7 +167,8 @@ func (c *Client) run(ctx context.Context) error {
 				ack.SetPacketID(p.PacketID())
 				_ = c.transmit(ctx, ack)
 			case 2:
-				log.Print(fmt.Errorf("got QoS 2: unsupported ")) // todo disconnect them
+				// todo supported QoS 2
+				log.Print(fmt.Errorf("got QoS 2: unsupported "))
 			}
 		}
 

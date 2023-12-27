@@ -19,6 +19,7 @@ type Node struct {
 
 func (n *Node) match(result *[]*Node, parts []string, i int) {
 	lastPart := len(parts)-1 == i
+	// wip handle # /
 	switch {
 	case i > len(parts)-1:
 		*result = append(*result, n)

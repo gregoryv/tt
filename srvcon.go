@@ -26,7 +26,6 @@ func (s *Server) serveConn(ctx context.Context, conn Connection) {
 	defer func() {
 		s.log.Println("del", connstr)
 		s.stat.RemoveConn()
-		// todo handle closed connection
 	}()
 
 	sc := &sclient{

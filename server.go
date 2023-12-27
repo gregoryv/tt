@@ -240,7 +240,6 @@ type subscription struct {
 	subscriptionID int
 
 	filters []string
-	// wip multiple clients can share a subscription
 
 	handlers []pubHandler
 }

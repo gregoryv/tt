@@ -54,7 +54,7 @@ func (r *router) removeFilters(sc *sclient, filters []string) {
 	r.m.Lock()
 	defer r.m.Unlock()
 
-	// wip remove filters in router
+	// todo remove filters in router
 }
 
 // Route routes mq.Publish packets by topic name.
@@ -66,7 +66,7 @@ func (r *router) Route(ctx context.Context, p mq.Packet) error {
 		r.rut.Match(&result, p.TopicName())
 		for _, n := range result {
 			if n.Value == nil {
-				r.log.Println("oups node.Value is nil", n.Filter()) // wip oups
+				r.log.Println("node.Value is nil", n.Filter())
 				continue
 			}
 			for _, s := range n.Value.([]*subscription) {
