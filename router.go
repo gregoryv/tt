@@ -65,6 +65,10 @@ func (r *router) Route(ctx context.Context, p mq.Packet) error {
 		var result []*arn.Node
 		r.rut.Match(&result, p.TopicName())
 		for _, n := range result {
+			if n.Value == nil {
+				r.log.Println("oups node.Value is nil", n.Filter()) // wip oups
+				continue
+			}
 			for _, s := range n.Value.([]*subscription) {
 				for _, h := range s.handlers {
 					if err := h(ctx, p); err != nil {

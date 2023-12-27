@@ -1,7 +1,5 @@
 package arn
 
-import "log"
-
 // NewNode returns a new node using txt as level value. E.g. +, # or a
 // word.
 func NewNode(txt string) *Node {
@@ -21,14 +19,13 @@ type Node struct {
 
 func (n *Node) match(result *[]*Node, parts []string, i int) {
 	lastPart := len(parts)-1 == i
-	log.Println(lastPart, parts, i)
 	switch {
 	case i > len(parts)-1:
 		*result = append(*result, n)
 		return
 
 	case n.txt == "#":
-		if parts[0][0] != '$' {
+		if len(parts[0]) > 0 && parts[0][0] != '$' {
 			// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901246
 			*result = append(*result, n)
 		}

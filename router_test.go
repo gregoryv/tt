@@ -2,42 +2,35 @@ package tt
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
 	"log"
-	"strings"
 	"testing"
 
 	"github.com/gregoryv/mq"
-	"github.com/gregoryv/tt/ttx"
+	"github.com/gregoryv/tt/spec"
 )
 
 func Test_router(t *testing.T) {
-	var count int
-	var handle = func(_ context.Context, _ *mq.Publish) error {
-		count++
-		return nil
-	}
-	log.SetOutput(ioutil.Discard)
-	r := newRouter()
-	r.AddSubscriptions(
-		mustNewSubscription("gopher/pink", handle),
-		mustNewSubscription("gopher/blue", ttx.NoopPub),
-		mustNewSubscription("#", handle),
-		mustNewSubscription("#", func(_ context.Context, _ *mq.Publish) error {
-			return fmt.Errorf("failed")
-		}),
-	)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	// number of handle routes that should be triggered by below Pub
-	ctx := context.Background()
-	if err := r.Route(ctx, mq.Pub(0, "gopher/pink", "hi")); err != nil {
-		t.Error(err)
+	match := func(filter, name string) bool {
+		var count int
+		var handle = func(_ context.Context, _ *mq.Publish) error {
+			count++
+			return nil
+		}
+		r := newRouter()
+		r.AddSubscriptions(
+			mustNewSubscription(filter, handle),
+		)
+
+		ctx := context.Background()
+		if err := r.Route(ctx, mq.Pub(0, name, "hi")); err != nil {
+			t.Error(err)
+		}
+		return count == 1
 	}
-	if v := r.String(); !strings.Contains(v, "4 subscriptions, 3 filters") {
-		// t.Error(v) wip
-	}
-	if count != 2 {
-		t.Fail()
+	err := spec.VerifyFilterMatching(match)
+	if err != nil {
+		t.Errorf("\n%v", err)
 	}
 }
