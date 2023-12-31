@@ -2,7 +2,18 @@ package spec
 
 import "testing"
 
-func TestVerify_brokenFormater(t *testing.T) {
+func TestVerify_brokenTopicFormater(t *testing.T) {
+	impl := func(f string) bool { return false }
+	if err := VerifyTopicNameFormat(impl); err == nil {
+		t.Error("should return error")
+	}
+	impl = func(f string) bool { return true }
+	if err := VerifyTopicNameFormat(impl); err == nil {
+		t.Error("should return error")
+	}
+}
+
+func TestVerify_brokenFilterFormater(t *testing.T) {
 	impl := func(f string) bool { return false }
 	if err := VerifyFilterFormat(impl); err == nil {
 		t.Error("should return error")

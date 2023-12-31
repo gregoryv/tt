@@ -10,6 +10,40 @@ import (
 	"fmt"
 )
 
+// VerifyNameFormat verifies topic filter implementation against the
+// given rules.
+func VerifyTopicNameFormat(fn func(filter string) bool) error {
+	var all []error
+	for _, r := range RulesTopicNameFormat {
+		got := fn(r.Name)
+		if r.Exp && !got {
+			all = append(all, fmt.Errorf("%q should be acceptable topic name", r.Name))
+			continue
+		}
+		if !r.Exp && got {
+			all = append(all, fmt.Errorf("%q should NOT be acceptable topic name", r.Name))
+		}
+	}
+	return errors.Join(all...)
+}
+
+var RulesTopicNameFormat = []struct {
+	Exp  bool
+	Name string
+}{
+	{true, "/"},
+	{true, "a/b"},
+	{true, "a/b/ "},
+
+	{false, "#"},
+	{false, "/#"},
+	{false, "+"},
+	{false, "/+"},
+	{false, "/a/+/c"},
+}
+
+// ----------------------------------------
+
 // VerifyFilterFormat verifies topic filter implementation against the
 // given rules.
 func VerifyFilterFormat(fn func(filter string) bool) error {
