@@ -11,21 +11,26 @@ import (
 )
 
 // VerifyFilterFormat verifies topic filter implementation against the
-// given rules. If no rules are given, default set of rules are used.
-func VerifyFilterFormat(fn func(filter string) bool, rules ...RuleFilterFormat) error {
+// given rules.
+func VerifyFilterFormat(fn func(filter string) bool) error {
 	var all []error
-	if len(rules) == 0 {
-		rules = RulesFilterFormat
-	}
-	for _, rule := range rules {
-		if err := rule.Verify(fn); err != nil {
-			all = append(all, err)
+	for _, r := range RulesFilterFormat {
+		got := fn(r.Filter)
+		if r.Exp && !got {
+			all = append(all, fmt.Errorf("%q should be acceptable format", r.Filter))
+			continue
+		}
+		if !r.Exp && got {
+			all = append(all, fmt.Errorf("%q should NOT be acceptable format", r.Filter))
 		}
 	}
 	return errors.Join(all...)
 }
 
-var RulesFilterFormat = []RuleFilterFormat{
+var RulesFilterFormat = []struct {
+	Exp    bool
+	Filter string
+}{
 	{true, "#"},
 	{true, "/#"},
 	{true, "a/b/#"},
@@ -42,50 +47,38 @@ var RulesFilterFormat = []RuleFilterFormat{
 	{false, "/a+"},
 }
 
-type RuleFilterFormat struct {
-	Exp    bool
-	Filter string
-}
-
-func (r *RuleFilterFormat) Verify(fn func(string) bool) error {
-	got := fn(r.Filter)
-	if r.Exp && !got {
-		return fmt.Errorf("%q should be acceptable format", r.Filter)
-	}
-	if !r.Exp && got {
-		return fmt.Errorf("%q should NOT be acceptable format", r.Filter)
-	}
-	return nil
-}
-
 // ----------------------------------------
 
 // VerifyFilterMatching verifies match func against the given
-// rules. If no rules are given, default set of rules is used.
-func VerifyFilterMatching(fn MatchFunc, rules ...RuleFilterMatch) error {
+// rules.
+func VerifyFilterMatching(fn func(filter, name string) bool) error {
 	var all []error
-	if len(rules) == 0 {
-		rules = RulesTopic
-	}
-	for _, topic := range rules {
-		if err := topic.Verify(fn); err != nil {
-			all = append(all, err)
+	for _, r := range RulesFilterMatching {
+		got := fn(r.Filter, r.Name)
+		if r.Exp && !got {
+			all = append(all, fmt.Errorf("%s should match %s", r.Filter, r.Name))
+			continue
+		}
+		if !r.Exp && got {
+			all = append(all, fmt.Errorf("%s should NOT match %s", r.Filter, r.Name))
 		}
 	}
 	return errors.Join(all...)
 }
 
-var RulesTopic = []RuleFilterMatch{
+var RulesFilterMatching = []struct {
+	Exp    bool
+	Filter string
+	Name   string
+}{
 	{true, "#", "/"},
 	{true, "#", "word"},
 	{true, "#", "a/b"},
 	{true, "a/#", "a/b"},
 	{true, "a/#", "a"},
-
 	{true, "a/+/#", "a/b/c"},
 	{true, "a/+/#", "a/b"},
 	{true, "a/+/+", "a/b/c"},
-
 	{true, "word", "word"},
 	{true, "$sys", "$sys"},
 	{true, "a/b", "a/b"},
@@ -105,22 +98,3 @@ var RulesTopic = []RuleFilterMatch{
 	{false, "a", "/a"},
 	{false, "+", "/finance"},
 }
-
-type RuleFilterMatch struct {
-	Exp    bool
-	Filter string
-	Name   string
-}
-
-func (r *RuleFilterMatch) Verify(fn MatchFunc) error {
-	got := fn(r.Filter, r.Name)
-	if r.Exp && !got {
-		return fmt.Errorf("%s should match %s", r.Filter, r.Name)
-	}
-	if !r.Exp && got {
-		return fmt.Errorf("%s should NOT match %s", r.Filter, r.Name)
-	}
-	return nil
-}
-
-type MatchFunc func(filter, name string) bool
