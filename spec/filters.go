@@ -7,7 +7,7 @@ import (
 
 // VerifyFilterMatching verifies match func against the given
 // rules. If no rules are given, default set of rules is used.
-func VerifyFilterMatching(fn MatchFunc, rules ...RuleTopic) error {
+func VerifyFilterMatching(fn MatchFunc, rules ...RuleFilterMatch) error {
 	var all []error
 	if len(rules) == 0 {
 		rules = RulesTopic
@@ -20,7 +20,7 @@ func VerifyFilterMatching(fn MatchFunc, rules ...RuleTopic) error {
 	return errors.Join(all...)
 }
 
-var RulesTopic = []RuleTopic{
+var RulesTopic = []RuleFilterMatch{
 	{true, "#", "/"},
 	{true, "#", "word"},
 	{true, "#", "a/b"},
@@ -37,7 +37,7 @@ var RulesTopic = []RuleTopic{
 	{true, "hello/ Åke/", "hello/ Åke/"},
 	{true, "+/+", "/finance"},
 	{true, "/+", "/finance"},
-	
+
 	{false, "#", "$sys"},
 	{false, "+", "$sys"},
 	{false, "a/b/+/#", "a/b"},
@@ -51,13 +51,13 @@ var RulesTopic = []RuleTopic{
 	{false, "+", "/finance"},
 }
 
-type RuleTopic struct {
+type RuleFilterMatch struct {
 	Exp    bool
 	Filter string
 	Name   string
 }
 
-func (r *RuleTopic) Verify(fn MatchFunc) error {
+func (r *RuleFilterMatch) Verify(fn MatchFunc) error {
 	got := fn(r.Filter, r.Name)
 	if r.Exp && !got {
 		return fmt.Errorf("%s should match %s", r.Filter, r.Name)
