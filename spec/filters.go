@@ -35,7 +35,9 @@ var RulesTopic = []RuleTopic{
 	{true, "$sys", "$sys"},
 	{true, "a/b", "a/b"},
 	{true, "hello/ Åke/", "hello/ Åke/"},
-
+	{true, "+/+", "/finance"},
+	{true, "/+", "/finance"},
+	
 	{false, "#", "$sys"},
 	{false, "+", "$sys"},
 	{false, "a/b/+/#", "a/b"},
@@ -46,6 +48,7 @@ var RulesTopic = []RuleTopic{
 	{false, "a/B", "a/b"},
 	{false, "/a", "a"},
 	{false, "a", "/a"},
+	{false, "+", "/finance"},
 }
 
 type RuleTopic struct {

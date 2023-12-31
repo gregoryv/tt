@@ -54,7 +54,7 @@ func match(filter, name string) bool {
 				return false
 			}
 			if f == "+" {
-				if i == 0 && nameLevels[i][0] == '$' {
+				if i == 0 && (len(nameLevels[i]) > 0 && nameLevels[i][0] == '$') {
 					return false
 				}
 				continue
