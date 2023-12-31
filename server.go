@@ -9,7 +9,6 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -276,13 +275,25 @@ func (s *subscription) addTopicFilter(f string) {
 // ----------------------------------------
 
 // https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901247
-func parseTopicFilter(v string) error {
-	if len(v) == 0 {
+func parseTopicFilter(filter string) error {
+	if len(filter) == 0 {
 		return fmt.Errorf("empty filter")
 	}
-	if i := strings.Index(v, "#"); i >= 0 && i < len(v)-1 {
-		// i.e. /a/#/b
-		return fmt.Errorf("%q # not allowed there", v)
+	for i, r := range filter {
+		switch r {
+		case '+':
+			if i > 0 && filter[i-1] != '/' {
+				return fmt.Errorf("%q single-level wildcard occupy entire level", filter)
+			}
+		case '#':
+			if i != len(filter)-1 {
+				// i.e. /a/#/b
+				return fmt.Errorf("%q multi-level wildcard must be last", filter)
+			}
+			if i > 0 && filter[i-1] != '/' {
+				return fmt.Errorf("%q multi-level wildcard must follow level separator", filter)
+			}
+		}
 	}
 
 	return nil

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gregoryv/tt/spec"
 	"github.com/gregoryv/tt/ttx"
 )
 
@@ -75,27 +76,13 @@ func ExampleTopicFilter() {
 }
 
 func TestParseTopicFilter(t *testing.T) {
-	// https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901247
-	okcases := []string{
-		"#",
-	}
-	for _, filter := range okcases {
+	impl := func(filter string) bool {
 		err := parseTopicFilter(filter)
-		if err != nil {
-			t.Fatal(err)
-		}
+		return err == nil
 	}
-
-	badcases := []string{
-		"a/#/c",
-		"#/",
-		"",
-	}
-	for _, filter := range badcases {
-		err := parseTopicFilter(filter)
-		if err == nil {
-			t.Fatalf("%s should fail", filter)
-		}
+	err := spec.VerifyFilterFormat(impl)
+	if err != nil {
+		t.Error(err)
 	}
 }
 

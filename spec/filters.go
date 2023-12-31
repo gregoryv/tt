@@ -50,10 +50,10 @@ type RuleFilterFormat struct {
 func (r *RuleFilterFormat) Verify(fn func(string) bool) error {
 	got := fn(r.Filter)
 	if r.Exp && !got {
-		return fmt.Errorf("%s should be acceptable format", r.Filter)
+		return fmt.Errorf("%q should be acceptable format", r.Filter)
 	}
 	if !r.Exp && got {
-		return fmt.Errorf("%s should NOT be acceptable format", r.Filter)
+		return fmt.Errorf("%q should NOT be acceptable format", r.Filter)
 	}
 	return nil
 }
