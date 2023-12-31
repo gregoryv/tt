@@ -82,6 +82,13 @@ func (s *Server) Events() <-chan interface{} {
 	return s.app
 }
 
+func (s *Server) trigger(e any) {
+	select {
+	case s.app <- e:
+	default:
+	}
+}
+
 // Run the server. Use [Server.Signal] to listen for progress.
 func (s *Server) Run(ctx context.Context) {
 	s.startup.Do(s.setDefaults)
@@ -91,11 +98,17 @@ func (s *Server) Run(ctx context.Context) {
 		return
 	}
 
-	s.app <- event.ServerUp(0)
-	for conn := range s.incoming {
-		go s.serveConn(ctx, conn)
+	s.trigger(event.ServerUp(0))
+	for {
+		select {
+		case <-ctx.Done():
+			s.trigger(event.ServerStop{nil})
+			return
+
+		case conn := <-s.incoming:
+			go s.serveConn(ctx, conn)
+		}
 	}
-	s.app <- event.ServerStop{nil}
 }
 
 func (s *Server) setDefaults() {

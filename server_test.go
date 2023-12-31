@@ -10,6 +10,15 @@ import (
 	"github.com/gregoryv/tt/ttx"
 )
 
+func TestServer_cancelContext(t *testing.T) {
+	srv := NewServer()
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+	srv.Run(ctx)
+	// should not block
+}
+
 func Test_connFeed(t *testing.T) {
 	{ // accepts connections
 		ctx, cancel := context.WithCancel(context.Background())
