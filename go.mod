@@ -3,11 +3,11 @@ module github.com/gregoryv/tt
 go 1.21.1
 
 require (
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/gregoryv/cmdline v0.15.3
 	github.com/gregoryv/draw v0.33.0
 	github.com/gregoryv/golden v0.7.1
-	github.com/gregoryv/mq v0.27.1-0.20231022101840-4ddc97fc1a3f
+	github.com/gregoryv/mq v0.27.1-0.20231214214413-4a91fa70f262
 	github.com/gregoryv/web v0.25.0
 )
 
