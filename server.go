@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -298,3 +299,12 @@ func parseTopicFilter(filter string) error {
 
 	return nil
 }
+
+func parseTopicName(name string) error {
+	if i := strings.IndexAny(name, "+#"); i >= 0 {
+		return ErrMalformedTopicName
+	}
+	return nil
+}
+
+var ErrMalformedTopicName = fmt.Errorf("malformed topic name")

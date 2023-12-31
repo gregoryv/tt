@@ -190,6 +190,11 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 			_ = sc.transmit(ctx, d)
 		}
 
+		// wip parse topic name
+		if err := parseTopicName(p.TopicName()); err != nil {
+
+		}
+
 		switch p.QoS() {
 		case 0:
 			_ = sc.srv.router.Route(ctx, p)

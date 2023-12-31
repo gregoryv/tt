@@ -10,20 +10,28 @@ import (
 	"fmt"
 )
 
-// VerifyNameFormat verifies topic filter implementation against the
-// given rules.
+// VerifyTopicNameFormat returns error if below requirements are not
+// implemented.
+//
+//   - The wildcard characters can be used in Topic Filters, but MUST NOT
+//     be used within a Topic Name [MQTT-4.7.0-1].
 func VerifyTopicNameFormat(fn func(filter string) bool) error {
 	var all []error
 	for _, r := range RulesTopicNameFormat {
 		got := fn(r.Name)
 		if r.Exp && !got {
-			all = append(all, fmt.Errorf("%q should be acceptable topic name", r.Name))
+			all = append(all, fmt.Errorf("topic name %q MUST be accepted", r.Name))
 			continue
 		}
 		if !r.Exp && got {
-			all = append(all, fmt.Errorf("%q should NOT be acceptable topic name", r.Name))
+			all = append(all, fmt.Errorf("topic name %q MUST NOT be accepted", r.Name))
 		}
 	}
+	if len(all) > 0 {
+		all = append(all, fmt.Errorf(`The wildcard characters can be used in Topic Filters,
+but MUST NOT be used within a Topic Name [MQTT-4.7.0-1]`))
+	}
+
 	return errors.Join(all...)
 }
 
