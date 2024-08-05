@@ -192,6 +192,25 @@ func TestServer_DisconnectOnMalformedTopicName(t *testing.T) {
 	}
 }
 
+// Ping results in pong
+func TestServer_AnswersPingWithPong(t *testing.T) {
+	ctx := context.Background()
+	conn, _ := setupClientServer(ctx, t)
+
+	{ // initiate connect sequence
+		mq.NewConnect().WriteTo(conn)
+		// ignore ack
+		_, _ = mq.ReadPacket(conn)
+	}
+	{ // send ping
+		mq.NewPingReq().WriteTo(conn)
+	}
+	{ // check expected disconnect packet
+		p, _ := mq.ReadPacket(conn)
+		_ = p.(*mq.PingResp)
+	}
+}
+
 func setupClientServer(ctx context.Context, t *testing.T) (conn, srvconn net.Conn) {
 	s := NewServer()
 	ctx, cancel := context.WithCancel(ctx)
