@@ -211,6 +211,17 @@ func TestServer_AnswersPingWithPong(t *testing.T) {
 	}
 }
 
+func Test_includePort(t *testing.T) {
+	if got := includePort("x:123", true); got != "x:123" {
+		t.Errorf("got %q, expected x:123", got)
+	}
+	if got := includePort("x:123", false); got != "x" {
+		t.Errorf("got %q, expected x", got)
+	}
+}
+
+// ----------------------------------------
+
 func setupClientServer(ctx context.Context, t *testing.T) (conn, srvconn net.Conn) {
 	s := NewServer()
 	ctx, cancel := context.WithCancel(ctx)
