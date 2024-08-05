@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Disconnect client if Server.maxQoS is exceeded
 - Use simpler but more correct filter matching over arn.Tree
 - Rename Client.Start to Run
 - Add client settings, hiding fields
