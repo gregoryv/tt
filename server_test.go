@@ -86,6 +86,19 @@ func TestParseTopicFilter(t *testing.T) {
 	}
 }
 
+func Test_parseTopicName(t *testing.T) {
+	bad := func(name string) {
+		t.Helper()
+		if err := parseTopicName(name); err == nil {
+			t.Errorf("topic name %q accepted, expected error", name)
+		}
+	}
+	bad("/+")
+	bad("+")
+	bad("#")
+}
+
+
 // ----------------------------------------
 
 // mustNewSubscription panics on bad filter
