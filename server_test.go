@@ -3,6 +3,8 @@ package tt
 import (
 	"context"
 	"errors"
+	"io/ioutil"
+	"log"
 	"net"
 	"testing"
 	"time"
@@ -10,6 +12,22 @@ import (
 	"github.com/gregoryv/tt/spec"
 	"github.com/gregoryv/tt/ttx"
 )
+
+func TestServer_SetDebugIncreasesLogging(t *testing.T) {
+	srv := NewServer()
+	l := log.New(ioutil.Discard, "", 0)
+	srv.SetLogger(l)
+	srv.SetDebug(true)
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	t.Cleanup(cancel)
+	cancel()
+	srv.Run(ctx)
+
+	if l.Flags() == 0 {
+		t.Error("SetDebug did not change logger flags")
+	}
+}
 
 func TestServer_cancelContext(t *testing.T) {
 	srv := NewServer()
