@@ -29,7 +29,8 @@ func (s *Server) serveConn(ctx context.Context, conn Connection) {
 	}()
 
 	sc := &sclient{
-		maxQoS:   1, // todo configure maxQoS on server
+		// todo support QoS 2
+		maxQoS:   1,
 		maxIDLen: 11,
 		remote:   includePort(conn.RemoteAddr().String(), s.debug),
 		log:      s.log,
@@ -192,7 +193,10 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 		}
 
 		if err := parseTopicName(p.TopicName()); err != nil {
-			// wip disconnect on malformed topic name
+			p := mq.NewDisconnect()
+			p.SetReasonCode(mq.MalformedPacket)
+			_ = sc.transmit(ctx, p)
+			return
 		}
 
 		switch p.QoS() {
@@ -204,7 +208,8 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 			_ = sc.srv.router.Route(ctx, p)
 			_ = sc.transmit(ctx, ack)
 
-		case 2: // todo implement server support for QoS 2
+		case 2:
+			// todo support QoS 2
 
 		}
 

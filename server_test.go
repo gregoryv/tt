@@ -98,7 +98,6 @@ func Test_parseTopicName(t *testing.T) {
 	bad("#")
 }
 
-
 // ----------------------------------------
 
 // mustNewSubscription panics on bad filter

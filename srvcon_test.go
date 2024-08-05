@@ -163,6 +163,35 @@ func TestServer_DisconnectOnQoSExceed(t *testing.T) {
 	}
 }
 
+// Publish with malformed topic name results in disconnect.
+func TestServer_DisconnectOnMalformedTopicName(t *testing.T) {
+	ctx := context.Background()
+	conn, _ := setupClientServer(ctx, t)
+
+	{ // initiate connect sequence
+		mq.NewConnect().WriteTo(conn)
+		// ignore ack
+		_, _ = mq.ReadPacket(conn)
+	}
+	{ // send publish with malformed topic name
+		p := mq.NewPublish()
+		p.SetPacketID(1)
+		p.SetQoS(1)
+		p.SetTopicName("+")
+		p.WriteTo(conn)
+	}
+	{ // check expected disconnect packet
+		p, _ := mq.ReadPacket(conn)
+		if p := p.(*mq.Disconnect); p.ReasonCode() != mq.MalformedPacket {
+			t.Error(p)
+		}
+	}
+	// verify the connection is closed
+	if _, err := mq.NewPublish().WriteTo(conn); err == nil {
+		t.Error("network Connection still open")
+	}
+}
+
 func setupClientServer(ctx context.Context, t *testing.T) (conn, srvconn net.Conn) {
 	s := NewServer()
 	ctx, cancel := context.WithCancel(ctx)
