@@ -13,6 +13,12 @@ import (
 	"github.com/gregoryv/tt/ttx"
 )
 
+func TestServer_SetConnectTimeout(t *testing.T) {
+	srv := NewServer()
+	srv.SetConnectTimeout(0)
+}
+
+
 func TestServer_SetDebugIncreasesLogging(t *testing.T) {
 	srv := NewServer()
 	l := log.New(ioutil.Discard, "", 0)

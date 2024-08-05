@@ -134,6 +134,7 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 			a.SetAssignedClientID(sc.clientID)
 		}
 		_ = sc.transmit(ctx, a)
+		// todo respect connectTimeout
 
 	case *mq.Subscribe:
 		a := mq.NewSubAck()
