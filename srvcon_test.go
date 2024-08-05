@@ -134,6 +134,35 @@ func TestServer_DisconnectOnMalformed(t *testing.T) {
 	}
 }
 
+// Publish with exceeding QoS results in disconnect.
+func TestServer_DisconnectOnQoSExceed(t *testing.T) {
+	ctx := context.Background()
+	conn, _ := setupClientServer(ctx, t)
+
+	{ // initiate connect sequence
+		mq.NewConnect().WriteTo(conn)
+		// ignore ack
+		_, _ = mq.ReadPacket(conn)
+	}
+	{ // send publish with exceeding QoS
+		p := mq.NewPublish()
+		p.SetPacketID(1)
+		p.SetQoS(2)
+		p.SetTopicName("hello")
+		p.WriteTo(conn)
+	}
+	{ // check expected disconnect packet
+		p, _ := mq.ReadPacket(conn)
+		if p := p.(*mq.Disconnect); p.ReasonCode() != mq.QoSNotSupported {
+			t.Error(p)
+		}
+	}
+	// verify the connection is closed
+	if _, err := mq.NewPublish().WriteTo(conn); err == nil {
+		t.Error("network Connection still open")
+	}
+}
+
 func setupClientServer(ctx context.Context, t *testing.T) (conn, srvconn net.Conn) {
 	s := NewServer()
 	ctx, cancel := context.WithCancel(ctx)

@@ -29,7 +29,7 @@ func (s *Server) serveConn(ctx context.Context, conn Connection) {
 	}()
 
 	sc := &sclient{
-		maxQoS:   1,
+		maxQoS:   1, // todo configure maxQoS on server
 		maxIDLen: 11,
 		remote:   includePort(conn.RemoteAddr().String(), s.debug),
 		log:      s.log,
@@ -188,11 +188,11 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 			d := mq.NewDisconnect()
 			d.SetReasonCode(mq.QoSNotSupported)
 			_ = sc.transmit(ctx, d)
+			return
 		}
 
-		// wip parse topic name
 		if err := parseTopicName(p.TopicName()); err != nil {
-
+			// wip disconnect on malformed topic name
 		}
 
 		switch p.QoS() {
