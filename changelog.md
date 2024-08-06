@@ -3,7 +3,7 @@
 This project adheres to semantic versioning and all notable
 changes will be documented in this file.
 
-## [unreleased]
+## [0.11.0] 2024-08-06
 
 - Disconnect client if Server.maxQoS is exceeded
 - Use simpler but more correct filter matching over arn.Tree
