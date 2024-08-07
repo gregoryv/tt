@@ -114,7 +114,6 @@ func (c *Client) run(ctx context.Context) error {
 		ping.delay()
 		return nil
 	}
-	go ping.run(ctx, c.transmit) // todo only ping if connected
 
 	handle := func(ctx context.Context, p mq.Packet) {
 		// set log prefix if client was assigned an id
@@ -150,6 +149,9 @@ func (c *Client) run(ctx context.Context) error {
 				if v := p.ServerKeepAlive(); v > 0 {
 					ping.SetInterval(v)
 				}
+				// client is connected start the ping routine
+				go ping.run(ctx, c.transmit)
+
 			case code >= 0x80:
 				c.app <- event.ClientConnectFail(code.String())
 			}
