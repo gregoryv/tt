@@ -86,7 +86,7 @@ func (c *Client) run(ctx context.Context) error {
 	pool := newIDPool(c.maxPacketID)
 	ping := newKeepAlive()
 
-	c.transmit = func(ctx context.Context, p mq.Packet) error {
+	transmit := func(ctx context.Context, p mq.Packet) error {
 		// set packet id if needed, blocks if pool is exhausted
 		if err := pool.SetPacketID(ctx, p); err != nil {
 			cancel()
@@ -114,6 +114,8 @@ func (c *Client) run(ctx context.Context) error {
 		ping.delay()
 		return nil
 	}
+	// set for use by method Client.Send
+	c.transmit = transmit
 
 	handle := func(ctx context.Context, p mq.Packet) {
 		// set log prefix if client was assigned an id
@@ -130,7 +132,7 @@ func (c *Client) run(ctx context.Context) error {
 			if err := p.WellFormed(); err != nil {
 				d := mq.NewDisconnect()
 				d.SetReasonCode(mq.MalformedPacket)
-				_ = c.transmit(ctx, d)
+				_ = transmit(ctx, d)
 			}
 		}
 
@@ -150,7 +152,7 @@ func (c *Client) run(ctx context.Context) error {
 					ping.SetInterval(v)
 				}
 				// client is connected start the ping routine
-				go ping.run(ctx, c.transmit)
+				go ping.run(ctx, transmit)
 
 			case code >= 0x80:
 				c.app <- event.ClientConnectFail(code.String())
@@ -162,14 +164,14 @@ func (c *Client) run(ctx context.Context) error {
 			case 1:
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
-				_ = c.transmit(ctx, ack)
+				_ = transmit(ctx, ack)
 			case 2:
 				// todo supported QoS 2
 				c.log.Print(fmt.Errorf("got QoS 2: unsupported "))
 			}
 		}
 
-		// finally let the application have it
+		// finally let the application have the packet
 		c.app <- p
 	}
 	recv := newReceiver(handle, conn)
