@@ -86,6 +86,8 @@ func (c *Client) run(ctx context.Context) error {
 	pool := newIDPool(c.maxPacketID)
 	ping := newKeepAlive()
 
+	// define transmit func first, as it's used when receiving packets
+	// to e.g. transmit acks.
 	transmit := func(ctx context.Context, p mq.Packet) error {
 		// set packet id if needed, blocks if pool is exhausted
 		if err := pool.SetPacketID(ctx, p); err != nil {
@@ -199,6 +201,7 @@ var ErrClientStopped = fmt.Errorf("Client stopped")
 func newIDPool(max uint16) *iDPool {
 	o := iDPool{
 		nextTimeout: 3 * time.Second,
+		timer:       time.NewTimer(3 * time.Second),
 		max:         max,
 		used:        make([]time.Time, max+1),
 		values:      make(chan uint16, max),
@@ -211,9 +214,11 @@ func newIDPool(max uint16) *iDPool {
 
 type iDPool struct {
 	nextTimeout time.Duration
-	max         uint16
-	used        []time.Time // flags id that has been used in Out handler
-	values      chan uint16
+	timer       *time.Timer
+
+	max    uint16
+	used   []time.Time // flags id that has been used in Out handler
+	values chan uint16
 }
 
 // reuse returns the given value to the pool, returns the reused value
@@ -266,11 +271,12 @@ func (o *iDPool) SetPacketID(ctx context.Context, p mq.Packet) error {
 // or context is canceled. next is safe for concurrent use by multiple
 // goroutines.
 func (o *iDPool) next(ctx context.Context) (uint16, error) {
+	o.timer.Reset(o.nextTimeout)
 	select {
 	case <-ctx.Done():
 		return 0, ctx.Err()
 
-	case <-time.After(o.nextTimeout):
+	case <-o.timer.C:
 		return 0, ErrIDPoolEmpty
 
 	case v := <-o.values:
