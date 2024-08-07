@@ -41,6 +41,9 @@ type Client struct {
 	transmit func(ctx context.Context, p mq.Packet) error
 
 	app chan interface{}
+
+	// synchronize Send
+	m sync.Mutex
 }
 
 func (c *Client) SetServer(v string)      { c.server = v }
@@ -84,12 +87,7 @@ func (c *Client) run(ctx context.Context) error {
 	pool := newIDPool(c.maxPacketID)
 	ping := newKeepAlive()
 
-	var m sync.Mutex
 	c.transmit = func(ctx context.Context, p mq.Packet) error {
-		// sync each outgoing packet
-		m.Lock()
-		defer m.Unlock()
-
 		// set packet id if needed, blocks if pool is exhausted
 		if err := pool.SetPacketID(ctx, p); err != nil {
 			cancel()
@@ -109,14 +107,12 @@ func (c *Client) run(ctx context.Context) error {
 		log.Printf("out %s%s", p, dump(debug, p))
 
 		// write packet on the wire
-		_, err := p.WriteTo(conn)
-
-		if err != nil {
+		if _, err := p.WriteTo(conn); err != nil {
 			return err
 		}
 
-		ping.delay() // since we just send a packet
-
+		// packet just sent, no need for a ping
+		ping.delay()
 		return nil
 	}
 	go ping.run(ctx, c.transmit)
@@ -181,11 +177,15 @@ func (c *Client) run(ctx context.Context) error {
 }
 
 // Send returns when the packet was successfully encoded on the wire.
-// Returns ErrClientStopped if not running.
+// Returns ErrClientStopped if not running. Send is safe to call
+// concurrently.
 func (c *Client) Send(ctx context.Context, p mq.Packet) error {
 	if c.transmit == nil {
 		return ErrClientStopped
 	}
+	// sync each outgoing packet
+	c.m.Lock()
+	defer c.m.Unlock()
 	return c.transmit(ctx, p)
 }
 

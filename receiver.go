@@ -23,10 +23,10 @@ func newReceiver(h handlerFunc, r io.Reader) *receiver {
 type receiver struct {
 	wire     io.Reader
 	handle   handlerFunc
-	deadline time.Duration	
+	deadline time.Duration
 }
 
-// Run handles packets until context is cancelled
+// Run handles packets until context is cancelled.
 func (r *receiver) Run(ctx context.Context) error {
 	for {
 		if err := ctx.Err(); err != nil {

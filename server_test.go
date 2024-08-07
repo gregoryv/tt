@@ -18,7 +18,6 @@ func TestServer_SetConnectTimeout(t *testing.T) {
 	srv.SetConnectTimeout(0)
 }
 
-
 func TestServer_SetDebugIncreasesLogging(t *testing.T) {
 	srv := NewServer()
 	l := log.New(ioutil.Discard, "", 0)
