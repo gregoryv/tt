@@ -16,7 +16,7 @@ import (
 
 func NewClient() *Client {
 	return &Client{
-		logger: log.New(ioutil.Discard, "", log.Flags()),
+		log:    log.New(ioutil.Discard, "", log.Flags()),
 		server: "tcp://127.0.0.1:1883",
 		app:    make(chan interface{}, 1),
 	}
@@ -31,7 +31,7 @@ type Client struct {
 	debug bool
 
 	// optional logger, leave empty for no logging
-	logger *log.Logger
+	log *log.Logger
 
 	// Outgoing packets use ids from 1..MaxPacketID, this limits the
 	// number of packets in flight.
@@ -49,7 +49,7 @@ type Client struct {
 func (c *Client) SetServer(v string)      { c.server = v }
 func (c *Client) SetDebug(v bool)         { c.debug = v }
 func (c *Client) SetMaxPacketID(v uint16) { c.maxPacketID = v }
-func (c *Client) SetLogger(v *log.Logger) { c.logger = v }
+func (c *Client) SetLogger(v *log.Logger) { c.log = v }
 
 func (c *Client) Run(ctx context.Context) error {
 	err := c.run(ctx)
@@ -64,6 +64,7 @@ func (c *Client) Events() <-chan interface{} {
 	return c.app
 }
 
+// run prepares and initiates transmit and receive logic of packets.
 func (c *Client) run(ctx context.Context) error {
 
 	s, err := url.Parse(c.server)
@@ -72,12 +73,10 @@ func (c *Client) run(ctx context.Context) error {
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	log := c.logger
-	debug := c.debug
 	maxIDLen := uint(11)
 
 	// dial server
-	log.Print("dial ", s.String())
+	c.log.Print("dial ", s.String())
 	conn, err := net.Dial(s.Scheme, s.Host)
 	if err != nil {
 		return err
@@ -97,14 +96,14 @@ func (c *Client) run(ctx context.Context) error {
 		// use client id
 		switch p := p.(type) {
 		case *mq.Connect:
-			log.SetPrefix(trimID(p.ClientID(), maxIDLen) + " ")
+			c.log.SetPrefix(trimID(p.ClientID(), maxIDLen) + " ")
 			if v := p.KeepAlive(); v > 0 {
 				ping.SetInterval(v)
 			}
 		}
 
 		// log just before sending
-		log.Printf("out %s%s", p, dump(debug, p))
+		c.log.Printf("out %s%s", p, dump(c.debug, p))
 
 		// write packet on the wire
 		if _, err := p.WriteTo(conn); err != nil {
@@ -115,17 +114,17 @@ func (c *Client) run(ctx context.Context) error {
 		ping.delay()
 		return nil
 	}
-	go ping.run(ctx, c.transmit)
+	go ping.run(ctx, c.transmit) // todo only ping if connected
 
-	recv := newReceiver(func(ctx context.Context, p mq.Packet) {
+	handle := func(ctx context.Context, p mq.Packet) {
 		// set log prefix if client was assigned an id
 		if p, ok := p.(*mq.ConnAck); ok {
 			if v := p.AssignedClientID(); v != "" {
-				log.SetPrefix(trimID(v, maxIDLen))
+				c.log.SetPrefix(trimID(v, maxIDLen))
 			}
 		}
 		// log incoming packet
-		log.Printf("in %s%s", p, dump(debug, p))
+		c.log.Printf("in %s%s", p, dump(c.debug, p))
 
 		// check if malformed
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
@@ -164,13 +163,14 @@ func (c *Client) run(ctx context.Context) error {
 				_ = c.transmit(ctx, ack)
 			case 2:
 				// todo supported QoS 2
-				log.Print(fmt.Errorf("got QoS 2: unsupported "))
+				c.log.Print(fmt.Errorf("got QoS 2: unsupported "))
 			}
 		}
 
 		// finally let the application have it
 		c.app <- p
-	}, conn)
+	}
+	recv := newReceiver(handle, conn)
 
 	c.app <- event.ClientUp(0)
 	return recv.Run(ctx)
