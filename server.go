@@ -47,7 +47,7 @@ type Server struct {
 	// sync server initial setup
 	startup sync.Once
 
-	// application server events, see Server.Signal()
+	// application server events, see [Server.Events]
 	app chan interface{}
 
 	// listeners feed new connections here
@@ -94,7 +94,7 @@ func (s *Server) trigger(e any) {
 	}
 }
 
-// Run the server. Use [Server.Signal] to listen for progress.
+// Run the server. Use [Server.Events] to listen for progress.
 func (s *Server) Run(ctx context.Context) {
 	s.startup.Do(s.setDefaults)
 
