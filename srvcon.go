@@ -23,11 +23,6 @@ func (s *Server) serveConn(ctx context.Context, conn Connection) {
 	s.log.Println("new", connstr)
 	s.stat.AddConn()
 
-	defer func() {
-		s.log.Println("del", connstr)
-		s.stat.RemoveConn()
-	}()
-
 	sc := &sclient{
 		// todo support QoS 2
 		maxQoS:   1,
@@ -39,7 +34,10 @@ func (s *Server) serveConn(ctx context.Context, conn Connection) {
 	}
 
 	// ignore error here, the Connection is done
-	_ = newReceiver(sc.receive, conn).Run(ctx)
+	err := newReceiver(sc.receive, conn).Run(ctx)	
+	s.log.Println("del", connstr, err)
+	s.stat.RemoveConn()
+	
 }
 
 func includePort(addr string, yes bool) string {
