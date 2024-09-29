@@ -34,10 +34,10 @@ func (s *Server) serveConn(ctx context.Context, conn Connection) {
 	}
 
 	// ignore error here, the Connection is done
-	err := newReceiver(sc.receive, conn).Run(ctx)	
+	err := newReceiver(sc.receive, conn).Run(ctx)
 	s.log.Println("del", connstr, err)
 	s.stat.RemoveConn()
-	
+
 }
 
 func includePort(addr string, yes bool) string {

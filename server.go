@@ -82,6 +82,11 @@ func (s *Server) Events() <-chan interface{} {
 	return s.app
 }
 
+// Incoming returns channel on which to feed new connections
+func (s *Server) Incoming() chan<- Connection {
+	return s.incoming
+}
+
 func (s *Server) trigger(e any) {
 	select {
 	case s.app <- e:
