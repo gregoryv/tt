@@ -6,9 +6,9 @@ import (
 
 // https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901241
 
-func match(filter, name string) bool {
+func match(filter, topicName string) bool {
 	if filter == "#" {
-		if name[0] == '$' {
+		if topicName[0] == '$' {
 			return false
 		}
 		return true
@@ -21,13 +21,13 @@ func match(filter, name string) bool {
 	case hasNumberSign && !hasPlusSign:
 		// a/b/#  a/b
 		prefix := filter[:len(filter)-2]
-		return strings.HasPrefix(name, prefix)
+		return strings.HasPrefix(topicName, prefix)
 
 	case hasNumberSign && hasPlusSign:
 		// a/+/#  a/b/c
 		filter = filter[:len(filter)-2]
 		filterLevels := strings.Split(filter, "/")
-		nameLevels := strings.Split(name, "/")
+		nameLevels := strings.Split(topicName, "/")
 		for i, f := range filterLevels {
 			// a/b/+/#  a/b
 			if i == len(nameLevels) {
@@ -44,7 +44,7 @@ func match(filter, name string) bool {
 
 	case !hasNumberSign && hasPlusSign:
 		filterLevels := strings.Split(filter, "/")
-		nameLevels := strings.Split(name, "/")
+		nameLevels := strings.Split(topicName, "/")
 		if len(nameLevels) > len(filterLevels) {
 			return false
 		}
@@ -65,5 +65,5 @@ func match(filter, name string) bool {
 		}
 		return true
 	}
-	return filter == name
+	return filter == topicName
 }
