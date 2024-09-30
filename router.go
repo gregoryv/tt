@@ -30,14 +30,10 @@ func (r *router) String() string {
 	for _, s := range r.filtSub {
 		c += len(s)
 	}
-	return plural(c, "subscription")
-}
-
-func plural(v int, word string) string {
-	if v > 1 {
-		word = word + "s"
+	if c == 1 {
+		return "1 subscription"
 	}
-	return fmt.Sprintf("%v %s", v, word)
+	return fmt.Sprintf("%v subscriptions", c)
 }
 
 func (r *router) AddSubscriptions(v ...*subscription) {
