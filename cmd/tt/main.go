@@ -85,7 +85,7 @@ type PubCmd struct {
 	topic   string
 	payload string
 	qos     uint8
-	repeat  int
+	count   int
 
 	clientID string
 	username string
@@ -102,7 +102,7 @@ func (c *PubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.qos = cli.Option("-q, --qos").Uint8(0)
 	c.username = cli.Option("-u, --username").String("")
 	c.password = cli.Option("-p, --password").String("")
-	c.repeat = cli.Option("-r, --repeat").Int(1)
+	c.count = cli.Option("-n, --count").Int(1)
 }
 
 func (c *PubCmd) Run(ctx context.Context) error {
@@ -127,7 +127,7 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			_ = client.Send(ctx, p)
 
 		case event.ClientConnect:
-			for i := 0; i < c.repeat; i++ {
+			for i := 0; i < c.count; i++ {
 				m := mq.Pub(c.qos, c.topic, c.payload)
 				if err := client.Send(ctx, m); err != nil {
 					return err
