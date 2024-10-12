@@ -3,7 +3,7 @@
 This project adheres to semantic versioning and all notable
 changes will be documented in this file.
 
-## [unreleased]
+## [0.12.0] 2024-10-12
 
 - Client can publish using QoS 2
 - Add flag --retain
