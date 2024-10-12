@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Add flag --retain
 - Rename --repeat flag to --count
 
 ## [0.11.0] 2024-08-06
