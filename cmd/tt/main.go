@@ -149,6 +149,10 @@ func (c *PubCmd) Run(ctx context.Context) error {
 			_ = client.Send(ctx, mq.NewDisconnect())
 			cancel()
 
+		case *mq.PubComp:
+			_ = client.Send(ctx, mq.NewDisconnect())
+			cancel()
+
 		case *mq.Disconnect:
 			cancel()
 			if r := v.ReasonCode(); r > 0x80 {

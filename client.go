@@ -167,10 +167,15 @@ func (c *Client) run(ctx context.Context) error {
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
 				_ = transmit(ctx, ack)
-			case 2:
-				// todo supported QoS 2
-				c.log.Print(fmt.Errorf("got QoS 2: unsupported "))
+			case 2: // ack is done in PubRec
 			}
+
+		case *mq.PubRec:
+			// todo what if the application layer doesn't want to
+			// release a packet based on the PubRec reason
+			rel := mq.NewPubRel()
+			rel.SetPacketID(p.PacketID())
+			_ = transmit(ctx, rel)
 		}
 
 		// finally let the application have the packet

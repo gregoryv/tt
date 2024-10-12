@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [unreleased]
 
+- Client can publish using QoS 2
 - Add flag --retain
 - Rename --repeat flag to --count
 
