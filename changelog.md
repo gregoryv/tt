@@ -3,6 +3,10 @@
 This project adheres to semantic versioning and all notable
 changes will be documented in this file.
 
+## [0.12.1-dev]
+
+- Bump Go to 1.23 and update dependencies
+
 ## [0.12.0] 2024-10-12
 
 - Client can publish using QoS 2
