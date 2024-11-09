@@ -19,9 +19,7 @@ jobs:
         go-version: '1.23'
 
     - name: Build
-      run: go install -v ./cmd/tt
+      run: go run ci.go build
 
     - name: Test
-      run: |
-        go install github.com/gregoryv/gocolor/cmd/gocolor@latest
-        go test -v ./... | gocolor
+      run: go run ci.go setup test | gocolor
