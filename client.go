@@ -108,7 +108,7 @@ func (c *Client) run(ctx context.Context) error {
 		}
 
 		// log just before sending
-		c.log.Printf("out %s%s", p, dump(c.debug, p))
+		c.log.Printf("%s%s", p, dump(c.debug, p))
 
 		// write packet on the wire
 		if _, err := p.WriteTo(conn); err != nil {
@@ -130,7 +130,7 @@ func (c *Client) run(ctx context.Context) error {
 			}
 		}
 		// log incoming packet
-		c.log.Printf("in %s%s", p, dump(c.debug, p))
+		c.log.Printf("%s%s (in)", p, dump(c.debug, p))
 
 		// check if malformed
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {

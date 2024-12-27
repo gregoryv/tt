@@ -20,11 +20,13 @@ func (s *Server) serveConn(ctx context.Context, conn Connection) {
 	addr := conn.RemoteAddr()
 	a := includePort(addr.String(), s.debug)
 	connstr := fmt.Sprintf("conn %s://%s", addr.Network(), a)
-	s.log.Println("new", connstr)
+	if s.debug {
+		s.log.Println("new", connstr)
+	}
 	s.stat.AddConn()
 
 	sc := &sclient{
-		// todo support QoS 2
+		// todo support client selected QoS when subscribing
 		maxQoS:   1,
 		maxIDLen: 11,
 		remote:   includePort(conn.RemoteAddr().String(), s.debug),
@@ -39,7 +41,6 @@ func (s *Server) serveConn(ctx context.Context, conn Connection) {
 		s.log.Println("del", connstr, err)
 	}
 	s.stat.RemoveConn()
-
 }
 
 func includePort(addr string, yes bool) string {
@@ -87,7 +88,7 @@ func (sc *sclient) transmit(ctx context.Context, p mq.Packet) error {
 		p.SetMaxQoS(sc.maxQoS)
 	}
 
-	sc.log.Printf("%s out %v%s", sc.from, p, dump(sc.debug, p))
+	sc.log.Printf("%s %v%s", sc.from, p, dump(sc.debug, p))
 
 	if _, err := p.WriteTo(sc.conn); err != nil {
 		return err
@@ -114,7 +115,7 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 		sc.from = fmt.Sprintf("%s@%s", sc.shortID, sc.remote)
 	}
 
-	sc.log.Printf("%s in %v%s", sc.from, p, dump(sc.debug, p))
+	sc.log.Printf("%s %v%s (in)", sc.from, p, dump(sc.debug, p))
 
 	if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 		if err := p.WellFormed(); err != nil {
