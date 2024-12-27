@@ -15,7 +15,7 @@ import (
 
 // serveConn handles the client connection.  Blocks until connection
 // is closed or context cancelled.
-func (s *Server) serveConn(ctx context.Context, conn Connection) {
+func serveConn(ctx context.Context, s *Server, conn Connection) {
 	// the server tracks active connections
 	addr := conn.RemoteAddr()
 	a := includePort(addr.String(), s.debug)

@@ -111,7 +111,7 @@ func (s *Server) Run(ctx context.Context) {
 			return
 
 		case conn := <-s.incoming:
-			go s.serveConn(ctx, conn)
+			go serveConn(ctx, s, conn)
 		}
 	}
 }
