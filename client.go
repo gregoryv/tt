@@ -14,11 +14,14 @@ import (
 	"github.com/gregoryv/tt/event"
 )
 
+// NewClient returns new client with no logging pointing to
+// tcp://127.0.0.1:1883 wich max packet ID 10.
 func NewClient() *Client {
 	return &Client{
-		log:    log.New(ioutil.Discard, "", log.Flags()),
-		server: "tcp://127.0.0.1:1883",
-		app:    make(chan interface{}, 1),
+		log:         log.New(ioutil.Discard, "", log.Flags()),
+		server:      "tcp://127.0.0.1:1883",
+		app:         make(chan interface{}, 1),
+		maxPacketID: 10,
 	}
 }
 
@@ -30,7 +33,7 @@ type Client struct {
 	// Set to true to include more log output
 	debug bool
 
-	// optional logger, leave empty for no logging
+	// optional logger
 	log *log.Logger
 
 	// Outgoing packets use ids from 1..MaxPacketID, this limits the

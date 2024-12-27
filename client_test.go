@@ -20,7 +20,6 @@ func TestClientIO(t *testing.T) {
 
 func testClient(t *testing.T, server string) {
 	client := NewClient()
-	client.SetMaxPacketID(10) // required for sending QoS > 0
 	// assuming a broker is running
 	client.SetServer(server)
 
