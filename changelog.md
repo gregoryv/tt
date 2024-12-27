@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [0.12.1-dev]
 
+- Stop ping routine when client.run returns 
 - Bump Go to 1.23 and update dependencies
 
 ## [0.12.0] 2024-10-12
