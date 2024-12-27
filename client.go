@@ -18,16 +18,16 @@ import (
 // tcp://127.0.0.1:1883 wich max packet ID 10.
 func NewClient() *Client {
 	return &Client{
-		log:         log.New(ioutil.Discard, "", log.Flags()),
 		server:      "tcp://127.0.0.1:1883",
-		app:         make(chan interface{}, 1),
+		log:         log.New(ioutil.Discard, "", log.Flags()),
 		maxPacketID: 10,
+		app:         make(chan interface{}, 1),
 	}
 }
 
 // Client implements a mqtt-v5 client.
 type Client struct {
-	// Server to connect to, defaults to tcp://localhost:1883
+	// Server to connect to, e.g. tcp://localhost:1883
 	server string
 
 	// Set to true to include more log output
