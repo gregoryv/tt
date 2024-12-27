@@ -9,33 +9,51 @@ import (
 	"github.com/gregoryv/tt/event"
 )
 
-func TestClient(t *testing.T) {
+func TestClientIO(t *testing.T) {
+	t.Run("mosquitto", func(t *testing.T) {
+		testClient(t, "tcp://localhost:1883")
+	})
+	t.Run("tt", func(t *testing.T) {
+		testClient(t, "tcp://localhost:11883")
+	})
+}
+
+func testClient(t *testing.T, server string) {
 	client := NewClient()
-	client.SetServer("tcp://localhost:1883")
+	client.SetMaxPacketID(10) // required for sending QoS > 0
+	// assuming a broker is running
+	client.SetServer(server)
 
 	ctx := context.Background()
-	ctx, _ = context.WithTimeout(ctx, time.Millisecond)
+	ctx, cancel := context.WithCancel(ctx)
 	go client.Run(ctx)
 
 	for v := range client.Events() {
 		switch v := v.(type) {
 		case event.ClientUp:
-			_ = client.Send(ctx, mq.NewConnect())
-
-		case event.ClientConnect:
-			// do something once you are connected
-			p := mq.Pub(0, "gopher/happy", "yes")
-			err := client.Send(ctx, p)
-			if err != nil {
+			p := mq.NewConnect()
+			p.SetClientID("sparrow")
+			if err := client.Send(ctx, p); err != nil {
 				t.Fatal(err)
 			}
 
-		case *mq.Publish:
-			_ = v // do something the received packet
+		case event.ClientConnect:
+			// do something once you are connected
+			p := mq.Pub(1, "gopher/happy", "yes")
+			if err := client.Send(ctx, p); err != nil {
+				t.Fatal(err)
+			}
 
-		case event.ClientStop:
-			// do some clean up maybe
+		case *mq.PubAck:
+			p := mq.NewDisconnect()
+			if err := client.Send(ctx, p); err != nil {
+				t.Fatal(err)
+			}
+			cancel()
+			return
 
+		default:
+			t.Log(v)
 		}
 	}
 }
