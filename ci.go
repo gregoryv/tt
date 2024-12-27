@@ -25,6 +25,9 @@ func main() {
 		case "build":
 			sh("go", "build", "-o", dist, "./cmd/tt")
 
+		case "install":
+			sh("go", "install", "./cmd/tt")
+
 		case "test":
 			sh("go", "test", "./...")
 
