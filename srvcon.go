@@ -35,7 +35,9 @@ func (s *Server) serveConn(ctx context.Context, conn Connection) {
 
 	// ignore error here, the Connection is done
 	err := newReceiver(sc.receive, conn).Run(ctx)
-	s.log.Println("del", connstr, err)
+	if s.debug {
+		s.log.Println("del", connstr, err)
+	}
 	s.stat.RemoveConn()
 
 }
@@ -61,6 +63,7 @@ type Connection interface {
 type sclient struct {
 	clientID string
 	shortID  string
+	from     string // shortID@remote
 	maxQoS   uint8
 	maxIDLen uint
 
@@ -84,7 +87,7 @@ func (sc *sclient) transmit(ctx context.Context, p mq.Packet) error {
 		p.SetMaxQoS(sc.maxQoS)
 	}
 
-	sc.log.Printf("out %v -> %s@%s%s", p, sc.shortID, sc.remote, dump(sc.debug, p))
+	sc.log.Printf("%s out %v%s", sc.from, p, dump(sc.debug, p))
 
 	if _, err := p.WriteTo(sc.conn); err != nil {
 		return err
@@ -108,9 +111,10 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 		}
 		sc.clientID = clientID
 		sc.shortID = trimID(clientID, sc.maxIDLen)
+		sc.from = fmt.Sprintf("%s@%s", sc.shortID, sc.remote)
 	}
 
-	sc.log.Printf("in %v <- %s@%s%s", p, sc.shortID, sc.remote, dump(sc.debug, p))
+	sc.log.Printf("%s in %v%s", sc.from, p, dump(sc.debug, p))
 
 	if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 		if err := p.WellFormed(); err != nil {
