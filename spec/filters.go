@@ -20,16 +20,22 @@ func VerifyTopicNameFormat(fn func(filter string) bool) error {
 	for _, r := range RulesTopicNameFormat {
 		got := fn(r.Name)
 		if r.Exp && !got {
-			all = append(all, fmt.Errorf("topic name %q MUST be accepted", r.Name))
+			all = append(all,
+				fmt.Errorf("topic name %q MUST be accepted", r.Name),
+			)
 			continue
 		}
 		if !r.Exp && got {
-			all = append(all, fmt.Errorf("topic name %q MUST NOT be accepted", r.Name))
+			all = append(all,
+				fmt.Errorf("topic name %q MUST NOT be accepted", r.Name),
+			)
 		}
 	}
 	if len(all) > 0 {
-		all = append(all, fmt.Errorf(`The wildcard characters can be used in Topic Filters,
-but MUST NOT be used within a Topic Name [MQTT-4.7.0-1]`))
+		all = append(all,
+			fmt.Errorf(`The wildcard characters can be used in Topic Filters,
+but MUST NOT be used within a Topic Name [MQTT-4.7.0-1]`),
+		)
 	}
 
 	return errors.Join(all...)
@@ -59,11 +65,15 @@ func VerifyFilterFormat(fn func(filter string) bool) error {
 	for _, r := range RulesFilterFormat {
 		got := fn(r.Filter)
 		if r.Exp && !got {
-			all = append(all, fmt.Errorf("%q should be acceptable format", r.Filter))
+			all = append(all,
+				fmt.Errorf("%q should be acceptable format", r.Filter),
+			)
 			continue
 		}
 		if !r.Exp && got {
-			all = append(all, fmt.Errorf("%q should NOT be acceptable format", r.Filter))
+			all = append(all,
+				fmt.Errorf("%q should NOT be acceptable format", r.Filter),
+			)
 		}
 	}
 	return errors.Join(all...)
@@ -98,11 +108,15 @@ func VerifyFilterMatching(fn func(filter, name string) bool) error {
 	for _, r := range RulesFilterMatching {
 		got := fn(r.Filter, r.Name)
 		if r.Exp && !got {
-			all = append(all, fmt.Errorf("%s should match %s", r.Filter, r.Name))
+			all = append(all,
+				fmt.Errorf("%s should match %s", r.Filter, r.Name),
+			)
 			continue
 		}
 		if !r.Exp && got {
-			all = append(all, fmt.Errorf("%s should NOT match %s", r.Filter, r.Name))
+			all = append(all,
+				fmt.Errorf("%s should NOT match %s", r.Filter, r.Name),
+			)
 		}
 	}
 	return errors.Join(all...)
