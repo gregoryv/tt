@@ -8,6 +8,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gregoryv/mq"
@@ -39,6 +40,18 @@ func serveConn(ctx context.Context, s *Server, conn Connection) {
 	err := newReceiver(sc.receive, conn).Run(ctx)
 	if s.debug {
 		s.log.Println("del", connstr, err)
+	}
+	if p := sc.mqc.Will(); err != nil && p != nil {
+		delay := time.Duration(sc.mqc.WillDelayInterval())
+		time.AfterFunc(delay*time.Second, func() {
+			switch p.QoS() {
+			case 0:
+				s.log.Println("publish will")
+				_ = sc.srv.router.Route(ctx, p)
+			default:
+				s.log.Println("TODO publish will messages QoS > 0")
+			}
+		})
 	}
 	s.stat.RemoveConn()
 }
@@ -75,6 +88,8 @@ type sclient struct {
 	// sync transmitions
 	m    sync.Mutex
 	conn Connection
+
+	mqc *mq.Connect
 
 	srv *Server
 }
@@ -113,6 +128,7 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 		sc.clientID = clientID
 		sc.shortID = trimID(clientID, sc.maxIDLen)
 		sc.from = fmt.Sprintf("%s@%s", sc.shortID, sc.remote)
+		sc.mqc = p
 	}
 
 	sc.log.Printf("%s %v%s (in)", sc.from, p, dump(sc.debug, p))

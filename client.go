@@ -40,7 +40,7 @@ type Client struct {
 	// number of packets in flight.
 	maxPacketID uint16
 
-	// set by Run and used in Send
+	// set by run and used in Send
 	transmit func(ctx context.Context, p mq.Packet) error
 
 	app chan interface{}
@@ -54,6 +54,7 @@ func (c *Client) SetDebug(v bool)         { c.debug = v }
 func (c *Client) SetMaxPacketID(v uint16) { c.maxPacketID = v }
 func (c *Client) SetLogger(v *log.Logger) { c.log = v }
 
+// Run the client, blocks until stopped or disconnected.
 func (c *Client) Run(ctx context.Context) error {
 	err := c.run(ctx)
 	c.app <- event.ClientStop{err}
@@ -87,6 +88,7 @@ func (c *Client) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 
 	// pool of packet ids for reuse
 	pool := newIDPool(c.maxPacketID)
