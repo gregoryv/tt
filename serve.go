@@ -20,12 +20,6 @@ import (
 // is closed or context cancelled.
 func serve(ctx context.Context, s *Server, conn Connection) {
 	// the server tracks active connections
-	addr := conn.RemoteAddr()
-	a := includePort(addr.String(), s.debug)
-	connstr := fmt.Sprintf("conn %s://%s", addr.Network(), a)
-	if s.debug {
-		s.log.Println("new", connstr)
-	}
 	s.stat.AddConn()
 
 	sc := &sclient{
@@ -57,9 +51,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		sc.receive(ctx, p)
 	}
 
-	if s.debug {
-		s.log.Println("del", connstr, err)
-	}
 	if p := sc.mqc.Will(); err != nil && p != nil {
 		delay := time.Duration(sc.mqc.WillDelayInterval())
 		time.AfterFunc(delay*time.Second, func() {
