@@ -123,7 +123,9 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 		sc.shortID = trimID(clientID, sc.maxIDLen)
 		sc.mqc = p
 	}
-	sc.log.Printf("%s %v%s from %s", sc.shortID, p, dump(sc.debug, p), sc.remote)
+	sc.log.Printf(
+		"%s %v%s from %s", sc.shortID, p, dump(sc.debug, p), sc.remote,
+	)
 
 	if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 		if err := p.WellFormed(); err != nil {
