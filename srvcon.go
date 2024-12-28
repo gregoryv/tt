@@ -29,8 +29,6 @@ func serveConn(ctx context.Context, s *Server, conn Connection) {
 	s.stat.AddConn()
 
 	sc := &sclient{
-		// todo support client selected QoS when subscribing
-		maxQoS:   1,
 		maxIDLen: 11,
 		remote:   includePort(conn.RemoteAddr().String(), s.debug),
 		log:      s.log,
@@ -94,7 +92,7 @@ type sclient struct {
 	clientID string
 	shortID  string
 	from     string // shortID@remote
-	maxQoS   uint8
+
 	maxIDLen uint
 
 	remote string
@@ -116,7 +114,7 @@ func (sc *sclient) transmit(ctx context.Context, p mq.Packet) error {
 
 	switch p := p.(type) {
 	case *mq.ConnAck:
-		p.SetMaxQoS(sc.maxQoS)
+		p.SetMaxQoS(sc.srv.maxQoS)
 	}
 
 	sc.log.Printf("%s %v%s", sc.from, p, dump(sc.debug, p))
@@ -221,7 +219,7 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 	case *mq.Publish:
 		// Disconnect any attempts to publish exceeding qos.
 		// Specified in section 3.3.1.2 QoS
-		if p.QoS() > sc.maxQoS {
+		if p.QoS() > sc.srv.maxQoS {
 			d := mq.NewDisconnect()
 			d.SetReasonCode(mq.QoSNotSupported)
 			_ = sc.transmit(ctx, d)

@@ -25,6 +25,7 @@ func NewServer() *Server {
 		router:   newRouter(),
 		stat:     newServerStats(),
 		incoming: make(chan Connection, 1),
+		maxQoS:   1, // todo implement QoS 2 support
 	}
 }
 
@@ -52,6 +53,9 @@ type Server struct {
 
 	// listeners feed new connections here
 	incoming chan Connection
+
+	// maxQoS this server supports
+	maxQoS uint8
 }
 
 // AddBind which to listen on for connections, defaults to
