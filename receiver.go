@@ -20,6 +20,9 @@ func newReceiver(h handlerFunc, r io.Reader) *receiver {
 	}
 }
 
+// handlerFunc handles a mqtt control packet
+type handlerFunc func(context.Context, mq.Packet)
+
 type receiver struct {
 	wire     io.Reader
 	handle   handlerFunc

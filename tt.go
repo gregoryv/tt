@@ -9,8 +9,6 @@ import (
 	"github.com/gregoryv/mq"
 )
 
-// handlerFunc handles a mqtt control packet
-type handlerFunc func(context.Context, mq.Packet)
 type errHandler func(context.Context, mq.Packet) error
 
 func dump(debug bool, p mq.Packet) string {
