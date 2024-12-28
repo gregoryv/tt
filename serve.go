@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -24,7 +23,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 
 	sc := &sclient{
 		maxIDLen: 11,
-		remote:   includePort(conn.RemoteAddr().String(), s.debug),
+		remote:   conn.RemoteAddr().String(),
 		log:      s.log,
 		srv:      s,
 		conn:     conn,
@@ -58,16 +57,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		})
 	}
 	s.stat.RemoveConn()
-}
-
-func includePort(addr string, yes bool) string {
-	if yes {
-		return addr
-	}
-	if i := strings.Index(addr, ":"); i > 0 {
-		return addr[:i]
-	}
-	return addr
 }
 
 type pubHandler func(context.Context, *mq.Publish) error
@@ -108,7 +97,7 @@ func (sc *sclient) transmit(ctx context.Context, p mq.Packet) error {
 		p.SetMaxQoS(sc.srv.maxQoS)
 	}
 
-	sc.log.Printf("%s %v%s", sc.from, p, dump(sc.debug, p))
+	sc.log.Printf("%s %v%s", sc.shortID, p, dump(sc.debug, p))
 
 	if _, err := p.WriteTo(sc.conn); err != nil {
 		return err
@@ -135,8 +124,7 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 		sc.from = fmt.Sprintf("%s@%s", sc.shortID, sc.remote)
 		sc.mqc = p
 	}
-
-	sc.log.Printf("%s %v%s (in)", sc.from, p, dump(sc.debug, p))
+	sc.log.Printf("%s %v%s from %s", sc.shortID, p, dump(sc.debug, p), sc.remote)
 
 	if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 		if err := p.WellFormed(); err != nil {
