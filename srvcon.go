@@ -2,10 +2,12 @@ package tt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -37,7 +39,24 @@ func serveConn(ctx context.Context, s *Server, conn Connection) {
 	}
 
 	// ignore error here, the Connection is done
-	err := newReceiver(sc.receive).Run(ctx, conn)
+	var err error
+	for {
+		err = ctx.Err()
+		if err != nil {
+			break
+		}
+		deadline := time.Now().Add(400 * time.Millisecond)
+		conn.SetReadDeadline(deadline)
+
+		p, err := mq.ReadPacket(conn)
+		if err != nil {
+			if errors.Is(err, os.ErrDeadlineExceeded) {
+				continue
+			}
+			break
+		}
+		sc.receive(ctx, p)
+	}
 	if s.debug {
 		s.log.Println("del", connstr, err)
 	}
