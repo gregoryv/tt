@@ -150,7 +150,7 @@ func Manual() *Element {
 				var buf, a, b bytes.Buffer
 				server := "tcp://localhost:9983"
 				{ // start server
-					cmd := exec.Command("tt", "srv", "-b", server)
+					cmd := exec.Command("tt", "srv", "-b", "--log-prefix", "ttsrv", server)
 					cmd.Stdout = &buf
 					cmd.Stderr = &buf
 					tidyGobin(&buf, cmd, "&")

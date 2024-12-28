@@ -8,7 +8,7 @@ TimeoutStartSec=0
 Type=simple
 KillMode=process
 WorkingDirectory=/tmp/
-ExecStart=/home/gregory/bin/tt srv --bind-tcp=tcp://localhost:11883
+ExecStart=/home/gregory/bin/tt srv --bind-tcp=tcp://localhost:11883 --log-prefix=""
 Restart=always
 RestartSec=2
 LimitNOFILE=5555

@@ -229,12 +229,14 @@ type SrvCmd struct {
 	shared opts
 	tt.Bind
 	ConnectTimeout time.Duration
+	LogPrefix      string
 }
 
 func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.Bind.URL = cli.Option("-b, --bind-tcp, $TT_BIND_TCP").Url("tcp://localhost:").String()
 	c.Bind.AcceptTimeout = cli.Option("-a, --accept-timeout").Duration("500ms").String()
 	c.ConnectTimeout = cli.Option("--connect-timeout").Duration("200ms")
+	c.LogPrefix = cli.Option("--log-prefix", "").String("")
 }
 
 func (c *SrvCmd) Run(ctx context.Context) error {
@@ -242,7 +244,10 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 	srv.SetDebug(c.shared.Debug)
 	srv.SetConnectTimeout(c.ConnectTimeout)
 	srv.AddBind(&c.Bind)
-	srv.SetLogger(log.New(os.Stderr, "ttsrv ", log.Flags()))
+	if c.LogPrefix != "" {
+		c.LogPrefix += " "
+	}
+	srv.SetLogger(log.New(os.Stderr, c.LogPrefix, log.Flags()))
 	ctx, cancel := context.WithCancel(ctx)
 	go srv.Run(ctx)
 

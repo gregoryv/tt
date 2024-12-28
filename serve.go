@@ -73,9 +73,11 @@ type sclient struct {
 
 	maxIDLen uint
 
+	// ip:port
 	remote string
-	log    *log.Logger
-	debug  bool
+
+	log   *log.Logger
+	debug bool
 
 	// sync transmitions
 	m    sync.Mutex
