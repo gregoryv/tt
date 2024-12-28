@@ -37,7 +37,7 @@ func serveConn(ctx context.Context, s *Server, conn Connection) {
 	}
 
 	// ignore error here, the Connection is done
-	err := newReceiver(sc.receive, conn).Run(ctx)
+	err := newReceiver(sc.receive).Run(ctx, conn)
 	if s.debug {
 		s.log.Println("del", connstr, err)
 	}
@@ -70,6 +70,7 @@ type pubHandler func(context.Context, *mq.Publish) error
 
 type Connection interface {
 	io.ReadWriteCloser
+	SetReadDeadline(time.Time) error
 	RemoteAddr() net.Addr
 }
 

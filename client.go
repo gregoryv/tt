@@ -189,10 +189,10 @@ func (c *Client) run(ctx context.Context) error {
 		// finally let the application have the packet
 		c.app <- p
 	}
-	recv := newReceiver(handle, conn)
+	recv := newReceiver(handle)
 
 	c.app <- event.ClientUp(0)
-	return recv.Run(ctx)
+	return recv.Run(ctx, conn)
 }
 
 // Send returns when the packet was successfully encoded on the wire.

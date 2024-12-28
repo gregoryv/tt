@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/gregoryv/mq"
 )
@@ -47,6 +48,10 @@ func (c *ClosedConn) Write(_ []byte) (int, error) {
 
 func (c *ClosedConn) Close() error {
 	return nil
+}
+
+func (c *ClosedConn) SetReadDeadline(_ time.Time) error {
+	return &net.OpError{Op: "setReadDeadline", Err: fmt.Errorf("ttx closed conn")}
 }
 
 func (c *ClosedConn) RemoteAddr() net.Addr {

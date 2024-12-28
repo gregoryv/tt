@@ -15,7 +15,9 @@ func Test_receiver(t *testing.T) {
 	{ // handlerFunc is called on packet from server
 		conn, srvconn := net.Pipe()
 		called := ttx.NewCalled()
-		go newReceiver(called.Handler, srvconn).Run(context.Background())
+		ctx := context.Background()
+
+		go newReceiver(called.Handler).Run(ctx, srvconn)
 
 		p := mq.NewPublish()
 		p.SetTopicName("a/b")
@@ -38,19 +40,21 @@ func Test_receiver(t *testing.T) {
 		}
 		defer conn.Close()
 
-		recv := newReceiver(nil, conn)
+		recv := newReceiver(nil)
 		recv.deadline = time.Microsecond // speedup
 
 		ctx, cancel := context.WithCancel(context.Background())
 		time.AfterFunc(2*time.Microsecond, cancel)
-		if err := recv.Run(ctx); !errors.Is(err, context.Canceled) {
+		if err := recv.Run(ctx, conn); !errors.Is(err, context.Canceled) {
 			t.Errorf("unexpected error: %v", err)
 		}
 	}
 
 	{ // Run is stopped on closed connection
-		recv := newReceiver(nil, &ttx.ClosedConn{})
-		if err := recv.Run(context.Background()); err == nil {
+		recv := newReceiver(nil)
+		ctx := context.Background()
+		conn := &ttx.ClosedConn{}
+		if err := recv.Run(ctx, conn); err == nil {
 			t.Errorf("receiver should fail once Connection is closed")
 		}
 	}

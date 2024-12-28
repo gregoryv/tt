@@ -3,7 +3,6 @@ package tt
 import (
 	"context"
 	"errors"
-	"io"
 	"os"
 	"time"
 
@@ -12,9 +11,8 @@ import (
 
 // newReceiver returns a receiver that reads packets from the reader
 // and calls the handler.
-func newReceiver(h handlerFunc, r io.Reader) *receiver {
+func newReceiver(h handlerFunc) *receiver {
 	return &receiver{
-		wire:     r,
 		handle:   h,
 		deadline: 400 * time.Millisecond,
 	}
@@ -24,31 +22,25 @@ func newReceiver(h handlerFunc, r io.Reader) *receiver {
 type handlerFunc func(context.Context, mq.Packet)
 
 type receiver struct {
-	wire     io.Reader
 	handle   handlerFunc
 	deadline time.Duration
 }
 
 // Run handles packets until context is cancelled.
-func (r *receiver) Run(ctx context.Context) error {
+func (c *receiver) Run(ctx context.Context, conn Connection) error {
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		if w, ok := r.wire.(hasReadDeadline); ok {
-			_ = w.SetReadDeadline(time.Now().Add(r.deadline))
-		}
-		p, err := mq.ReadPacket(r.wire)
+		conn.SetReadDeadline(time.Now().Add(c.deadline))
+
+		p, err := mq.ReadPacket(conn)
 		if err != nil {
 			if errors.Is(err, os.ErrDeadlineExceeded) {
 				continue
 			}
 			return err
 		}
-		r.handle(ctx, p)
+		c.handle(ctx, p)
 	}
-}
-
-type hasReadDeadline interface {
-	SetReadDeadline(time.Time) error
 }
