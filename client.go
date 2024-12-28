@@ -2,11 +2,13 @@ package tt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/url"
+	"os"
 	"sync"
 	"time"
 
@@ -189,10 +191,24 @@ func (c *Client) run(ctx context.Context) error {
 		// finally let the application have the packet
 		c.app <- p
 	}
-	recv := newReceiver(handle)
 
 	c.app <- event.ClientUp(0)
-	return recv.Run(ctx, conn)
+	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		deadline := time.Now().Add(400 * time.Millisecond)
+		conn.SetReadDeadline(deadline)
+
+		p, err := mq.ReadPacket(conn)
+		if err != nil {
+			if errors.Is(err, os.ErrDeadlineExceeded) {
+				continue
+			}
+			return err
+		}
+		handle(ctx, p)
+	}
 }
 
 // Send returns when the packet was successfully encoded on the wire.

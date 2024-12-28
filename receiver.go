@@ -18,21 +18,20 @@ func newReceiver(h handlerFunc) *receiver {
 	}
 }
 
-// handlerFunc handles a mqtt control packet
-type handlerFunc func(context.Context, mq.Packet)
-
 type receiver struct {
 	handle   handlerFunc
 	deadline time.Duration
 }
 
-// Run handles packets until context is cancelled.
-func (c *receiver) Run(ctx context.Context, conn Connection) error {
+// Run handles packets until context is cancelled or a malformed
+// packet is read. It's the callers responsibility to close the
+// connection.
+func (r *receiver) Run(ctx context.Context, conn Connection) error {
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		conn.SetReadDeadline(time.Now().Add(c.deadline))
+		conn.SetReadDeadline(time.Now().Add(r.deadline))
 
 		p, err := mq.ReadPacket(conn)
 		if err != nil {
@@ -41,6 +40,9 @@ func (c *receiver) Run(ctx context.Context, conn Connection) error {
 			}
 			return err
 		}
-		c.handle(ctx, p)
+		r.handle(ctx, p)
 	}
 }
+
+// handlerFunc handles a mqtt control packet
+type handlerFunc func(context.Context, mq.Packet)
