@@ -3,7 +3,6 @@ package tt
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -71,7 +70,6 @@ type Connection interface {
 type sclient struct {
 	clientID string
 	shortID  string
-	from     string // shortID@remote
 
 	maxIDLen uint
 
@@ -121,7 +119,6 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 		}
 		sc.clientID = clientID
 		sc.shortID = trimID(clientID, sc.maxIDLen)
-		sc.from = fmt.Sprintf("%s@%s", sc.shortID, sc.remote)
 		sc.mqc = p
 	}
 	sc.log.Printf("%s %v%s from %s", sc.shortID, p, dump(sc.debug, p), sc.remote)
