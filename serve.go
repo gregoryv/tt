@@ -3,6 +3,7 @@ package tt
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -46,7 +47,10 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			}
 			break
 		}
-		sc.receive(ctx, p)
+		err = sc.receive(ctx, p)
+		if err != nil {
+			break
+		}
 	}
 
 	if p := sc.mqc.Will(); err != nil && p != nil {
@@ -111,7 +115,7 @@ func (sc *sclient) transmit(ctx context.Context, p mq.Packet) error {
 	return nil
 }
 
-func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
+func (sc *sclient) receive(ctx context.Context, p mq.Packet) error {
 	switch p := p.(type) {
 	case *mq.Connect:
 		// generate a client id before any logging
@@ -150,6 +154,17 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 		// todo respect connectTimeout
 
 	case *mq.Subscribe:
+		// The Payload MUST contain at least one Topic Filter and
+		// Subscription Options pair [MQTT-3.8.3-2]. A SUBSCRIBE
+		// packet with no Payload is a Protocol Error. Refer to
+		// section 4.13 for information about handling errors.
+		if len(p.Filters()) == 0 {
+			d := mq.NewDisconnect()
+			d.SetReasonCode(mq.ProtocolError)
+			_ = sc.transmit(ctx, d)
+			return fmt.Errorf("SUBSCRIBE protocol error")
+		}
+
 		a := mq.NewSubAck()
 		a.SetPacketID(p.PacketID())
 		sub := newSubscription(func(ctx context.Context, p *mq.Publish) error {
@@ -164,8 +179,7 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 			if err != nil {
 				p := mq.NewDisconnect()
 				p.SetReasonCode(mq.MalformedPacket)
-				_ = sc.transmit(ctx, p)
-				return
+				return sc.transmit(ctx, p)
 			}
 			sub.addTopicFilter(filter)
 
@@ -185,8 +199,7 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 			if err != nil {
 				p := mq.NewDisconnect()
 				p.SetReasonCode(mq.MalformedPacket)
-				_ = sc.transmit(ctx, p)
-				return
+				return sc.transmit(ctx, p)
 			}
 		}
 		sc.srv.router.removeFilters(sc, filters)
@@ -202,15 +215,13 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 		if p.QoS() > sc.srv.maxQoS {
 			d := mq.NewDisconnect()
 			d.SetReasonCode(mq.QoSNotSupported)
-			_ = sc.transmit(ctx, d)
-			return
+			return sc.transmit(ctx, d)
 		}
 
 		if err := parseTopicName(p.TopicName()); err != nil {
 			p := mq.NewDisconnect()
 			p.SetReasonCode(mq.MalformedPacket)
-			_ = sc.transmit(ctx, p)
-			return
+			return sc.transmit(ctx, p)
 		}
 
 		switch p.QoS() {
@@ -228,6 +239,8 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) {
 		}
 
 	case *mq.Disconnect:
-		_ = sc.conn.Close()
+		return sc.conn.Close()
 	}
+
+	return nil
 }

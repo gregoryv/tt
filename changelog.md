@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [0.12.1-dev]
 
+- Disconnect with protocol error if subscribe contains no filters
 - Add tt srv --log-prefix option
 - Stop ping routine when client.run returns 
 - Bump Go to 1.23 and update dependencies
