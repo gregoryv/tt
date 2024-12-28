@@ -38,7 +38,7 @@ func serveConn(ctx context.Context, s *Server, conn Connection) {
 		conn:     conn,
 	}
 
-	// ignore error here, the Connection is done
+	// read control packets from connection
 	var err error
 	var p mq.Packet
 	for {
@@ -65,13 +65,7 @@ func serveConn(ctx context.Context, s *Server, conn Connection) {
 	if p := sc.mqc.Will(); err != nil && p != nil {
 		delay := time.Duration(sc.mqc.WillDelayInterval())
 		time.AfterFunc(delay*time.Second, func() {
-			switch p.QoS() {
-			case 0:
-				s.log.Println("publish will")
-				_ = sc.srv.router.Route(ctx, p)
-			default:
-				s.log.Println("TODO publish will messages QoS > 0")
-			}
+			_ = sc.srv.router.Route(ctx, p)
 		})
 	}
 	s.stat.RemoveConn()
