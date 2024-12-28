@@ -230,6 +230,6 @@ func setupClientServer(ctx context.Context, t *testing.T) (conn, srvconn net.Con
 	<-s.Events() // running
 
 	conn, srvconn = net.Pipe()
-	go serveConn(ctx, s, srvconn)
+	go serve(ctx, s, srvconn)
 	return
 }

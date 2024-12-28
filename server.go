@@ -115,7 +115,7 @@ func (s *Server) Run(ctx context.Context) {
 			return
 
 		case conn := <-s.incoming:
-			go serveConn(ctx, s, conn)
+			go serve(ctx, s, conn)
 		}
 	}
 }
@@ -196,7 +196,7 @@ type connFeed struct {
 
 	AcceptTimeout time.Duration
 
-	// serveConn handles new remote connections
+	// serve handles new remote connections
 	feed chan<- Connection
 }
 
