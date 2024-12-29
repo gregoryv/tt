@@ -56,9 +56,14 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	}
 	if err != nil {
 		sc.log.Print(err)
+		
 		if errors.Is(err, mq.ErrMissingData) {
+			// This happens e.g. if a subscribe without topic filters
+			// is send. It may change if mq successfully parses the
+			// packet; in that case the reason code should be
+			// mq.ProtocolError
 			d := mq.NewDisconnect()
-			d.SetReasonCode(mq.ProtocolError)
+			d.SetReasonCode(mq.MalformedPacket)
 			_ = sc.transmit(ctx, d)
 		}
 	}
