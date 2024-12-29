@@ -341,7 +341,7 @@ func (k *keepAlive) delay() {
 	k.packetSent <- struct{}{}
 }
 
-func (k *keepAlive) run(ctx context.Context, transmit errHandler) {
+func (k *keepAlive) run(ctx context.Context, transmit trFunc) {
 	last := time.Now()
 	tick := time.NewTicker(time.Second)
 	for {

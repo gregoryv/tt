@@ -38,9 +38,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		}
 		conn.SetReadDeadline(time.Now().Add(400 * time.Millisecond))
 
-		// wip make this cleaner, handling error depends on what
-		// packet is read. Ie. it is a protocol error if SUBSCRIBE is
-		// missing filters. Here it comes back as mq.ErrMissingData.
 		p, err = mq.ReadPacket(conn)
 		if err != nil {
 			if errors.Is(err, os.ErrDeadlineExceeded) {
@@ -76,7 +73,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 
 }
 
-type pubHandler func(context.Context, mq.Packet) error
+// transmit or receive func
+type trFunc func(context.Context, mq.Packet) error
 
 type Connection interface {
 	io.ReadWriteCloser

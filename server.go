@@ -251,7 +251,7 @@ func (s *serverStats) RemoveConn() {
 
 // ----------------------------------------
 
-func newSubscription(handlers ...pubHandler) *subscription {
+func newSubscription(handlers ...trFunc) *subscription {
 	r := &subscription{
 		handlers: handlers,
 	}
@@ -263,7 +263,7 @@ type subscription struct {
 
 	filters []string
 
-	handlers []pubHandler
+	handlers []trFunc
 }
 
 func (r *subscription) String() string {

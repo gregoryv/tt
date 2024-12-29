@@ -3,13 +3,10 @@ package tt
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
 
 	"github.com/gregoryv/mq"
 )
-
-type errHandler func(context.Context, mq.Packet) error
 
 func dump(debug bool, p mq.Packet) string {
 	if !debug {

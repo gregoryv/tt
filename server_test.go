@@ -124,7 +124,7 @@ func Test_parseTopicName(t *testing.T) {
 // ----------------------------------------
 
 // mustNewSubscription panics on bad filter
-func mustNewSubscription(filter string, handlers ...pubHandler) *subscription {
+func mustNewSubscription(filter string, handlers ...trFunc) *subscription {
 	mustParseTopicFilter(filter)
 	sub := newSubscription(handlers...)
 	sub.addTopicFilter(filter)
