@@ -25,7 +25,7 @@ func NewServer() *Server {
 		router:   newRouter(),
 		stat:     newServerStats(),
 		incoming: make(chan Connection, 1),
-		maxQoS:   1, // todo implement QoS 2 support
+		maxQoS:   1, // todo support QoS 2
 	}
 }
 

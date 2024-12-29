@@ -231,7 +231,7 @@ func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc 
 				_ = transmit(ctx, ack)
 
 			case 2:
-				// todo support QoS 2
+				// support QoS 2
 
 			}
 
