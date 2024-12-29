@@ -16,7 +16,7 @@ func Test_router(t *testing.T) {
 
 	match := func(filter, name string) bool {
 		var count int
-		var handle = func(_ context.Context, _ *mq.Publish) error {
+		var handle = func(_ context.Context, _ mq.Packet) error {
 			count++
 			return nil
 		}

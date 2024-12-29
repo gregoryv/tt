@@ -12,7 +12,7 @@ import (
 
 func NoopHandler(_ context.Context, _ mq.Packet) {}
 
-func NoopPub(_ context.Context, _ *mq.Publish) error { return nil }
+func NoopPub(_ context.Context, _ mq.Packet) error { return nil }
 
 func NewCalled() *Called {
 	return &Called{

@@ -31,7 +31,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	var err error
 	var p mq.Packet
 	for {
-		// read control packets from connection		
+		// read control packets from connection
 		err = ctx.Err()
 		if err != nil {
 			break
@@ -73,10 +73,10 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			})
 		}
 	}
-	
+
 }
 
-type pubHandler func(context.Context, *mq.Publish) error
+type pubHandler func(context.Context, mq.Packet) error
 
 type Connection interface {
 	io.ReadWriteCloser
@@ -170,9 +170,7 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) error {
 	case *mq.Subscribe:
 		a := mq.NewSubAck()
 		a.SetPacketID(p.PacketID())
-		sub := newSubscription(func(ctx context.Context, p *mq.Publish) error {
-			return sc.transmit(ctx, p)
-		})
+		sub := newSubscription(sc.transmit)
 		sub.subscriptionID = p.SubscriptionID()
 
 		// check all filters
