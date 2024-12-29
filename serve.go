@@ -19,7 +19,7 @@ import (
 func serve(ctx context.Context, s *Server, conn Connection) {
 	// the server tracks active connections
 	s.stat.AddConn()
-
+	defer s.stat.RemoveConn()
 	sc := &sclient{
 		maxIDLen: 11,
 		remote:   conn.RemoteAddr().String(),
@@ -37,8 +37,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		if err != nil {
 			break
 		}
-		deadline := time.Now().Add(400 * time.Millisecond)
-		conn.SetReadDeadline(deadline)
+		conn.SetReadDeadline(time.Now().Add(400 * time.Millisecond))
 
 		// wip make this cleaner, handling error depends on what
 		// packet is read. Ie. it is a protocol error if SUBSCRIBE is
@@ -69,7 +68,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			_ = sc.srv.router.Route(ctx, p)
 		})
 	}
-	s.stat.RemoveConn()
 }
 
 type pubHandler func(context.Context, *mq.Publish) error
