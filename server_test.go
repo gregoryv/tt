@@ -79,10 +79,31 @@ func Test_connFeed(t *testing.T) {
 }
 
 func TestSubscription_String(t *testing.T) {
-	sub := mustNewSubscription("all/gophers/#", ttx.NoopPub)
-	if v := sub.String(); v != "sub 0: all/gophers/#" {
-		t.Errorf("unexpected subscription string %q", sub)
-	}
+	sub := newSubscription(ttx.NoopPub)
+
+	t.Run("zero filters", func(t *testing.T) {
+		got := sub.String()
+		exp := "sub 0"
+		if got != exp {
+			t.Errorf("\ngot: %s\nexp: %s", got, exp)
+		}
+	})
+	t.Run("one filter", func(t *testing.T) {
+		sub.addTopicFilter("/a")
+		got := sub.String()
+		exp := "sub 0: /a"
+		if got != exp {
+			t.Errorf("\ngot: %s\nexp: %s", got, exp)
+		}
+	})
+	t.Run("multiple filter", func(t *testing.T) {
+		sub.addTopicFilter("/b")
+		got := sub.String()
+		exp := "sub 0: /a..."
+		if got != exp {
+			t.Errorf("\ngot: %s\nexp: %s", got, exp)
+		}
+	})
 }
 
 func TestMustNewSubscription(t *testing.T) {

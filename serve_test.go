@@ -234,6 +234,8 @@ func TestServer_AnswersPingWithPong(t *testing.T) {
 	}
 }
 
+// todo test connectTimeout
+
 // ----------------------------------------
 
 func ignorePacket(t *testing.T, conn net.Conn) {
