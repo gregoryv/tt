@@ -28,11 +28,10 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		conn:     conn,
 	}
 
-	// read control packets from connection
-
 	var err error
 	var p mq.Packet
 	for {
+		// read control packets from connection		
 		err = ctx.Err()
 		if err != nil {
 			break
@@ -56,7 +55,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	}
 	if err != nil {
 		sc.log.Print(err)
-		
+
 		if errors.Is(err, mq.ErrMissingData) {
 			// This happens e.g. if a subscribe without topic filters
 			// is send. It may change if mq successfully parses the
@@ -66,13 +65,15 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			d.SetReasonCode(mq.MalformedPacket)
 			_ = sc.transmit(ctx, d)
 		}
+
+		if p := sc.mqc.Will(); p != nil {
+			delay := time.Duration(sc.mqc.WillDelayInterval())
+			time.AfterFunc(delay*time.Second, func() {
+				_ = sc.srv.router.Route(ctx, p)
+			})
+		}
 	}
-	if p := sc.mqc.Will(); err != nil && p != nil {
-		delay := time.Duration(sc.mqc.WillDelayInterval())
-		time.AfterFunc(delay*time.Second, func() {
-			_ = sc.srv.router.Route(ctx, p)
-		})
-	}
+	
 }
 
 type pubHandler func(context.Context, *mq.Publish) error
