@@ -3,7 +3,6 @@ package tt
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -30,6 +29,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	}
 
 	// read control packets from connection
+
 	var err error
 	var p mq.Packet
 	for {
@@ -40,6 +40,9 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		deadline := time.Now().Add(400 * time.Millisecond)
 		conn.SetReadDeadline(deadline)
 
+		// wip make this cleaner, handling error depends on what
+		// packet is read. Ie. it is a protocol error if SUBSCRIBE is
+		// missing filters. Here it comes back as mq.ErrMissingData.
 		p, err = mq.ReadPacket(conn)
 		if err != nil {
 			if errors.Is(err, os.ErrDeadlineExceeded) {
@@ -52,7 +55,14 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			break
 		}
 	}
-
+	if err != nil {
+		sc.log.Print(err)
+		if errors.Is(err, mq.ErrMissingData) {
+			d := mq.NewDisconnect()
+			d.SetReasonCode(mq.ProtocolError)
+			_ = sc.transmit(ctx, d)
+		}
+	}
 	if p := sc.mqc.Will(); err != nil && p != nil {
 		delay := time.Duration(sc.mqc.WillDelayInterval())
 		time.AfterFunc(delay*time.Second, func() {
@@ -154,17 +164,6 @@ func (sc *sclient) receive(ctx context.Context, p mq.Packet) error {
 		// todo respect connectTimeout
 
 	case *mq.Subscribe:
-		// The Payload MUST contain at least one Topic Filter and
-		// Subscription Options pair [MQTT-3.8.3-2]. A SUBSCRIBE
-		// packet with no Payload is a Protocol Error. Refer to
-		// section 4.13 for information about handling errors.
-		if len(p.Filters()) == 0 {
-			d := mq.NewDisconnect()
-			d.SetReasonCode(mq.ProtocolError)
-			_ = sc.transmit(ctx, d)
-			return fmt.Errorf("SUBSCRIBE protocol error")
-		}
-
 		a := mq.NewSubAck()
 		a.SetPacketID(p.PacketID())
 		sub := newSubscription(func(ctx context.Context, p *mq.Publish) error {

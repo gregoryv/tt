@@ -2,6 +2,7 @@ package tt
 
 import (
 	"context"
+	"log"
 	"net"
 	"testing"
 
@@ -15,8 +16,7 @@ func TestServer_SubscribeThenUnsubscribe(t *testing.T) {
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
-		// ignore ack
-		_, _ = mq.ReadPacket(conn)
+		ignorePacket(t, conn)
 	}
 	{ // subscribe using malformed topic filter
 		p := mq.NewSubscribe()
@@ -53,8 +53,7 @@ func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
-		// ignore ack
-		_, _ = mq.ReadPacket(conn)
+		ignorePacket(t, conn)
 	}
 	{ // subscribe using malformed topic filter
 		p := mq.NewSubscribe()
@@ -94,8 +93,7 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 
 	// initiate connect sequence
 	mq.NewConnect().WriteTo(conn)
-	// ignore ack
-	_, _ = mq.ReadPacket(conn)
+	ignorePacket(t, conn)
 
 	// client sends disconnect
 	mq.NewDisconnect().WriteTo(conn)
@@ -114,8 +112,7 @@ func TestServer_DisconnectOnMalformed(t *testing.T) {
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
-		// ignore ack
-		_, _ = mq.ReadPacket(conn)
+		ignorePacket(t, conn)
 	}
 	{ // send malformed packet
 		p := mq.NewPublish()
@@ -141,8 +138,7 @@ func TestServer_DisconnectOnQoSExceed(t *testing.T) {
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
-		// ignore ack
-		_, _ = mq.ReadPacket(conn)
+		ignorePacket(t, conn)
 	}
 	{ // send publish with exceeding QoS
 		p := mq.NewPublish()
@@ -170,8 +166,7 @@ func TestServer_DisconnectOnMalformedTopicName(t *testing.T) {
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
-		// ignore ack
-		_, _ = mq.ReadPacket(conn)
+		ignorePacket(t, conn)
 	}
 	{ // send publish with malformed topic name
 		p := mq.NewPublish()
@@ -192,6 +187,32 @@ func TestServer_DisconnectOnMalformedTopicName(t *testing.T) {
 	}
 }
 
+// Subscribe without filters results in disconnect.
+func TestServer_DisconnectOnMalformedSubscribe(t *testing.T) {
+	ctx := context.Background()
+	conn, _ := setupClientServer(ctx, t)
+
+	{ // initiate connect sequence
+		mq.NewConnect().WriteTo(conn)
+		ignorePacket(t, conn)
+	}
+	{ // subscribe with no filters
+		p := mq.NewSubscribe()
+		p.SetPacketID(1)
+		p.WriteTo(conn)
+	}
+	{ // check expected disconnect packet
+		p, _ := mq.ReadPacket(conn)
+		if p := p.(*mq.Disconnect); p.ReasonCode() != mq.ProtocolError {
+			t.Error(p)
+		}
+	}
+	// verify the connection is closed
+	if _, err := mq.NewPublish().WriteTo(conn); err == nil {
+		t.Error("network Connection still open")
+	}
+}
+
 // Ping results in pong
 func TestServer_AnswersPingWithPong(t *testing.T) {
 	ctx := context.Background()
@@ -199,8 +220,7 @@ func TestServer_AnswersPingWithPong(t *testing.T) {
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
-		// ignore ack
-		_, _ = mq.ReadPacket(conn)
+		ignorePacket(t, conn)
 	}
 	{ // send ping
 		mq.NewPingReq().WriteTo(conn)
@@ -213,8 +233,18 @@ func TestServer_AnswersPingWithPong(t *testing.T) {
 
 // ----------------------------------------
 
+func ignorePacket(t *testing.T, conn net.Conn) {
+	_, err := mq.ReadPacket(conn)
+	if err != nil {
+		t.Helper()
+		t.Fatal(err)
+	}
+}
+
 func setupClientServer(ctx context.Context, t *testing.T) (conn, srvconn net.Conn) {
 	s := NewServer()
+	s.SetLogger(log.New(&testWriter{t}, "", log.Lshortfile))
+
 	ctx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
 	go s.Run(ctx)
@@ -223,4 +253,13 @@ func setupClientServer(ctx context.Context, t *testing.T) (conn, srvconn net.Con
 	conn, srvconn = net.Pipe()
 	go serve(ctx, s, srvconn)
 	return
+}
+
+type testWriter struct {
+	t *testing.T
+}
+
+func (w *testWriter) Write(p []byte) (int, error) {
+	w.t.Log(string(p))
+	return len(p), nil
 }
