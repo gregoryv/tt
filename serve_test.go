@@ -11,8 +11,8 @@ import (
 
 // Server accepts subscribe followed by unsubscribe.
 func TestServer_SubscribeThenUnsubscribe(t *testing.T) {
-	ctx := context.Background()
-	conn, _ := setupClientServer(ctx, t)
+	s := NewServer()
+	conn, _ := testServer(t, s)
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
@@ -48,8 +48,8 @@ func TestServer_SubscribeThenUnsubscribe(t *testing.T) {
 // Server sends a disconnect when a client sends a subscribe
 // containing a malformed topic filter.
 func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
-	ctx := context.Background()
-	conn, _ := setupClientServer(ctx, t)
+	s := NewServer()
+	conn, _ := testServer(t, s)
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
@@ -72,8 +72,8 @@ func TestServer_DisconnectsOnMalformedSubscribe(t *testing.T) {
 // If a client connects without any id set the server should assign
 // one in the returning ConnAck.
 func TestServer_AssignsID(t *testing.T) {
-	ctx := context.Background()
-	conn, _ := setupClientServer(ctx, t)
+	s := NewServer()
+	conn, _ := testServer(t, s)
 
 	// initiate connect sequence without client id
 	mq.NewConnect().WriteTo(conn)
@@ -88,8 +88,8 @@ func TestServer_AssignsID(t *testing.T) {
 // If a client sends Disconnect, the server should close the network
 // connection.
 func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
-	ctx := context.Background()
-	conn, _ := setupClientServer(ctx, t)
+	s := NewServer()
+	conn, _ := testServer(t, s)
 
 	// initiate connect sequence
 	mq.NewConnect().WriteTo(conn)
@@ -107,8 +107,8 @@ func TestServer_CloseConnectionOnDisconnect(t *testing.T) {
 // If server gets a malformed packet it should disconnect with the
 // reason code MalformedPacket 0x81
 func TestServer_DisconnectOnMalformed(t *testing.T) {
-	ctx := context.Background()
-	conn, _ := setupClientServer(ctx, t)
+	s := NewServer()
+	conn, _ := testServer(t, s)
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
@@ -133,8 +133,8 @@ func TestServer_DisconnectOnMalformed(t *testing.T) {
 
 // Publish with exceeding QoS results in disconnect.
 func TestServer_DisconnectOnQoSExceed(t *testing.T) {
-	ctx := context.Background()
-	conn, _ := setupClientServer(ctx, t)
+	s := NewServer()
+	conn, _ := testServer(t, s)
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
@@ -161,8 +161,8 @@ func TestServer_DisconnectOnQoSExceed(t *testing.T) {
 
 // Publish with malformed topic name results in disconnect.
 func TestServer_DisconnectOnMalformedTopicName(t *testing.T) {
-	ctx := context.Background()
-	conn, _ := setupClientServer(ctx, t)
+	s := NewServer()
+	conn, _ := testServer(t, s)
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
@@ -189,8 +189,8 @@ func TestServer_DisconnectOnMalformedTopicName(t *testing.T) {
 
 // Subscribe without filters results in disconnect.
 func TestServer_DisconnectOnMalformedSubscribe(t *testing.T) {
-	ctx := context.Background()
-	conn, _ := setupClientServer(ctx, t)
+	s := NewServer()
+	conn, _ := testServer(t, s)
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
@@ -218,8 +218,8 @@ func TestServer_DisconnectOnMalformedSubscribe(t *testing.T) {
 
 // Ping results in pong
 func TestServer_AnswersPingWithPong(t *testing.T) {
-	ctx := context.Background()
-	conn, _ := setupClientServer(ctx, t)
+	s := NewServer()
+	conn, _ := testServer(t, s)
 
 	{ // initiate connect sequence
 		mq.NewConnect().WriteTo(conn)
@@ -244,10 +244,10 @@ func ignorePacket(t *testing.T, conn net.Conn) {
 	}
 }
 
-func setupClientServer(ctx context.Context, t *testing.T) (conn, srvconn net.Conn) {
-	s := NewServer()
+func testServer(t *testing.T, s *Server) (conn, srvconn net.Conn) {
 	s.SetLogger(log.New(&testWriter{t}, "", log.Lshortfile))
 
+	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
 	go s.Run(ctx)
