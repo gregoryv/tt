@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/gregoryv/mq"
 )
@@ -234,7 +235,19 @@ func TestServer_AnswersPingWithPong(t *testing.T) {
 	}
 }
 
-// todo test connectTimeout
+func TestServer_LateConnect(t *testing.T) {
+	s := NewServer()
+	s.SetConnectTimeout(time.Millisecond)
+	conn, _ := testServer(t, s)
+
+	<-time.After(s.ConnectTimeout() * 2)
+	mq.NewConnect().WriteTo(conn)
+
+	p, _ := mq.ReadPacket(conn)
+	if p := p.(*mq.Disconnect); p.ReasonCode() != mq.MaximumConnectTime {
+		t.Error(p)
+	}
+}
 
 // ----------------------------------------
 

@@ -69,6 +69,9 @@ func (s *Server) AddBind(b *Bind) {
 func (s *Server) SetConnectTimeout(v time.Duration) {
 	s.connectTimeout = v
 }
+func (s *Server) ConnectTimeout() time.Duration {
+	return s.connectTimeout
+}
 
 // SetDebug increases log information, default false.
 func (s *Server) SetDebug(v bool) {
