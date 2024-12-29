@@ -151,6 +151,9 @@ func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc 
 
 		case *mq.Connect:
 			a := mq.NewConnAck()
+			if s.maxQoS < 2 {
+				a.SetMaxQoS(s.maxQoS)
+			}
 			if p.ClientID() == "" {
 				a.SetAssignedClientID(sc.clientID)
 			}
@@ -201,8 +204,11 @@ func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc 
 			}
 
 		case *mq.Publish:
-			// Disconnect any attempts to publish exceeding qos.
-			// Specified in section 3.3.1.2 QoS
+			// 3.3.1.2 QoS
+			// If the Server included a Maximum QoS in its CONNACK
+			// response to a Client and it receives a PUBLISH packet
+			// with a QoS greater than this, then it uses DISCONNECT
+			// with Reason Code 0x9B (QoS not supported)...
 			if p.QoS() > s.maxQoS {
 				d := mq.NewDisconnect()
 				d.SetReasonCode(mq.QoSNotSupported)
