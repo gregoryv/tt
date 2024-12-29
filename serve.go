@@ -17,6 +17,8 @@ import (
 // serve handles the client connection.  Blocks until connection
 // is closed or context cancelled.
 func serve(ctx context.Context, s *Server, conn Connection) {
+	log := s.log
+
 	// the server tracks active connections
 	s.stat.AddConn()
 	defer s.stat.RemoveConn()
@@ -27,6 +29,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		srv:      s,
 		conn:     conn,
 	}
+	transmit := sc.transmitter()
+	receive := sc.receiver(transmit)
 
 	var err error
 	var p mq.Packet
@@ -45,13 +49,13 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			}
 			break
 		}
-		err = sc.receive(ctx, p)
+		err = receive(ctx, p)
 		if err != nil {
 			break
 		}
 	}
 	if err != nil {
-		sc.log.Print(err)
+		log.Print(err)
 
 		if errors.Is(err, mq.ErrMissingData) {
 			// This happens e.g. if a subscribe without topic filters
@@ -60,7 +64,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			// mq.ProtocolError
 			d := mq.NewDisconnect()
 			d.SetReasonCode(mq.MalformedPacket)
-			_ = sc.transmit(ctx, d)
+			_ = transmit(ctx, d)
 		}
 
 		if p := sc.mqc.Will(); p != nil {
@@ -104,142 +108,146 @@ type sclient struct {
 	srv *Server
 }
 
-func (sc *sclient) transmit(ctx context.Context, p mq.Packet) error {
-	sc.m.Lock()
-	defer sc.m.Unlock()
+func (sc *sclient) transmitter() trFunc {
+	return func(ctx context.Context, p mq.Packet) error {
+		sc.m.Lock()
+		defer sc.m.Unlock()
 
-	switch p := p.(type) {
-	case *mq.ConnAck:
-		p.SetMaxQoS(sc.srv.maxQoS)
+		switch p := p.(type) {
+		case *mq.ConnAck:
+			p.SetMaxQoS(sc.srv.maxQoS)
+		}
+
+		sc.log.Printf("%s %v%s", sc.shortID, p, dump(sc.debug, p))
+
+		if _, err := p.WriteTo(sc.conn); err != nil {
+			return err
+		}
+
+		switch p.(type) {
+		case *mq.Disconnect:
+			// close Connection after Disconnect is send
+			sc.conn.Close()
+		}
+		return nil
 	}
-
-	sc.log.Printf("%s %v%s", sc.shortID, p, dump(sc.debug, p))
-
-	if _, err := p.WriteTo(sc.conn); err != nil {
-		return err
-	}
-
-	switch p.(type) {
-	case *mq.Disconnect:
-		// close Connection after Disconnect is send
-		sc.conn.Close()
-	}
-	return nil
 }
 
-func (sc *sclient) receive(ctx context.Context, p mq.Packet) error {
-	switch p := p.(type) {
-	case *mq.Connect:
-		// generate a client id before any logging
-		clientID := p.ClientID()
-		if clientID == "" {
-			clientID = uuid.NewString()
-		}
-		sc.clientID = clientID
-		sc.shortID = trimID(clientID, sc.maxIDLen)
-		sc.mqc = p
-	}
-	sc.log.Printf(
-		"%s %v%s from %s", sc.shortID, p, dump(sc.debug, p), sc.remote,
-	)
-
-	if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
-		if err := p.WellFormed(); err != nil {
-			d := mq.NewDisconnect()
-			d.SetReasonCode(mq.MalformedPacket)
-			_ = sc.transmit(ctx, d)
-		}
-	}
-
-	switch p := p.(type) {
-	case *mq.PingReq:
-		// 3.12.4-1 The Server MUST send a PINGRESP packet in
-		// response to a PINGREQ packet
-		_ = sc.transmit(ctx, mq.NewPingResp())
-
-	case *mq.Connect:
-		a := mq.NewConnAck()
-		if p.ClientID() == "" {
-			a.SetAssignedClientID(sc.clientID)
-		}
-		_ = sc.transmit(ctx, a)
-		// todo respect connectTimeout
-
-	case *mq.Subscribe:
-		a := mq.NewSubAck()
-		a.SetPacketID(p.PacketID())
-		sub := newSubscription(sc.transmit)
-		sub.subscriptionID = p.SubscriptionID()
-
-		// check all filters
-		for _, f := range p.Filters() {
-			filter := f.Filter()
-			err := parseTopicFilter(filter)
-			if err != nil {
-				p := mq.NewDisconnect()
-				p.SetReasonCode(mq.MalformedPacket)
-				return sc.transmit(ctx, p)
+func (sc *sclient) receiver(transmit trFunc) trFunc {
+	return func(ctx context.Context, p mq.Packet) error {
+		switch p := p.(type) {
+		case *mq.Connect:
+			// generate a client id before any logging
+			clientID := p.ClientID()
+			if clientID == "" {
+				clientID = uuid.NewString()
 			}
-			sub.addTopicFilter(filter)
-
-			// Subscribe.WellFormed fails if for any reason,
-			// though here we want to set a reason code for each
-			// filter.  3.9.3 SUBACK Payload
-			a.AddReasonCode(mq.Success)
+			sc.clientID = clientID
+			sc.shortID = trimID(clientID, sc.maxIDLen)
+			sc.mqc = p
 		}
-		sc.srv.router.AddSubscriptions(sub)
-		_ = sc.transmit(ctx, a)
+		sc.log.Printf(
+			"%s %v%s from %s", sc.shortID, p, dump(sc.debug, p), sc.remote,
+		)
 
-	case *mq.Unsubscribe:
-		// check all filters
-		filters := p.Filters()
-		for _, filter := range filters {
-			err := parseTopicFilter(filter)
-			if err != nil {
-				p := mq.NewDisconnect()
-				p.SetReasonCode(mq.MalformedPacket)
-				return sc.transmit(ctx, p)
+		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
+			if err := p.WellFormed(); err != nil {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.MalformedPacket)
+				_ = transmit(ctx, d)
 			}
 		}
-		sc.srv.router.removeFilters(sc, filters)
-		{
-			ack := mq.NewUnsubAck()
-			ack.SetPacketID(p.PacketID())
-			sc.transmit(ctx, ack)
+
+		switch p := p.(type) {
+		case *mq.PingReq:
+			// 3.12.4-1 The Server MUST send a PINGRESP packet in
+			// response to a PINGREQ packet
+			_ = transmit(ctx, mq.NewPingResp())
+
+		case *mq.Connect:
+			a := mq.NewConnAck()
+			if p.ClientID() == "" {
+				a.SetAssignedClientID(sc.clientID)
+			}
+			_ = transmit(ctx, a)
+			// todo respect connectTimeout
+
+		case *mq.Subscribe:
+			a := mq.NewSubAck()
+			a.SetPacketID(p.PacketID())
+			sub := newSubscription(transmit)
+			sub.subscriptionID = p.SubscriptionID()
+
+			// check all filters
+			for _, f := range p.Filters() {
+				filter := f.Filter()
+				err := parseTopicFilter(filter)
+				if err != nil {
+					p := mq.NewDisconnect()
+					p.SetReasonCode(mq.MalformedPacket)
+					return transmit(ctx, p)
+				}
+				sub.addTopicFilter(filter)
+
+				// Subscribe.WellFormed fails if for any reason,
+				// though here we want to set a reason code for each
+				// filter.  3.9.3 SUBACK Payload
+				a.AddReasonCode(mq.Success)
+			}
+			sc.srv.router.AddSubscriptions(sub)
+			_ = transmit(ctx, a)
+
+		case *mq.Unsubscribe:
+			// check all filters
+			filters := p.Filters()
+			for _, filter := range filters {
+				err := parseTopicFilter(filter)
+				if err != nil {
+					p := mq.NewDisconnect()
+					p.SetReasonCode(mq.MalformedPacket)
+					return transmit(ctx, p)
+				}
+			}
+			sc.srv.router.removeFilters(sc, filters)
+			{
+				ack := mq.NewUnsubAck()
+				ack.SetPacketID(p.PacketID())
+				transmit(ctx, ack)
+			}
+
+		case *mq.Publish:
+			// Disconnect any attempts to publish exceeding qos.
+			// Specified in section 3.3.1.2 QoS
+			if p.QoS() > sc.srv.maxQoS {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.QoSNotSupported)
+				return transmit(ctx, d)
+			}
+
+			if err := parseTopicName(p.TopicName()); err != nil {
+				p := mq.NewDisconnect()
+				p.SetReasonCode(mq.MalformedPacket)
+				return transmit(ctx, p)
+			}
+
+			switch p.QoS() {
+			case 0:
+				_ = sc.srv.router.Route(ctx, p)
+			case 1:
+				ack := mq.NewPubAck()
+				ack.SetPacketID(p.PacketID())
+				_ = sc.srv.router.Route(ctx, p)
+				_ = transmit(ctx, ack)
+
+			case 2:
+				// todo support QoS 2
+
+			}
+
+		case *mq.Disconnect:
+			return sc.conn.Close()
 		}
 
-	case *mq.Publish:
-		// Disconnect any attempts to publish exceeding qos.
-		// Specified in section 3.3.1.2 QoS
-		if p.QoS() > sc.srv.maxQoS {
-			d := mq.NewDisconnect()
-			d.SetReasonCode(mq.QoSNotSupported)
-			return sc.transmit(ctx, d)
-		}
-
-		if err := parseTopicName(p.TopicName()); err != nil {
-			p := mq.NewDisconnect()
-			p.SetReasonCode(mq.MalformedPacket)
-			return sc.transmit(ctx, p)
-		}
-
-		switch p.QoS() {
-		case 0:
-			_ = sc.srv.router.Route(ctx, p)
-		case 1:
-			ack := mq.NewPubAck()
-			ack.SetPacketID(p.PacketID())
-			_ = sc.srv.router.Route(ctx, p)
-			_ = sc.transmit(ctx, ack)
-
-		case 2:
-			// todo support QoS 2
-
-		}
-
-	case *mq.Disconnect:
-		return sc.conn.Close()
+		return nil
 	}
-
-	return nil
 }
