@@ -119,6 +119,8 @@ func (sc *sclient) transmitter(s *Server, conn Connection) trFunc {
 }
 
 func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc {
+	start := time.Now()
+
 	return func(ctx context.Context, p mq.Packet) error {
 		switch p := p.(type) {
 		case *mq.Connect:
@@ -150,6 +152,12 @@ func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc 
 			_ = transmit(ctx, mq.NewPingResp())
 
 		case *mq.Connect:
+			if err := lateConnect(start, s.connectTimeout); err != nil {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.MaximumConnectTime)
+				_ = transmit(ctx, d)
+				return err
+			}
 			a := mq.NewConnAck()
 			if s.maxQoS < 2 {
 				a.SetMaxQoS(s.maxQoS)
@@ -158,7 +166,6 @@ func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc 
 				a.SetAssignedClientID(sc.clientID)
 			}
 			_ = transmit(ctx, a)
-			// todo respect connectTimeout
 
 		case *mq.Subscribe:
 			a := mq.NewSubAck()
@@ -241,6 +248,16 @@ func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc 
 
 		return nil
 	}
+}
+
+func lateConnect(start time.Time, max time.Duration) error {
+	if max == 0 {
+		return nil
+	}
+	if time.Since(start) > max {
+		return errors.New(mq.MaximumConnectTime.String())
+	}
+	return nil
 }
 
 // transmit or receive func
