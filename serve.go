@@ -70,15 +70,132 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		}
 	}
 
-	receive := sc.receiver(s, conn, transmit)
+	start := time.Now()
 	for {
 		p, err := nextPacket(ctx, conn)
 		if err != nil {
 			handleErr(err)
 			return
 		}
-		if err := receive(ctx, p); err != nil {
-			handleErr(err)
+
+		switch p := p.(type) {
+		case *mq.Connect:
+			// generate a client id before any logging
+			clientID := p.ClientID()
+			if clientID == "" {
+				clientID = uuid.NewString()
+			}
+			sc.clientID = clientID
+			sc.shortID = trimID(clientID, sc.maxIDLen)
+			sc.mqc = p
+		}
+		s.log.Printf(
+			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), sc.remote,
+		)
+
+		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
+			if err := p.WellFormed(); err != nil {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.MalformedPacket)
+				_ = transmit(ctx, d)
+			}
+		}
+
+		switch p := p.(type) {
+		case *mq.PingReq:
+			// 3.12.4-1 The Server MUST send a PINGRESP packet in
+			// response to a PINGREQ packet
+			_ = transmit(ctx, mq.NewPingResp())
+
+		case *mq.Connect:
+			if err := lateConnect(start, s.connectTimeout); err != nil {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.MaximumConnectTime)
+				_ = transmit(ctx, d)
+				return
+			}
+			a := mq.NewConnAck()
+			if s.maxQoS < 2 {
+				a.SetMaxQoS(s.maxQoS)
+			}
+			if p.ClientID() == "" {
+				a.SetAssignedClientID(sc.clientID)
+			}
+			_ = transmit(ctx, a)
+
+		case *mq.Subscribe:
+			a := mq.NewSubAck()
+			a.SetPacketID(p.PacketID())
+			sub := newSubscription(transmit)
+			sub.subscriptionID = p.SubscriptionID()
+
+			// check all filters
+			for _, f := range p.Filters() {
+				filter := f.Filter()
+				err := parseTopicFilter(filter)
+				if err != nil {
+					p := mq.NewDisconnect()
+					p.SetReasonCode(mq.MalformedPacket)
+					_ = transmit(ctx, p)
+				}
+				sub.addTopicFilter(filter)
+
+				// Subscribe.WellFormed fails if for any reason,
+				// though here we want to set a reason code for each
+				// filter.  3.9.3 SUBACK Payload
+				a.AddReasonCode(mq.Success)
+			}
+			s.router.AddSubscriptions(sub)
+			_ = transmit(ctx, a)
+
+		case *mq.Unsubscribe:
+			// check all filters
+			filters := p.Filters()
+			if err := checkTopicFilters(filters); err != nil {
+				p := mq.NewDisconnect()
+				p.SetReasonCode(mq.MalformedPacket)
+				_ = transmit(ctx, p)
+			}
+			s.router.removeFilters(sc, filters)
+
+			ack := mq.NewUnsubAck()
+			ack.SetPacketID(p.PacketID())
+			_ = transmit(ctx, ack)
+
+		case *mq.Publish:
+			// 3.3.1.2 QoS
+			// If the Server included a Maximum QoS in its CONNACK
+			// response to a Client and it receives a PUBLISH packet
+			// with a QoS greater than this, then it uses DISCONNECT
+			// with Reason Code 0x9B (QoS not supported)...
+			if p.QoS() > s.maxQoS {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.QoSNotSupported)
+				_ = transmit(ctx, d)
+			}
+
+			if err := parseTopicName(p.TopicName()); err != nil {
+				p := mq.NewDisconnect()
+				p.SetReasonCode(mq.MalformedPacket)
+				_ = transmit(ctx, p)
+			}
+
+			switch p.QoS() {
+			case 0:
+				_ = s.router.Route(ctx, p)
+			case 1:
+				ack := mq.NewPubAck()
+				ack.SetPacketID(p.PacketID())
+				_ = s.router.Route(ctx, p)
+				_ = transmit(ctx, ack)
+
+			case 2:
+				// support QoS 2
+
+			}
+
+		case *mq.Disconnect:
+			conn.Close()
 			return
 		}
 	}
@@ -119,134 +236,6 @@ type sclient struct {
 	remote string
 
 	mqc *mq.Connect
-}
-
-func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc {
-	start := time.Now()
-
-	return func(ctx context.Context, p mq.Packet) error {
-		switch p := p.(type) {
-		case *mq.Connect:
-			// generate a client id before any logging
-			clientID := p.ClientID()
-			if clientID == "" {
-				clientID = uuid.NewString()
-			}
-			sc.clientID = clientID
-			sc.shortID = trimID(clientID, sc.maxIDLen)
-			sc.mqc = p
-		}
-		s.log.Printf(
-			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), sc.remote,
-		)
-
-		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
-			if err := p.WellFormed(); err != nil {
-				d := mq.NewDisconnect()
-				d.SetReasonCode(mq.MalformedPacket)
-				_ = transmit(ctx, d)
-			}
-		}
-
-		switch p := p.(type) {
-		case *mq.PingReq:
-			// 3.12.4-1 The Server MUST send a PINGRESP packet in
-			// response to a PINGREQ packet
-			_ = transmit(ctx, mq.NewPingResp())
-
-		case *mq.Connect:
-			if err := lateConnect(start, s.connectTimeout); err != nil {
-				d := mq.NewDisconnect()
-				d.SetReasonCode(mq.MaximumConnectTime)
-				_ = transmit(ctx, d)
-				return err
-			}
-			a := mq.NewConnAck()
-			if s.maxQoS < 2 {
-				a.SetMaxQoS(s.maxQoS)
-			}
-			if p.ClientID() == "" {
-				a.SetAssignedClientID(sc.clientID)
-			}
-			_ = transmit(ctx, a)
-
-		case *mq.Subscribe:
-			a := mq.NewSubAck()
-			a.SetPacketID(p.PacketID())
-			sub := newSubscription(transmit)
-			sub.subscriptionID = p.SubscriptionID()
-
-			// check all filters
-			for _, f := range p.Filters() {
-				filter := f.Filter()
-				err := parseTopicFilter(filter)
-				if err != nil {
-					p := mq.NewDisconnect()
-					p.SetReasonCode(mq.MalformedPacket)
-					return transmit(ctx, p)
-				}
-				sub.addTopicFilter(filter)
-
-				// Subscribe.WellFormed fails if for any reason,
-				// though here we want to set a reason code for each
-				// filter.  3.9.3 SUBACK Payload
-				a.AddReasonCode(mq.Success)
-			}
-			s.router.AddSubscriptions(sub)
-			_ = transmit(ctx, a)
-
-		case *mq.Unsubscribe:
-			// check all filters
-			filters := p.Filters()
-			if err := checkTopicFilters(filters); err != nil {
-				p := mq.NewDisconnect()
-				p.SetReasonCode(mq.MalformedPacket)
-				return transmit(ctx, p)
-			}
-			s.router.removeFilters(sc, filters)
-
-			ack := mq.NewUnsubAck()
-			ack.SetPacketID(p.PacketID())
-			transmit(ctx, ack)
-
-		case *mq.Publish:
-			// 3.3.1.2 QoS
-			// If the Server included a Maximum QoS in its CONNACK
-			// response to a Client and it receives a PUBLISH packet
-			// with a QoS greater than this, then it uses DISCONNECT
-			// with Reason Code 0x9B (QoS not supported)...
-			if p.QoS() > s.maxQoS {
-				d := mq.NewDisconnect()
-				d.SetReasonCode(mq.QoSNotSupported)
-				return transmit(ctx, d)
-			}
-
-			if err := parseTopicName(p.TopicName()); err != nil {
-				p := mq.NewDisconnect()
-				p.SetReasonCode(mq.MalformedPacket)
-				return transmit(ctx, p)
-			}
-
-			switch p.QoS() {
-			case 0:
-				_ = s.router.Route(ctx, p)
-			case 1:
-				ack := mq.NewPubAck()
-				ack.SetPacketID(p.PacketID())
-				_ = s.router.Route(ctx, p)
-				_ = transmit(ctx, ack)
-
-			case 2:
-				// support QoS 2
-
-			}
-
-		case *mq.Disconnect:
-			return conn.Close()
-		}
-
-		return nil
-	}
 }
 
 func checkTopicFilters(filters []string) error {
