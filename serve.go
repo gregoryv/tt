@@ -177,11 +177,11 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			send(ctx, ack)
 
 		case *mq.Publish:
-			// 3.3.1.2 QoS
 			// If the Server included a Maximum QoS in its CONNACK
 			// response to a Client and it receives a PUBLISH packet
 			// with a QoS greater than this, then it uses DISCONNECT
-			// with Reason Code 0x9B (QoS not supported)...
+			// with Reason Code 0x9B (QoS not supported) as described
+			// in section 4.13 Handling errors.			
 			if p.QoS() > s.maxQoS {
 				disconnect(mq.QoSNotSupported)
 				return
@@ -207,6 +207,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			}
 
 		case *mq.Disconnect:
+			// needed for the defered will logic
 			pkDisconnect = p
 			return
 		}
