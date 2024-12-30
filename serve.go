@@ -46,7 +46,10 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		send(ctx, p)
 	}
 
-	// Pre connect state
+	// After a Network Connection is established by a Client to a
+	// Server, the first packet sent from the Client to the Server
+	// MUST be a CONNECT packet [MQTT-3.1.0-1].
+
 	// start is used to honor the server.connectTimeout
 	start := time.Now()
 	p, err := nextPacket(ctx, conn)
@@ -74,6 +77,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			disconnect(mq.MaximumConnectTime)
 			return
 		}
+		// save the connect packet for will handling. This probably
+		// needs to be saved in a session state for this client.
 		pkConnect = p
 		a := mq.NewConnAck()
 		if s.maxQoS < 2 {
@@ -86,14 +91,20 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	}
 	// client is now connected in the MQTT sense
 
-	// handle will
+	// The Will Message MUST be published after the Network Connection
+	// is subsequently closed and either the Will Delay Interval has
+	// elapsed or the Session ends, unless the Will Message has been
+	// deleted by the Server on receipt of a DISCONNECT packet with
+	// Reason Code 0x00 (Normal disconnection) or a new Network
+	// Connection for the ClientID is opened before the Will Delay
+	// Interval has elapsed [MQTT-3.1.2-8]
+
 	// pkDisconnect is only set if the client sends it
 	var pkDisconnect *mq.Disconnect
 	if will := pkConnect.Will(); will != nil {
 		defer func() {
 			if pkDisconnect != nil {
 				if pkDisconnect.ReasonCode() == mq.NormalDisconnect {
-					// skip the will
 					return
 				}
 			}
