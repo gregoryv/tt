@@ -54,6 +54,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	}
 
 	// Wait for a connect packet
+	// start is used to honor the server.connectTimeout
 	start := time.Now()
 	p, err := nextPacket(ctx, conn)
 	if err != nil {
@@ -61,16 +62,13 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		return
 	}
 	if p, ok := p.(*mq.Connect); ok {
-		// set the shortID before any logging
+		// set shortID before any logging
 		assignID := p.ClientID() == ""
 		if assignID {
 			// set it on the packet, could be a local variable
 			p.SetClientID(uuid.NewString())
 		}
 		shortID = trimID(p.ClientID(), maxIDLen)
-		if p.Will() != nil {
-			defer handleWill(ctx, s, p)
-		}
 		s.log.Printf(
 			"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
 		)
@@ -80,6 +78,10 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			send(ctx, d)
 			return
 		}
+		if p.Will() != nil {
+			defer handleWill(ctx, s, p)
+		}
+
 		a := mq.NewConnAck()
 		if s.maxQoS < 2 {
 			a.SetMaxQoS(s.maxQoS)
