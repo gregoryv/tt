@@ -17,8 +17,8 @@ func dump(debug bool, p mq.Packet) string {
 	return "\n" + hex.Dump(buf.Bytes()) + "\n"
 }
 
-func trimID(s string, width uint) string {
-	if v := uint(len(s)); v > width {
+func trimID(s string, width int) string {
+	if v := len(s); v > width {
 		return prefixStr + s[v-width:]
 	}
 	return s

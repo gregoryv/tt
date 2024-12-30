@@ -46,7 +46,7 @@ func (r *router) AddSubscriptions(v ...*subscription) {
 	}
 }
 
-func (r *router) removeFilters(sc *sclient, filters []string) {
+func (r *router) removeFilters(filters []string) {
 	r.m.Lock()
 	defer r.m.Unlock()
 

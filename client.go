@@ -82,7 +82,7 @@ func (c *Client) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	// stop e.g. the pinger when done
 	defer cancel()
-	maxIDLen := uint(11)
+	maxIDLen := 11
 
 	// dial server
 	c.log.Print("dial ", s.String())

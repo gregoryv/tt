@@ -23,14 +23,14 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	defer s.stat.RemoveConn()
 	remote := conn.RemoteAddr().String()
 
-	sc := &sclient{
-		maxIDLen: 11,
-	}
+	maxIDLen := 11
+	// shortID is set when connect packet is received
+	var shortID string
 
 	// protects connection from concurrent writes
 	var m sync.Mutex
 	transmit := func(ctx context.Context, p mq.Packet) error {
-		s.log.Printf("%s %v%s", sc.shortID, p, dump(s.debug, p))
+		s.log.Printf("%s %v%s", shortID, p, dump(s.debug, p))
 		m.Lock()
 		_, err := p.WriteTo(conn)
 		m.Unlock()
@@ -67,13 +67,13 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		if clientID == "" {
 			clientID = uuid.NewString()
 		}
-		sc.shortID = trimID(clientID, sc.maxIDLen)
+		shortID = trimID(clientID, maxIDLen)
 		if p.Will() != nil {
 			defer handleWill(ctx, s, p)
 		}
 
 		s.log.Printf(
-			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), remote,
+			"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
 		)
 		if err := lateConnect(start, s.connectTimeout); err != nil {
 			d := mq.NewDisconnect()
@@ -100,7 +100,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		}
 
 		s.log.Printf(
-			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), remote,
+			"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
 		)
 
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
@@ -152,7 +152,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				send(ctx, p)
 				return
 			}
-			s.router.removeFilters(sc, filters)
+			s.router.removeFilters(filters)
 
 			ack := mq.NewUnsubAck()
 			ack.SetPacketID(p.PacketID())
@@ -220,12 +220,6 @@ type Connection interface {
 	io.ReadWriteCloser
 	SetReadDeadline(time.Time) error
 	RemoteAddr() net.Addr
-}
-
-// sclient represents a connected client on the server side.
-type sclient struct {
-	shortID  string
-	maxIDLen uint
 }
 
 func handleWill(ctx context.Context, s *Server, c *mq.Connect) {
