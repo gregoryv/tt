@@ -25,7 +25,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		maxIDLen: 11,
 		remote:   conn.RemoteAddr().String(),
 	}
-	defer sc.handleWill(ctx, s)
 
 	// protects connection from concurrent writes
 	var m sync.Mutex
@@ -72,7 +71,9 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		}
 		sc.clientID = clientID
 		sc.shortID = trimID(clientID, sc.maxIDLen)
-		sc.mqc = p
+		if p.Will() != nil {
+			defer handleWill(ctx, s, p)
+		}
 
 		s.log.Printf(
 			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), sc.remote,
@@ -247,14 +248,10 @@ type sclient struct {
 	mqc *mq.Connect
 }
 
-func (sc *sclient) handleWill(ctx context.Context, s *Server) {
-	p := sc.mqc.Will()
-	if p == nil {
-		return
-	}
-	delay := time.Duration(sc.mqc.WillDelayInterval())
+func handleWill(ctx context.Context, s *Server, c *mq.Connect) {
+	delay := time.Duration(c.WillDelayInterval())
 	time.AfterFunc(delay*time.Second, func() {
-		_ = s.router.Route(ctx, p)
+		_ = s.router.Route(ctx, c.Will())
 	})
 }
 
