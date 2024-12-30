@@ -29,21 +29,18 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	// protects connection from concurrent writes
 	var m sync.Mutex
 	transmit := func(ctx context.Context, p mq.Packet) error {
-		m.Lock()
-		defer m.Unlock()
-
 		s.log.Printf("%s %v%s", sc.shortID, p, dump(s.debug, p))
-
-		if _, err := p.WriteTo(conn); err != nil {
-			return err
-		}
-
-		return nil
+		m.Lock()
+		_, err := p.WriteTo(conn)
+		m.Unlock()
+		return err
 	}
-
+	// send ignores transmit errors
+	send := func(ctx context.Context, p mq.Packet) {
+		_ = transmit(ctx, p)
+	}
 	handleErr := func(err error) {
 		s.log.Print(err)
-
 		if errors.Is(err, mq.ErrMissingData) {
 			// This happens e.g. if a subscribe without topic
 			// filters is send. It may change if mq successfully
@@ -51,7 +48,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			// should be mq.ProtocolError
 			d := mq.NewDisconnect()
 			d.SetReasonCode(mq.MalformedPacket)
-			_ = transmit(ctx, d)
+			send(ctx, d)
 		}
 	}
 
@@ -81,7 +78,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		if err := lateConnect(start, s.connectTimeout); err != nil {
 			d := mq.NewDisconnect()
 			d.SetReasonCode(mq.MaximumConnectTime)
-			_ = transmit(ctx, d)
+			send(ctx, d)
 			return
 		}
 		a := mq.NewConnAck()
@@ -91,7 +88,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		if p.ClientID() == "" {
 			a.SetAssignedClientID(sc.clientID)
 		}
-		_ = transmit(ctx, a)
+		send(ctx, a)
 	}
 	// client is now connected in the MQTT sense
 
@@ -120,7 +117,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			if err := p.WellFormed(); err != nil {
 				d := mq.NewDisconnect()
 				d.SetReasonCode(mq.MalformedPacket)
-				_ = transmit(ctx, d)
+				send(ctx, d)
 				return
 			}
 		}
@@ -129,7 +126,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		case *mq.PingReq:
 			// 3.12.4-1 The Server MUST send a PINGRESP packet in
 			// response to a PINGREQ packet
-			_ = transmit(ctx, mq.NewPingResp())
+			send(ctx, mq.NewPingResp())
 
 		case *mq.Subscribe:
 			a := mq.NewSubAck()
@@ -144,7 +141,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				if err != nil {
 					p := mq.NewDisconnect()
 					p.SetReasonCode(mq.MalformedPacket)
-					_ = transmit(ctx, p)
+					send(ctx, p)
 				}
 				sub.addTopicFilter(filter)
 
@@ -154,7 +151,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				a.AddReasonCode(mq.Success)
 			}
 			s.router.AddSubscriptions(sub)
-			_ = transmit(ctx, a)
+			send(ctx, a)
 
 		case *mq.Unsubscribe:
 			// check all filters
@@ -162,14 +159,14 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			if err := checkTopicFilters(filters); err != nil {
 				p := mq.NewDisconnect()
 				p.SetReasonCode(mq.MalformedPacket)
-				_ = transmit(ctx, p)
+				send(ctx, p)
 				return
 			}
 			s.router.removeFilters(sc, filters)
 
 			ack := mq.NewUnsubAck()
 			ack.SetPacketID(p.PacketID())
-			_ = transmit(ctx, ack)
+			send(ctx, ack)
 
 		case *mq.Publish:
 			// 3.3.1.2 QoS
@@ -180,14 +177,14 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			if p.QoS() > s.maxQoS {
 				d := mq.NewDisconnect()
 				d.SetReasonCode(mq.QoSNotSupported)
-				_ = transmit(ctx, d)
+				send(ctx, d)
 				return
 			}
 
 			if err := parseTopicName(p.TopicName()); err != nil {
 				p := mq.NewDisconnect()
 				p.SetReasonCode(mq.MalformedPacket)
-				_ = transmit(ctx, p)
+				send(ctx, p)
 				return
 			}
 
@@ -198,7 +195,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
 				_ = s.router.Route(ctx, p)
-				_ = transmit(ctx, ack)
+				send(ctx, ack)
 
 			case 2:
 				// support QoS 2
