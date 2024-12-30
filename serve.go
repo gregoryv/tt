@@ -26,6 +26,14 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		remote:   conn.RemoteAddr().String(),
 	}
 
+	defer func() {
+		if p := sc.mqc.Will(); p != nil {
+			delay := time.Duration(sc.mqc.WillDelayInterval())
+			time.AfterFunc(delay*time.Second, func() {
+				_ = s.router.Route(ctx, p)
+			})
+		}
+	}()
 	// protects connection from concurrent writes
 	var m sync.Mutex
 	transmit := func(ctx context.Context, p mq.Packet) error {
@@ -52,13 +60,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			d := mq.NewDisconnect()
 			d.SetReasonCode(mq.MalformedPacket)
 			_ = transmit(ctx, d)
-		}
-
-		if p := sc.mqc.Will(); p != nil {
-			delay := time.Duration(sc.mqc.WillDelayInterval())
-			time.AfterFunc(delay*time.Second, func() {
-				_ = s.router.Route(ctx, p)
-			})
 		}
 	}
 
@@ -90,6 +91,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				d := mq.NewDisconnect()
 				d.SetReasonCode(mq.MalformedPacket)
 				_ = transmit(ctx, d)
+				return
 			}
 		}
 
@@ -147,6 +149,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				p := mq.NewDisconnect()
 				p.SetReasonCode(mq.MalformedPacket)
 				_ = transmit(ctx, p)
+				return
 			}
 			s.router.removeFilters(sc, filters)
 
@@ -164,12 +167,14 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				d := mq.NewDisconnect()
 				d.SetReasonCode(mq.QoSNotSupported)
 				_ = transmit(ctx, d)
+				return
 			}
 
 			if err := parseTopicName(p.TopicName()); err != nil {
 				p := mq.NewDisconnect()
 				p.SetReasonCode(mq.MalformedPacket)
 				_ = transmit(ctx, p)
+				return
 			}
 
 			switch p.QoS() {
@@ -187,7 +192,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			}
 
 		case *mq.Disconnect:
-			conn.Close()
 			return
 		}
 	}
