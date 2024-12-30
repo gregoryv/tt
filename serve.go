@@ -56,7 +56,44 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		}
 	}
 
+	// Wait for a connect packet
 	start := time.Now()
+	p, err := nextPacket(ctx, conn)
+	if err != nil {
+		handleErr(err)
+		return
+	}
+
+	if p, ok := p.(*mq.Connect); ok {
+		// generate a client id before any logging
+		clientID := p.ClientID()
+		if clientID == "" {
+			clientID = uuid.NewString()
+		}
+		sc.clientID = clientID
+		sc.shortID = trimID(clientID, sc.maxIDLen)
+		sc.mqc = p
+
+		s.log.Printf(
+			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), sc.remote,
+		)
+		if err := lateConnect(start, s.connectTimeout); err != nil {
+			d := mq.NewDisconnect()
+			d.SetReasonCode(mq.MaximumConnectTime)
+			_ = transmit(ctx, d)
+			return
+		}
+		a := mq.NewConnAck()
+		if s.maxQoS < 2 {
+			a.SetMaxQoS(s.maxQoS)
+		}
+		if p.ClientID() == "" {
+			a.SetAssignedClientID(sc.clientID)
+		}
+		_ = transmit(ctx, a)
+	}
+	// client is now connected in the MQTT sense
+
 	for {
 		p, err := nextPacket(ctx, conn)
 		if err != nil {
@@ -64,8 +101,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			return
 		}
 
-		switch p := p.(type) {
-		case *mq.Connect:
+		if p, ok := p.(*mq.Connect); ok {
 			// generate a client id before any logging
 			clientID := p.ClientID()
 			if clientID == "" {
@@ -93,22 +129,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			// 3.12.4-1 The Server MUST send a PINGRESP packet in
 			// response to a PINGREQ packet
 			_ = transmit(ctx, mq.NewPingResp())
-
-		case *mq.Connect:
-			if err := lateConnect(start, s.connectTimeout); err != nil {
-				d := mq.NewDisconnect()
-				d.SetReasonCode(mq.MaximumConnectTime)
-				_ = transmit(ctx, d)
-				return
-			}
-			a := mq.NewConnAck()
-			if s.maxQoS < 2 {
-				a.SetMaxQoS(s.maxQoS)
-			}
-			if p.ClientID() == "" {
-				a.SetAssignedClientID(sc.clientID)
-			}
-			_ = transmit(ctx, a)
 
 		case *mq.Subscribe:
 			a := mq.NewSubAck()
