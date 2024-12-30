@@ -66,7 +66,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		if clientID == "" {
 			clientID = uuid.NewString()
 		}
-		sc.clientID = clientID
 		sc.shortID = trimID(clientID, sc.maxIDLen)
 		if p.Will() != nil {
 			defer handleWill(ctx, s, p)
@@ -86,7 +85,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			a.SetMaxQoS(s.maxQoS)
 		}
 		if p.ClientID() == "" {
-			a.SetAssignedClientID(sc.clientID)
+			a.SetAssignedClientID(clientID)
 		}
 		send(ctx, a)
 	}
@@ -99,15 +98,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			return
 		}
 
-		if p, ok := p.(*mq.Connect); ok {
-			// generate a client id before any logging
-			clientID := p.ClientID()
-			if clientID == "" {
-				clientID = uuid.NewString()
-			}
-			sc.clientID = clientID
-			sc.shortID = trimID(clientID, sc.maxIDLen)
-		}
 		s.log.Printf(
 			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), sc.remote,
 		)
@@ -233,11 +223,8 @@ type Connection interface {
 
 // sclient represents a connected client on the server side.
 type sclient struct {
-	clientID string
 	shortID  string
-
 	maxIDLen uint
-
 	// ip:port
 	remote string
 }
