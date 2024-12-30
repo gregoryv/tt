@@ -72,7 +72,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		s.log.Printf(
 			"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
 		)
-		if err := lateConnect(start, s.connectTimeout); err != nil {
+		if err := s.lateConnect(start); err != nil {
 			d := mq.NewDisconnect()
 			d.SetReasonCode(mq.MaximumConnectTime)
 			send(ctx, d)
@@ -236,16 +236,6 @@ func checkTopicFilters(filters []string) error {
 		if err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func lateConnect(start time.Time, max time.Duration) error {
-	if max == 0 {
-		return nil
-	}
-	if time.Since(start) > max {
-		return errors.New(mq.MaximumConnectTime.String())
 	}
 	return nil
 }

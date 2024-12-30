@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gregoryv/mq"
 	"github.com/gregoryv/tt/event"
 )
 
@@ -71,6 +72,16 @@ func (s *Server) SetConnectTimeout(v time.Duration) {
 }
 func (s *Server) ConnectTimeout() time.Duration {
 	return s.connectTimeout
+}
+
+func (s *Server) lateConnect(start time.Time) error {
+	if s.connectTimeout == 0 {
+		return nil
+	}
+	if time.Since(start) > s.connectTimeout {
+		return errors.New(mq.MaximumConnectTime.String())
+	}
+	return nil
 }
 
 // SetDebug increases log information, default false.
