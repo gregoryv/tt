@@ -201,11 +201,10 @@ func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc 
 				return transmit(ctx, p)
 			}
 			s.router.removeFilters(sc, filters)
-			{
-				ack := mq.NewUnsubAck()
-				ack.SetPacketID(p.PacketID())
-				transmit(ctx, ack)
-			}
+
+			ack := mq.NewUnsubAck()
+			ack.SetPacketID(p.PacketID())
+			transmit(ctx, ack)
 
 		case *mq.Publish:
 			// 3.3.1.2 QoS
