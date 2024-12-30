@@ -107,7 +107,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			}
 			sc.clientID = clientID
 			sc.shortID = trimID(clientID, sc.maxIDLen)
-			sc.mqc = p
 		}
 		s.log.Printf(
 			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), sc.remote,
@@ -241,8 +240,6 @@ type sclient struct {
 
 	// ip:port
 	remote string
-
-	mqc *mq.Connect
 }
 
 func handleWill(ctx context.Context, s *Server, c *mq.Connect) {
