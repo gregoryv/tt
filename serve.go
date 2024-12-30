@@ -16,6 +16,8 @@ import (
 // serve handles the client connection.  Blocks until connection
 // is closed or context cancelled.
 func serve(ctx context.Context, s *Server, conn Connection) {
+	defer conn.Close()
+
 	// the server tracks active connections
 	s.stat.AddConn()
 	defer s.stat.RemoveConn()
@@ -30,22 +32,12 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		m.Lock()
 		defer m.Unlock()
 
-		switch p := p.(type) {
-		case *mq.ConnAck:
-			p.SetMaxQoS(s.maxQoS)
-		}
-
 		s.log.Printf("%s %v%s", sc.shortID, p, dump(s.debug, p))
 
 		if _, err := p.WriteTo(conn); err != nil {
 			return err
 		}
 
-		switch p.(type) {
-		case *mq.Disconnect:
-			// close Connection after Disconnect is send
-			conn.Close()
-		}
 		return nil
 	}
 
