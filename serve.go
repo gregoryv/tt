@@ -60,18 +60,17 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		handleErr(err)
 		return
 	}
-
 	if p, ok := p.(*mq.Connect); ok {
-		// generate a client id before any logging
-		clientID := p.ClientID()
-		if clientID == "" {
-			clientID = uuid.NewString()
+		// set the shortID before any logging
+		assignID := p.ClientID() == ""
+		if assignID {
+			// set it on the packet, could be a local variable
+			p.SetClientID(uuid.NewString())
 		}
-		shortID = trimID(clientID, maxIDLen)
+		shortID = trimID(p.ClientID(), maxIDLen)
 		if p.Will() != nil {
 			defer handleWill(ctx, s, p)
 		}
-
 		s.log.Printf(
 			"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
 		)
@@ -85,8 +84,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		if s.maxQoS < 2 {
 			a.SetMaxQoS(s.maxQoS)
 		}
-		if p.ClientID() == "" {
-			a.SetAssignedClientID(clientID)
+		if assignID {
+			a.SetAssignedClientID(p.ClientID())
 		}
 		send(ctx, a)
 	}
