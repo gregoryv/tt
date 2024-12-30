@@ -195,13 +195,10 @@ func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc 
 		case *mq.Unsubscribe:
 			// check all filters
 			filters := p.Filters()
-			for _, filter := range filters {
-				err := parseTopicFilter(filter)
-				if err != nil {
-					p := mq.NewDisconnect()
-					p.SetReasonCode(mq.MalformedPacket)
-					return transmit(ctx, p)
-				}
+			if err := checkTopicFilters(filters); err != nil {
+				p := mq.NewDisconnect()
+				p.SetReasonCode(mq.MalformedPacket)
+				return transmit(ctx, p)
 			}
 			s.router.removeFilters(sc, filters)
 			{
@@ -248,6 +245,16 @@ func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc 
 
 		return nil
 	}
+}
+
+func checkTopicFilters(filters []string) error {
+	for _, filter := range filters {
+		err := parseTopicFilter(filter)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func lateConnect(start time.Time, max time.Duration) error {
