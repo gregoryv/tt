@@ -25,15 +25,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		maxIDLen: 11,
 		remote:   conn.RemoteAddr().String(),
 	}
+	defer sc.handleWill(ctx, s)
 
-	defer func() {
-		if p := sc.mqc.Will(); p != nil {
-			delay := time.Duration(sc.mqc.WillDelayInterval())
-			time.AfterFunc(delay*time.Second, func() {
-				_ = s.router.Route(ctx, p)
-			})
-		}
-	}()
 	// protects connection from concurrent writes
 	var m sync.Mutex
 	transmit := func(ctx context.Context, p mq.Packet) error {
@@ -232,6 +225,17 @@ type sclient struct {
 	remote string
 
 	mqc *mq.Connect
+}
+
+func (sc *sclient) handleWill(ctx context.Context, s *Server) {
+	p := sc.mqc.Will()
+	if p == nil {
+		return
+	}
+	delay := time.Duration(sc.mqc.WillDelayInterval())
+	time.AfterFunc(delay*time.Second, func() {
+		_ = s.router.Route(ctx, p)
+	})
 }
 
 func checkTopicFilters(filters []string) error {
