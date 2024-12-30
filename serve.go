@@ -17,12 +17,7 @@ import (
 // is closed or context cancelled.
 func serve(ctx context.Context, s *Server, conn Connection) {
 	defer conn.Close()
-
-	// the server tracks active connections
-	s.stat.AddConn()
-	defer s.stat.RemoveConn()
 	remote := conn.RemoteAddr().String()
-
 	maxIDLen := 11
 	// shortID is set when connect packet is received
 	var shortID string
