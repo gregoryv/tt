@@ -40,15 +40,18 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	send := func(ctx context.Context, p mq.Packet) {
 		_ = transmit(ctx, p)
 	}
+	disconnect := func(code mq.ReasonCode) {
+		p := mq.NewDisconnect()
+		p.SetReasonCode(code)
+		send(ctx, p)
+	}
 	malformedDisconnect := func(err error) {
 		if errors.Is(err, mq.ErrMissingData) {
 			// This happens e.g. if a subscribe without topic
 			// filters is send. It may change if mq successfully
 			// parses the packet; in that case the reason code
 			// should be mq.ProtocolError
-			d := mq.NewDisconnect()
-			d.SetReasonCode(mq.MalformedPacket)
-			send(ctx, d)
+			disconnect(mq.MalformedPacket)
 		}
 	}
 
@@ -75,9 +78,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
 			)
 			if err := s.lateConnect(start); err != nil {
-				d := mq.NewDisconnect()
-				d.SetReasonCode(mq.MaximumConnectTime)
-				send(ctx, d)
+				disconnect(mq.MaximumConnectTime)
 				return
 			}
 			if p.Will() != nil {
@@ -108,9 +109,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		)
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 			if err := p.WellFormed(); err != nil {
-				d := mq.NewDisconnect()
-				d.SetReasonCode(mq.MalformedPacket)
-				send(ctx, d)
+				disconnect(mq.MalformedPacket)
 				return
 			}
 		}
@@ -132,9 +131,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				filter := f.Filter()
 				err := parseTopicFilter(filter)
 				if err != nil {
-					p := mq.NewDisconnect()
-					p.SetReasonCode(mq.MalformedPacket)
-					send(ctx, p)
+					disconnect(mq.MalformedPacket)
+					return
 				}
 				sub.addTopicFilter(filter)
 
@@ -150,9 +148,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			// check all filters
 			filters := p.Filters()
 			if err := checkTopicFilters(filters); err != nil {
-				p := mq.NewDisconnect()
-				p.SetReasonCode(mq.MalformedPacket)
-				send(ctx, p)
+				disconnect(mq.MalformedPacket)
 				return
 			}
 			s.router.removeFilters(filters)
@@ -168,16 +164,12 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			// with a QoS greater than this, then it uses DISCONNECT
 			// with Reason Code 0x9B (QoS not supported)...
 			if p.QoS() > s.maxQoS {
-				d := mq.NewDisconnect()
-				d.SetReasonCode(mq.QoSNotSupported)
-				send(ctx, d)
+				disconnect(mq.QoSNotSupported)
 				return
 			}
 
 			if err := parseTopicName(p.TopicName()); err != nil {
-				p := mq.NewDisconnect()
-				p.SetReasonCode(mq.MalformedPacket)
-				send(ctx, p)
+				disconnect(mq.MalformedPacket)
 				return
 			}
 
