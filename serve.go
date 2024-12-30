@@ -23,7 +23,32 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		maxIDLen: 11,
 		remote:   conn.RemoteAddr().String(),
 	}
-	transmit := sc.transmitter(s, conn)
+
+	// protects connection from concurrent writes
+	var m sync.Mutex
+	transmit := func(ctx context.Context, p mq.Packet) error {
+		m.Lock()
+		defer m.Unlock()
+
+		switch p := p.(type) {
+		case *mq.ConnAck:
+			p.SetMaxQoS(s.maxQoS)
+		}
+
+		s.log.Printf("%s %v%s", sc.shortID, p, dump(s.debug, p))
+
+		if _, err := p.WriteTo(conn); err != nil {
+			return err
+		}
+
+		switch p.(type) {
+		case *mq.Disconnect:
+			// close Connection after Disconnect is send
+			conn.Close()
+		}
+		return nil
+	}
+
 	handleErr := func(err error) {
 		s.log.Print(err)
 
@@ -94,33 +119,6 @@ type sclient struct {
 	remote string
 
 	mqc *mq.Connect
-}
-
-func (sc *sclient) transmitter(s *Server, conn Connection) trFunc {
-	var m sync.Mutex
-
-	return func(ctx context.Context, p mq.Packet) error {
-		m.Lock()
-		defer m.Unlock()
-
-		switch p := p.(type) {
-		case *mq.ConnAck:
-			p.SetMaxQoS(s.maxQoS)
-		}
-
-		s.log.Printf("%s %v%s", sc.shortID, p, dump(s.debug, p))
-
-		if _, err := p.WriteTo(conn); err != nil {
-			return err
-		}
-
-		switch p.(type) {
-		case *mq.Disconnect:
-			// close Connection after Disconnect is send
-			conn.Close()
-		}
-		return nil
-	}
 }
 
 func (sc *sclient) receiver(s *Server, conn Connection, transmit trFunc) trFunc {
