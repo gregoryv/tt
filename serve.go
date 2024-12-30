@@ -53,43 +53,46 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		}
 	}
 
-	// Wait for a connect packet
-	// start is used to honor the server.connectTimeout
-	start := time.Now()
-	p, err := nextPacket(ctx, conn)
-	if err != nil {
-		handleErr(err)
-		return
-	}
-	if p, ok := p.(*mq.Connect); ok {
-		// set shortID before any logging
-		assignID := p.ClientID() == ""
-		if assignID {
-			// set it on the packet, could be a local variable
-			p.SetClientID(uuid.NewString())
-		}
-		shortID = trimID(p.ClientID(), maxIDLen)
-		s.log.Printf(
-			"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
-		)
-		if err := s.lateConnect(start); err != nil {
-			d := mq.NewDisconnect()
-			d.SetReasonCode(mq.MaximumConnectTime)
-			send(ctx, d)
+	// Pre connect state, using block so the gc can release resources
+	// once it's state is passed.
+	{
+		// start is used to honor the server.connectTimeout
+		start := time.Now()
+		p, err := nextPacket(ctx, conn)
+		if err != nil {
+			handleErr(err)
 			return
 		}
-		if p.Will() != nil {
-			defer handleWill(ctx, s, p)
-		}
+		if p, ok := p.(*mq.Connect); ok {
+			// set shortID before any logging
+			assignID := p.ClientID() == ""
+			if assignID {
+				// set it on the packet, could be a local variable
+				p.SetClientID(uuid.NewString())
+			}
+			shortID = trimID(p.ClientID(), maxIDLen)
+			s.log.Printf(
+				"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
+			)
+			if err := s.lateConnect(start); err != nil {
+				d := mq.NewDisconnect()
+				d.SetReasonCode(mq.MaximumConnectTime)
+				send(ctx, d)
+				return
+			}
+			if p.Will() != nil {
+				defer handleWill(ctx, s, p)
+			}
 
-		a := mq.NewConnAck()
-		if s.maxQoS < 2 {
-			a.SetMaxQoS(s.maxQoS)
+			a := mq.NewConnAck()
+			if s.maxQoS < 2 {
+				a.SetMaxQoS(s.maxQoS)
+			}
+			if assignID {
+				a.SetAssignedClientID(p.ClientID())
+			}
+			send(ctx, a)
 		}
-		if assignID {
-			a.SetAssignedClientID(p.ClientID())
-		}
-		send(ctx, a)
 	}
 	// client is now connected in the MQTT sense
 
