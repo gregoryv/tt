@@ -40,8 +40,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	send := func(ctx context.Context, p mq.Packet) {
 		_ = transmit(ctx, p)
 	}
-	handleErr := func(err error) {
-		s.log.Print(err)
+	malformedDisconnect := func(err error) {
 		if errors.Is(err, mq.ErrMissingData) {
 			// This happens e.g. if a subscribe without topic
 			// filters is send. It may change if mq successfully
@@ -60,7 +59,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		start := time.Now()
 		p, err := nextPacket(ctx, conn)
 		if err != nil {
-			handleErr(err)
+			s.log.Print(err)
+			malformedDisconnect(err)
 			return
 		}
 		if p, ok := p.(*mq.Connect); ok {
@@ -99,14 +99,13 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	for {
 		p, err := nextPacket(ctx, conn)
 		if err != nil {
-			handleErr(err)
+			s.log.Print(err)
+			malformedDisconnect(err)
 			return
 		}
-
 		s.log.Printf(
 			"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
 		)
-
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 			if err := p.WellFormed(); err != nil {
 				d := mq.NewDisconnect()
