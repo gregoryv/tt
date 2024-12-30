@@ -45,15 +45,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		p.SetReasonCode(code)
 		send(ctx, p)
 	}
-	malformedDisconnect := func(err error) {
-		if errors.Is(err, mq.ErrMissingData) {
-			// This happens e.g. if a subscribe without topic
-			// filters is send. It may change if mq successfully
-			// parses the packet; in that case the reason code
-			// should be mq.ProtocolError
-			disconnect(mq.MalformedPacket)
-		}
-	}
 
 	// Pre connect state, using block so the gc can release resources
 	// once it's state is passed.
@@ -63,7 +54,9 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		p, err := nextPacket(ctx, conn)
 		if err != nil {
 			s.log.Print(err)
-			malformedDisconnect(err)
+			if errors.Is(err, mq.ErrMissingData) {
+				disconnect(mq.MalformedPacket)
+			}
 			return
 		}
 		if p, ok := p.(*mq.Connect); ok {
@@ -101,7 +94,13 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		p, err := nextPacket(ctx, conn)
 		if err != nil {
 			s.log.Print(err)
-			malformedDisconnect(err)
+			if errors.Is(err, mq.ErrMissingData) {
+				// This happens e.g. if a subscribe without topic
+				// filters is send. It may change if mq successfully
+				// parses the packet; in that case the reason code
+				// should be mq.ProtocolError
+				disconnect(mq.MalformedPacket)
+			}
 			return
 		}
 		s.log.Printf(
