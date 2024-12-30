@@ -21,9 +21,10 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	// the server tracks active connections
 	s.stat.AddConn()
 	defer s.stat.RemoveConn()
+	remote := conn.RemoteAddr().String()
+
 	sc := &sclient{
 		maxIDLen: 11,
-		remote:   conn.RemoteAddr().String(),
 	}
 
 	// protects connection from concurrent writes
@@ -72,7 +73,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		}
 
 		s.log.Printf(
-			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), sc.remote,
+			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), remote,
 		)
 		if err := lateConnect(start, s.connectTimeout); err != nil {
 			d := mq.NewDisconnect()
@@ -99,7 +100,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		}
 
 		s.log.Printf(
-			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), sc.remote,
+			"%s %v%s from %s", sc.shortID, p, dump(s.debug, p), remote,
 		)
 
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
@@ -225,8 +226,6 @@ type Connection interface {
 type sclient struct {
 	shortID  string
 	maxIDLen uint
-	// ip:port
-	remote string
 }
 
 func handleWill(ctx context.Context, s *Server, c *mq.Connect) {
