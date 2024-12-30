@@ -46,49 +46,63 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		send(ctx, p)
 	}
 
-	// Pre connect state, using block so the gc can release resources
-	// once it's state is passed.
-	{
-		// start is used to honor the server.connectTimeout
-		start := time.Now()
-		p, err := nextPacket(ctx, conn)
-		if err != nil {
-			s.log.Print(err)
-			if errors.Is(err, mq.ErrMissingData) {
-				disconnect(mq.MalformedPacket)
-			}
+	// Pre connect state
+	// start is used to honor the server.connectTimeout
+	start := time.Now()
+	p, err := nextPacket(ctx, conn)
+	if err != nil {
+		s.log.Print(err)
+		if errors.Is(err, mq.ErrMissingData) {
+			disconnect(mq.MalformedPacket)
+		}
+		return
+	}
+
+	var pkConnect *mq.Connect
+	if p, ok := p.(*mq.Connect); ok {
+		// set shortID before any logging
+		assignID := p.ClientID() == ""
+		if assignID {
+			// set it on the packet, could be a local variable
+			p.SetClientID(uuid.NewString())
+		}
+		shortID = trimID(p.ClientID(), maxIDLen)
+		s.log.Printf(
+			"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
+		)
+		if err := s.lateConnect(start); err != nil {
+			disconnect(mq.MaximumConnectTime)
 			return
 		}
-		if p, ok := p.(*mq.Connect); ok {
-			// set shortID before any logging
-			assignID := p.ClientID() == ""
-			if assignID {
-				// set it on the packet, could be a local variable
-				p.SetClientID(uuid.NewString())
-			}
-			shortID = trimID(p.ClientID(), maxIDLen)
-			s.log.Printf(
-				"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
-			)
-			if err := s.lateConnect(start); err != nil {
-				disconnect(mq.MaximumConnectTime)
-				return
-			}
-			if p.Will() != nil {
-				defer handleWill(ctx, s, p)
-			}
-
-			a := mq.NewConnAck()
-			if s.maxQoS < 2 {
-				a.SetMaxQoS(s.maxQoS)
-			}
-			if assignID {
-				a.SetAssignedClientID(p.ClientID())
-			}
-			send(ctx, a)
+		pkConnect = p
+		a := mq.NewConnAck()
+		if s.maxQoS < 2 {
+			a.SetMaxQoS(s.maxQoS)
 		}
+		if assignID {
+			a.SetAssignedClientID(p.ClientID())
+		}
+		send(ctx, a)
 	}
 	// client is now connected in the MQTT sense
+
+	// handle will
+	// pkDisconnect is only set if the client sends it
+	var pkDisconnect *mq.Disconnect
+	if will := pkConnect.Will(); will != nil {
+		defer func() {
+			if pkDisconnect != nil {
+				if pkDisconnect.ReasonCode() == mq.NormalDisconnect {
+					// skip the will
+					return
+				}
+			}
+			delay := time.Duration(pkConnect.WillDelayInterval())
+			time.AfterFunc(delay*time.Second, func() {
+				_ = s.router.Route(ctx, will)
+			})
+		}()
+	}
 
 	for {
 		p, err := nextPacket(ctx, conn)
@@ -187,6 +201,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			}
 
 		case *mq.Disconnect:
+			pkDisconnect = p
 			return
 		}
 	}
@@ -214,13 +229,6 @@ type Connection interface {
 	io.ReadWriteCloser
 	SetReadDeadline(time.Time) error
 	RemoteAddr() net.Addr
-}
-
-func handleWill(ctx context.Context, s *Server, c *mq.Connect) {
-	delay := time.Duration(c.WillDelayInterval())
-	time.AfterFunc(delay*time.Second, func() {
-		_ = s.router.Route(ctx, c.Will())
-	})
 }
 
 func checkTopicFilters(filters []string) error {
