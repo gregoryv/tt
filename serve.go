@@ -23,40 +23,15 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		maxIDLen: 11,
 		remote:   conn.RemoteAddr().String(),
 	}
-	var (
-		transmit = sc.transmitter(s, conn)
-		receive  = sc.receiver(s, conn, transmit)
-		err      error
-		p        mq.Packet
-	)
-	for {
-		// read control packets from connection
-		err = ctx.Err()
-		if err != nil {
-			break
-		}
-		conn.SetReadDeadline(time.Now().Add(400 * time.Millisecond))
-
-		p, err = mq.ReadPacket(conn)
-		if err != nil {
-			if errors.Is(err, os.ErrDeadlineExceeded) {
-				continue
-			}
-			break
-		}
-		err = receive(ctx, p)
-		if err != nil {
-			break
-		}
-	}
-	if err != nil {
+	transmit := sc.transmitter(s, conn)
+	handleErr := func(err error) {
 		s.log.Print(err)
 
 		if errors.Is(err, mq.ErrMissingData) {
-			// This happens e.g. if a subscribe without topic filters
-			// is send. It may change if mq successfully parses the
-			// packet; in that case the reason code should be
-			// mq.ProtocolError
+			// This happens e.g. if a subscribe without topic
+			// filters is send. It may change if mq successfully
+			// parses the packet; in that case the reason code
+			// should be mq.ProtocolError
 			d := mq.NewDisconnect()
 			d.SetReasonCode(mq.MalformedPacket)
 			_ = transmit(ctx, d)
@@ -70,6 +45,36 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		}
 	}
 
+	receive := sc.receiver(s, conn, transmit)
+	for {
+		p, err := nextPacket(ctx, conn)
+		if err != nil {
+			handleErr(err)
+			return
+		}
+		if err := receive(ctx, p); err != nil {
+			handleErr(err)
+			return
+		}
+	}
+}
+
+func nextPacket(ctx context.Context, conn Connection) (mq.Packet, error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		conn.SetReadDeadline(time.Now().Add(400 * time.Millisecond))
+
+		p, err := mq.ReadPacket(conn)
+		if err != nil {
+			if !errors.Is(err, os.ErrDeadlineExceeded) {
+				return nil, err
+			}
+			continue
+		}
+		return p, nil
+	}
 }
 
 type Connection interface {
