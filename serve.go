@@ -116,7 +116,11 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	}
 
 	// client is now connected in the MQTT sense
-
+	//                                  _           _
+	//   ___ ___  _ __  _ __   ___  ___| |_ ___  __| |
+	//  / __/ _ \| '_ \| '_ \ / _ \/ __| __/ _ \/ _` |
+	// | (_| (_) | | | | | | |  __/ (__| ||  __/ (_| |
+	//  \___\___/|_| |_|_| |_|\___|\___|\__\___|\__,_|
 	for {
 		p, err := nextPacket(ctx, conn)
 		if err != nil {
