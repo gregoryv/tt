@@ -25,12 +25,10 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		log    = s.log
 		router = s.router
 
-		remote   = conn.RemoteAddr().String()
-		maxIDLen = 11
-
+		remote = conn.RemoteAddr().String()
 		// shortID is set when connect packet is received
-		shortID string
-
+		shortID  string
+		maxIDLen = 11
 		// protects connection from concurrent writes
 		transmit = s.syncWrites(conn, &shortID)
 		// send ignores transmit errors
@@ -47,27 +45,33 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	// After a Network Connection is established by a Client to a
 	// Server, the first packet sent from the Client to the Server
 	// MUST be a CONNECT packet [MQTT-3.1.0-1].
-
-	// start is used to honor the server.connectTimeout
-	start := time.Now()
-	p, err := nextPacket(ctx, conn)
-	if err != nil {
+	var (
+		// start is used to honor the server.connectTimeout
+		start    = time.Now()
+		pConnect *mq.Connect
+	)
+	if p, err := nextPacket(ctx, conn); err != nil {
 		log.Print(err)
 		if errors.Is(err, mq.ErrMissingData) {
 			disconnect(mq.MalformedPacket)
 		}
 		return
-	}
-
-	var pConnect *mq.Connect
-	if p, ok := p.(*mq.Connect); ok {
-		// set shortID before any logging
-		assignID := p.ClientID() == ""
-		if assignID {
-			// set it on the packet, could be a local variable
-			p.SetClientID(uuid.NewString())
+	} else {
+		p, ok := p.(*mq.Connect)
+		if !ok {
+			disconnect(mq.ProtocolError)
+			return
 		}
-		shortID = trimID(p.ClientID(), maxIDLen)
+		// set shortID before any logging
+		var assignedID string
+		if p.ClientID() == "" {
+			// set it on the packet, could be a local variable
+			assignedID = uuid.NewString()
+			shortID = trimID(assignedID, maxIDLen)
+		} else {
+			shortID = trimID(p.ClientID(), maxIDLen)
+		}
+
 		log.Printf(
 			"%s %v%s from %s", shortID, p, dump(debug, p), remote,
 		)
@@ -78,16 +82,14 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		// save the connect packet for will handling. This probably
 		// needs to be saved in a session state for this client.
 		pConnect = p
+
 		a := mq.NewConnAck()
 		if maxQoS < 2 {
 			a.SetMaxQoS(maxQoS)
 		}
-		if assignID {
-			a.SetAssignedClientID(p.ClientID())
-		}
+		a.SetAssignedClientID(assignedID)
 		send(ctx, a)
 	}
-	// client is now connected in the MQTT sense
 
 	// The Will Message MUST be published after the Network Connection
 	// is subsequently closed and either the Will Delay Interval has
@@ -112,6 +114,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			})
 		}()
 	}
+
+	// client is now connected in the MQTT sense
 
 	for {
 		p, err := nextPacket(ctx, conn)
@@ -145,7 +149,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		case *mq.Subscribe:
 			sub := newSubscription(transmit)
 			sub.subscriptionID = p.SubscriptionID()
-
 			// check all filters
 			for _, f := range p.Filters() {
 				filter := f.Filter()
