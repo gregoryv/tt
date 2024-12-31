@@ -18,33 +18,30 @@ import (
 func serve(ctx context.Context, s *Server, conn Connection) {
 	defer conn.Close()
 
-	maxQoS := s.maxQoS
-	debug := s.debug
-	log := s.log
-	router := s.router
-	remote := conn.RemoteAddr().String()
-	maxIDLen := 11
-	// shortID is set when connect packet is received
-	var shortID string
+	var (
+		maxQoS = s.maxQoS
+		debug  = s.debug
+		log    = s.log
+		router = s.router
 
-	// protects connection from concurrent writes
-	var m sync.Mutex
-	transmit := func(ctx context.Context, p mq.Packet) error {
-		log.Printf("%s %v%s", shortID, p, dump(debug, p))
-		m.Lock()
-		_, err := p.WriteTo(conn)
-		m.Unlock()
-		return err
-	}
-	// send ignores transmit errors
-	send := func(ctx context.Context, p mq.Packet) {
-		_ = transmit(ctx, p)
-	}
-	disconnect := func(code mq.ReasonCode) {
-		p := mq.NewDisconnect()
-		p.SetReasonCode(code)
-		send(ctx, p)
-	}
+		remote   = conn.RemoteAddr().String()
+		maxIDLen = 11
+
+		// shortID is set when connect packet is received
+		shortID string
+
+		// protects connection from concurrent writes
+		transmit = s.syncWrites(conn, &shortID)
+		// send ignores transmit errors
+		send = func(ctx context.Context, p mq.Packet) {
+			_ = transmit(ctx, p)
+		}
+		disconnect = func(code mq.ReasonCode) {
+			p := mq.NewDisconnect()
+			p.SetReasonCode(code)
+			send(ctx, p)
+		}
+	)
 
 	// After a Network Connection is established by a Client to a
 	// Server, the first packet sent from the Client to the Server
@@ -216,6 +213,18 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			pkDisconnect = p
 			return
 		}
+	}
+}
+
+// syncWrites synchronizes and logs writes of packets to connection
+func (s *Server) syncWrites(conn Connection, shortID *string) trFunc {
+	var m sync.Mutex
+	return func(ctx context.Context, p mq.Packet) error {
+		s.log.Printf("%s %v%s", *shortID, p, dump(s.debug, p))
+		m.Lock()
+		_, err := p.WriteTo(conn)
+		m.Unlock()
+		return err
 	}
 }
 
