@@ -58,7 +58,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		return
 	}
 
-	var pkConnect *mq.Connect
+	var pConnect *mq.Connect
 	if p, ok := p.(*mq.Connect); ok {
 		// set shortID before any logging
 		assignID := p.ClientID() == ""
@@ -76,7 +76,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		}
 		// save the connect packet for will handling. This probably
 		// needs to be saved in a session state for this client.
-		pkConnect = p
+		pConnect = p
 		a := mq.NewConnAck()
 		if maxQoS < 2 {
 			a.SetMaxQoS(maxQoS)
@@ -96,16 +96,16 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	// Connection for the ClientID is opened before the Will Delay
 	// Interval has elapsed [MQTT-3.1.2-8]
 
-	// pkDisconnect is only set if the client sends it
-	var pkDisconnect *mq.Disconnect
-	if will := pkConnect.Will(); will != nil {
+	// pDisconnect is only set if the client sends it
+	var pDisconnect *mq.Disconnect
+	if will := pConnect.Will(); will != nil {
 		defer func() {
-			if pkDisconnect != nil {
-				if pkDisconnect.ReasonCode() == mq.NormalDisconnect {
+			if pDisconnect != nil {
+				if pDisconnect.ReasonCode() == mq.NormalDisconnect {
 					return
 				}
 			}
-			delay := time.Duration(pkConnect.WillDelayInterval())
+			delay := time.Duration(pConnect.WillDelayInterval())
 			time.AfterFunc(delay*time.Second, func() {
 				_ = router.Route(ctx, will)
 			})
@@ -210,7 +210,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 
 		case *mq.Disconnect:
 			// needed for the defered will logic
-			pkDisconnect = p
+			pDisconnect = p
 			return
 		}
 	}
