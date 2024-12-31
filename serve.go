@@ -17,6 +17,11 @@ import (
 // is closed or context cancelled.
 func serve(ctx context.Context, s *Server, conn Connection) {
 	defer conn.Close()
+
+	maxQoS := s.maxQoS
+	debug := s.debug
+	log := s.log
+	router := s.router
 	remote := conn.RemoteAddr().String()
 	maxIDLen := 11
 	// shortID is set when connect packet is received
@@ -25,7 +30,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	// protects connection from concurrent writes
 	var m sync.Mutex
 	transmit := func(ctx context.Context, p mq.Packet) error {
-		s.log.Printf("%s %v%s", shortID, p, dump(s.debug, p))
+		log.Printf("%s %v%s", shortID, p, dump(debug, p))
 		m.Lock()
 		_, err := p.WriteTo(conn)
 		m.Unlock()
@@ -49,7 +54,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	start := time.Now()
 	p, err := nextPacket(ctx, conn)
 	if err != nil {
-		s.log.Print(err)
+		log.Print(err)
 		if errors.Is(err, mq.ErrMissingData) {
 			disconnect(mq.MalformedPacket)
 		}
@@ -65,8 +70,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			p.SetClientID(uuid.NewString())
 		}
 		shortID = trimID(p.ClientID(), maxIDLen)
-		s.log.Printf(
-			"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
+		log.Printf(
+			"%s %v%s from %s", shortID, p, dump(debug, p), remote,
 		)
 		if err := s.lateConnect(start); err != nil {
 			disconnect(mq.MaximumConnectTime)
@@ -76,8 +81,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 		// needs to be saved in a session state for this client.
 		pkConnect = p
 		a := mq.NewConnAck()
-		if s.maxQoS < 2 {
-			a.SetMaxQoS(s.maxQoS)
+		if maxQoS < 2 {
+			a.SetMaxQoS(maxQoS)
 		}
 		if assignID {
 			a.SetAssignedClientID(p.ClientID())
@@ -105,7 +110,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			}
 			delay := time.Duration(pkConnect.WillDelayInterval())
 			time.AfterFunc(delay*time.Second, func() {
-				_ = s.router.Route(ctx, will)
+				_ = router.Route(ctx, will)
 			})
 		}()
 	}
@@ -113,7 +118,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 	for {
 		p, err := nextPacket(ctx, conn)
 		if err != nil {
-			s.log.Print(err)
+			log.Print(err)
 			if errors.Is(err, mq.ErrMissingData) {
 				// This happens e.g. if a subscribe without topic
 				// filters is send. It may change if mq successfully
@@ -123,8 +128,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			}
 			return
 		}
-		s.log.Printf(
-			"%s %v%s from %s", shortID, p, dump(s.debug, p), remote,
+		log.Printf(
+			"%s %v%s from %s", shortID, p, dump(debug, p), remote,
 		)
 		if p, ok := p.(interface{ WellFormed() *mq.Malformed }); ok {
 			if err := p.WellFormed(); err != nil {
@@ -160,7 +165,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				// filter.  3.9.3 SUBACK Payload
 				a.AddReasonCode(mq.Success)
 			}
-			s.router.AddSubscriptions(sub)
+			router.AddSubscriptions(sub)
 			send(ctx, a)
 
 		case *mq.Unsubscribe:
@@ -170,7 +175,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				disconnect(mq.MalformedPacket)
 				return
 			}
-			s.router.removeFilters(filters)
+			router.removeFilters(filters)
 
 			ack := mq.NewUnsubAck()
 			ack.SetPacketID(p.PacketID())
@@ -181,8 +186,8 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			// response to a Client and it receives a PUBLISH packet
 			// with a QoS greater than this, then it uses DISCONNECT
 			// with Reason Code 0x9B (QoS not supported) as described
-			// in section 4.13 Handling errors.			
-			if p.QoS() > s.maxQoS {
+			// in section 4.13 Handling errors.
+			if p.QoS() > maxQoS {
 				disconnect(mq.QoSNotSupported)
 				return
 			}
@@ -194,11 +199,11 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 
 			switch p.QoS() {
 			case 0:
-				_ = s.router.Route(ctx, p)
+				_ = router.Route(ctx, p)
 			case 1:
 				ack := mq.NewPubAck()
 				ack.SetPacketID(p.PacketID())
-				_ = s.router.Route(ctx, p)
+				_ = router.Route(ctx, p)
 				send(ctx, ack)
 
 			case 2:
