@@ -3,6 +3,7 @@ package tt
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -142,8 +143,6 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			send(ctx, mq.NewPingResp())
 
 		case *mq.Subscribe:
-			a := mq.NewSubAck()
-			a.SetPacketID(p.PacketID())
 			sub := newSubscription(transmit)
 			sub.subscriptionID = p.SubscriptionID()
 
@@ -156,14 +155,9 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 					return
 				}
 				sub.addTopicFilter(filter)
-
-				// Subscribe.WellFormed fails if for any reason,
-				// though here we want to set a reason code for each
-				// filter.  3.9.3 SUBACK Payload
-				a.AddReasonCode(mq.Success)
 			}
 			router.AddSubscriptions(sub)
-			send(ctx, a)
+			send(ctx, ack(p))
 
 		case *mq.Unsubscribe:
 			// check all filters
@@ -173,10 +167,7 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 				return
 			}
 			router.removeFilters(filters)
-
-			ack := mq.NewUnsubAck()
-			ack.SetPacketID(p.PacketID())
-			send(ctx, ack)
+			send(ctx, ack(p))
 
 		case *mq.Publish:
 			// If the Server included a Maximum QoS in its CONNACK
@@ -197,15 +188,13 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			switch p.QoS() {
 			case 0:
 				_ = router.Route(ctx, p)
+
 			case 1:
-				ack := mq.NewPubAck()
-				ack.SetPacketID(p.PacketID())
 				_ = router.Route(ctx, p)
-				send(ctx, ack)
+				send(ctx, ack(p))
 
 			case 2:
 				// support QoS 2
-
 			}
 
 		case *mq.Disconnect:
@@ -213,6 +202,40 @@ func serve(ctx context.Context, s *Server, conn Connection) {
 			pDisconnect = p
 			return
 		}
+	}
+}
+
+// ack returns a corresponding ack packet
+func ack(p mq.Packet) mq.Packet {
+	switch p := p.(type) {
+	case *mq.Publish:
+		switch p.QoS() {
+		case 1:
+			a := mq.NewPubAck()
+			a.SetPacketID(p.PacketID())
+			return a
+		}
+		// todo support QoS 2
+		panic(fmt.Sprintf("ack: publish QoS %v", p.QoS()))
+
+	case *mq.Subscribe:
+		a := mq.NewSubAck()
+		a.SetPacketID(p.PacketID())
+		for _ = range p.Filters() {
+			// Subscribe.WellFormed fails if for any reason,
+			// though here we want to set a reason code for each
+			// filter.  3.9.3 SUBACK Payload
+			a.AddReasonCode(mq.Success)
+		}
+		return a
+
+	case *mq.Unsubscribe:
+		a := mq.NewUnsubAck()
+		a.SetPacketID(p.PacketID())
+		return a
+
+	default:
+		panic(fmt.Sprintf("%T has no ack", p))
 	}
 }
 

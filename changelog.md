@@ -3,7 +3,7 @@
 This project adheres to semantic versioning and all notable
 changes will be documented in this file.
 
-## [0.12.1-dev]
+## [0.13.0] 2024-12-31
 
 - Disconnect with protocol error if subscribe contains no filters
 - Add tt srv --log-prefix option
