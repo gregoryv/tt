@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -139,10 +140,21 @@ func (s *Server) Run(ctx context.Context) {
 
 		case <-s.stat.Changed():
 			// publish stats
-			v := fmt.Sprintf("%s %s", rev, s.stat.String())
-			p := mq.Pub(0, "$sys/mon/stat", v)
+			var mem runtime.MemStats
+			runtime.ReadMemStats(&mem)
+
+			payload := fmt.Sprintf("%s %v %v %v",
+				rev,
+				s.stat.ConnCount.Load(),
+				s.stat.ConnActive.Load(),
+				mem.Alloc,
+				// total subscriptions
+
+				// total published messages
+			)
+			p := mq.Pub(0, "$sys/mon/stat", payload)
 			s.router.Route(ctx, p)
-			s.log.Println("sys/mon/stat", v)
+			s.log.Println("sys/mon/stat", payload)
 		}
 	}
 }
@@ -315,6 +327,34 @@ func (s *serverStats) String() string {
 		s.ConnActive.Load(),
 	)
 }
+
+func memStats() func() string {
+	var stat runtime.MemStats
+
+	return func() string {
+		runtime.ReadMemStats(&stat)
+		return fmt.Sprintf("Alloc=%s Heap=%s GC=%d",
+			size(stat.Alloc),
+			size(stat.HeapAlloc),
+			stat.NumGC,
+		)
+	}
+}
+
+func size(v uint64) string {
+	if n := float64(v) / MB; n > 1.0 {
+		return fmt.Sprintf("%.2fMB", n)
+	}
+	if n := float64(v) / KB; n > 1.0 {
+		return fmt.Sprintf("%.2fKB", n)
+	}
+	return fmt.Sprintf("%v bytes", v)
+}
+
+const (
+	KB = float64(1024)
+	MB = KB * KB
+)
 
 // ----------------------------------------
 
