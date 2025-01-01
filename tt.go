@@ -4,6 +4,7 @@ package tt
 import (
 	"bytes"
 	"encoding/hex"
+	"runtime/debug"
 
 	"github.com/gregoryv/mq"
 )
@@ -25,3 +26,25 @@ func trimID(s string, width int) string {
 }
 
 const prefixStr = "~"
+
+func short(s string, width int) string {
+	if v := len(s); v > width {
+		return s[v-width:]
+	}
+	return s
+}
+
+func revision() string {
+	// this is a module so it will always work
+	info, _ := debug.ReadBuildInfo()
+	return findBuildValue(info.Settings, "vcs.revision")
+}
+
+func findBuildValue(bs []debug.BuildSetting, key string) string {
+	for _, s := range bs {
+		if s.Key == key {
+			return s.Value
+		}
+	}
+	return ""
+}

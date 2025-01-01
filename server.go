@@ -120,6 +120,7 @@ func (s *Server) Run(ctx context.Context) {
 		s.app <- event.ServerStop{err}
 		return
 	}
+	rev := short(revision(), 7)
 	go s.stat.Run(ctx)
 
 	s.trigger(event.ServerUp(0))
@@ -138,7 +139,7 @@ func (s *Server) Run(ctx context.Context) {
 
 		case <-s.stat.Changed():
 			// publish stats
-			v := s.stat.String()
+			v := fmt.Sprintln(rev, s.stat.String())
 			p := mq.Pub(0, "$sys/mon/stat", v)
 			s.router.Route(ctx, p)
 			s.log.Println("sys/mon/stat", v)
