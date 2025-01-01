@@ -236,7 +236,13 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			}
 
 		case *mq.Publish:
-			fmt.Fprintln(c.output, "PAYLOAD", string(v.Payload()))
+			if c.shared.Quiet {
+				fmt.Fprintln(c.output, v.TopicName(), string(v.Payload()))
+			} else {
+				// when logging is enabled the publish packet contains
+				// the topic
+				fmt.Fprintln(c.output, "PAYLOAD", string(v.Payload()))
+			}
 
 		case event.ClientStop:
 			cancel()
