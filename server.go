@@ -120,6 +120,7 @@ func (s *Server) Run(ctx context.Context) {
 		s.app <- event.ServerStop{err}
 		return
 	}
+	go s.stat.Run(ctx, s.router.Route)
 
 	s.trigger(event.ServerUp(0))
 	for {
@@ -254,17 +255,43 @@ func newServerStats() *serverStats {
 }
 
 type serverStats struct {
-	ConnCount  int64
-	ConnActive int64
+	ConnCount  atomic.Int64
+	ConnActive atomic.Int64
+
+	changed atomic.Bool
+}
+
+func (s *serverStats) Run(ctx context.Context, route trFunc) {
+	tick := time.NewTicker(time.Second)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-tick.C:
+			if !s.changed.Load() {
+				continue
+			}
+			// save current stats
+			p := mq.Pub(0, "$sys/stats",
+				fmt.Sprintf("%v %v", s.ConnCount.Load(), s.ConnActive.Load()),
+			)
+			route(ctx, p)
+			s.changed.Store(false)
+		}
+	}
 }
 
 func (s *serverStats) AddConn() {
-	atomic.AddInt64(&s.ConnCount, 1)
-	atomic.AddInt64(&s.ConnActive, 1)
+	s.ConnCount.Add(1)
+	s.ConnActive.Add(1)
+	s.changed.Store(true)
 }
 
 func (s *serverStats) RemoveConn() {
-	atomic.AddInt64(&s.ConnActive, -1)
+	s.ConnActive.Add(-1)
+	s.changed.Store(true)
 }
 
 // ----------------------------------------

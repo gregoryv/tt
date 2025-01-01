@@ -169,6 +169,7 @@ type SubCmd struct {
 	output      io.Writer
 	clientID    string
 	topicFilter string
+	filterQoS   uint8
 	keepAlive   time.Duration
 
 	server *url.URL
@@ -179,6 +180,7 @@ func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.server = cli.Option("-s, --server").Url("tcp://localhost:1883")
 	c.clientID = cli.Option("-c, --client-id").String("ttsub")
 	c.topicFilter = cli.Option("-t, --topic-filter").String("#")
+	c.filterQoS = cli.Option("-q, --qos", "filter quality of service").Uint8(1)
 	c.keepAlive = cli.Option("-k, --keep-alive", "disable with 0").Duration("10s")
 }
 
@@ -206,7 +208,11 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			case mq.Success:
 				s := mq.NewSubscribe()
 				s.SetSubscriptionID(1)
-				f := mq.NewTopicFilter(c.topicFilter, mq.OptNL)
+				opts := mq.OptNL
+				if v := c.filterQoS; v < 3 {
+					opts |= mq.FilterOption(v)
+				}
+				f := mq.NewTopicFilter(c.topicFilter, opts)
 				s.AddFilters(f)
 				_ = client.Send(ctx, s)
 			default:

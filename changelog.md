@@ -3,6 +3,10 @@
 This project adheres to semantic versioning and all notable
 changes will be documented in this file.
 
+## [0.13.1-dev]
+
+- Add option --qos to command tt sub
+
 ## [0.13.0] 2024-12-31
 
 - Disconnect with protocol error if subscribe contains no filters
