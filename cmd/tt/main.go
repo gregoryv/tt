@@ -45,7 +45,7 @@ func main() {
 	if shared.LogTimestamp {
 		log.SetFlags(log.LstdFlags)
 	}
-
+	log.SetOutput(shared.LogOutput())
 	// Run command in the background so we can interrupt it
 	ctx, cancel := context.WithCancel(context.Background())
 	if v := shared.Timeout; v > 0 {
@@ -185,6 +185,8 @@ type SubCmd struct {
 	filterQoS   uint8
 	keepAlive   time.Duration
 
+	autoReconnect bool
+
 	server *url.URL
 }
 
@@ -195,9 +197,28 @@ func (c *SubCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.topicFilter = cli.Option("-t, --topic-filter").String("#")
 	c.filterQoS = cli.Option("-q, --qos", "filter quality of service").Uint8(1)
 	c.keepAlive = cli.Option("-k, --keep-alive", "disable with 0").Duration("10s")
+	c.autoReconnect = cli.Flag("-r, --auto-reconnect")
 }
 
 func (c *SubCmd) Run(ctx context.Context) error {
+	for {
+		err := c.run(ctx)
+		if !c.autoReconnect {
+			return err
+		}
+		if err != nil {
+			log.Print(err)
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(2 * time.Second):
+		}
+
+	}
+}
+
+func (c *SubCmd) run(ctx context.Context) error {
 	client := tt.NewClient()
 	client.SetServer(c.server.String())
 	client.SetDebug(c.shared.Debug)

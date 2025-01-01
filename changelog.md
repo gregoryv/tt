@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [0.13.1-dev]
 
+- Add option --auto-reconnect to tt sub
 - Print topic before payload when --quiet is given to tt sub
 - Add option --quiet to disable log output
 - Server publishes stats to $sys/mon/stat
