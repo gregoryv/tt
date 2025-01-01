@@ -120,7 +120,7 @@ func (s *Server) Run(ctx context.Context) {
 		s.app <- event.ServerStop{err}
 		return
 	}
-	go s.stat.Run(ctx, s.router.Route)
+	go s.stat.Run(ctx)
 
 	s.trigger(event.ServerUp(0))
 	for {
@@ -135,6 +135,13 @@ func (s *Server) Run(ctx context.Context) {
 				serve(ctx, s, conn)
 				s.stat.RemoveConn()
 			}()
+
+		case <-s.stat.Changed():
+			// publish stats
+			v := s.stat.String()
+			p := mq.Pub(0, "$sys/mon/stat", v)
+			s.router.Route(ctx, p)
+			s.log.Println("sys/mon/stat", v)
 		}
 	}
 }
@@ -251,7 +258,9 @@ loop:
 // ----------------------------------------
 
 func newServerStats() *serverStats {
-	return &serverStats{}
+	return &serverStats{
+		c: make(chan struct{}, 1),
+	}
 }
 
 type serverStats struct {
@@ -259,9 +268,10 @@ type serverStats struct {
 	ConnActive atomic.Int64
 
 	changed atomic.Bool
+	c       chan struct{}
 }
 
-func (s *serverStats) Run(ctx context.Context, route trFunc) {
+func (s *serverStats) Run(ctx context.Context) {
 	tick := time.NewTicker(time.Second)
 
 	for {
@@ -273,11 +283,11 @@ func (s *serverStats) Run(ctx context.Context, route trFunc) {
 			if !s.changed.Load() {
 				continue
 			}
-			// save current stats
-			p := mq.Pub(0, "$sys/stats",
-				fmt.Sprintf("%v %v", s.ConnCount.Load(), s.ConnActive.Load()),
-			)
-			route(ctx, p)
+			select {
+			case s.c <- struct{}{}:
+			default:
+				fmt.Println("s.c full")
+			}
 			s.changed.Store(false)
 		}
 	}
@@ -292,6 +302,17 @@ func (s *serverStats) AddConn() {
 func (s *serverStats) RemoveConn() {
 	s.ConnActive.Add(-1)
 	s.changed.Store(true)
+}
+
+func (s *serverStats) Changed() <-chan struct{} {
+	return s.c
+}
+
+func (s *serverStats) String() string {
+	return fmt.Sprintf("%v %v",
+		s.ConnCount.Load(),
+		s.ConnActive.Load(),
+	)
 }
 
 // ----------------------------------------

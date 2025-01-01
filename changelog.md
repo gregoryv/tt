@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [0.13.1-dev]
 
+- Server publishes stats to $sys/mon/stat
 - Add option --qos to command tt sub
 
 ## [0.13.0] 2024-12-31
