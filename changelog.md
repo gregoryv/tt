@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [0.13.1-dev]
 
+- Add option --quiet to disable log output
 - Server publishes stats to $sys/mon/stat
 - Add option --qos to command tt sub
 

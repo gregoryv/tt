@@ -139,7 +139,7 @@ func (s *Server) Run(ctx context.Context) {
 
 		case <-s.stat.Changed():
 			// publish stats
-			v := fmt.Sprintln(rev, s.stat.String())
+			v := fmt.Sprintf("%s %s", rev, s.stat.String())
 			p := mq.Pub(0, "$sys/mon/stat", v)
 			s.router.Route(ctx, p)
 			s.log.Println("sys/mon/stat", v)

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -27,6 +28,7 @@ func main() {
 		shared = opts{
 			Debug:        cli.Flag("-d, --debug"),
 			LogTimestamp: cli.Flag("-T, --log-timestamp"),
+			Quiet:        cli.Option("-Q, --quiet", "hide log output").Bool(false),
 			Timeout:      cli.Option("--timeout", "0 means never").Duration("0"),
 		}
 
@@ -72,7 +74,15 @@ func main() {
 type opts struct {
 	Debug        bool
 	LogTimestamp bool
+	Quiet        bool
 	Timeout      time.Duration
+}
+
+func (o *opts) LogOutput() io.Writer {
+	if o.Quiet {
+		return ioutil.Discard
+	}
+	return os.Stderr
 }
 
 type Runner interface {
@@ -112,7 +122,10 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	client.SetServer(c.server.String())
 	client.SetDebug(c.shared.Debug)
 	client.SetMaxPacketID(10)
-	client.SetLogger(log.New(os.Stderr, c.clientID+" ", log.Flags()))
+
+	client.SetLogger(
+		log.New(c.shared.LogOutput(), c.clientID+" ", log.Flags()),
+	)
 
 	ctx, cancel := context.WithCancel(ctx)
 	go client.Run(ctx)
@@ -189,7 +202,9 @@ func (c *SubCmd) Run(ctx context.Context) error {
 	client.SetServer(c.server.String())
 	client.SetDebug(c.shared.Debug)
 	client.SetMaxPacketID(10)
-	client.SetLogger(log.New(os.Stderr, c.clientID+" ", log.Flags()))
+	client.SetLogger(
+		log.New(c.shared.LogOutput(), c.clientID+" ", log.Flags()),
+	)
 
 	ctx, cancel := context.WithCancel(ctx)
 	go client.Run(ctx)
@@ -253,7 +268,9 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 	if c.LogPrefix != "" {
 		c.LogPrefix += " "
 	}
-	srv.SetLogger(log.New(os.Stderr, c.LogPrefix, log.Flags()))
+	srv.SetLogger(
+		log.New(c.shared.LogOutput(), c.LogPrefix, log.Flags()),
+	)
 	ctx, cancel := context.WithCancel(ctx)
 	go srv.Run(ctx)
 
