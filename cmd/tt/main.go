@@ -36,6 +36,7 @@ func main() {
 		_        = commands.New("pub", &PubCmd{shared: shared})
 		_        = commands.New("sub", &SubCmd{shared: shared})
 		_        = commands.New("srv", &SrvCmd{shared: shared})
+		_        = commands.New("bench", &BenchCmd{shared: shared})
 		cmd      = commands.Selected()
 	)
 	u := cli.Usage()

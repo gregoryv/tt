@@ -85,12 +85,13 @@ func (c *Client) run(ctx context.Context) error {
 	maxIDLen := 11
 
 	// dial server
-	c.log.Print("dial ", s.String())
 	conn, err := net.Dial(s.Scheme, s.Host)
 	if err != nil {
+		c.log.Print("dial ", s.String(), err)
 		return err
 	}
 	defer conn.Close()
+	c.log.Print("dial ", s.String())
 
 	// pool of packet ids for reuse
 	pool := newIDPool(c.maxPacketID)

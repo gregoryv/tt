@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [0.13.1-dev]
 
+- Add command tt bench https://github.com/emqx/mqttbs
 - Add option --auto-reconnect to tt sub
 - Print topic before payload when --quiet is given to tt sub
 - Add option --quiet to disable log output

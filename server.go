@@ -122,7 +122,8 @@ func (s *Server) Run(ctx context.Context) {
 		return
 	}
 	rev := short(revision(), 7)
-	go s.stat.Run(ctx)
+
+	tick := time.NewTicker(time.Second)
 
 	s.trigger(event.ServerUp(0))
 	for {
@@ -138,7 +139,10 @@ func (s *Server) Run(ctx context.Context) {
 				s.stat.RemoveConn()
 			}()
 
-		case <-s.stat.Changed():
+		case <-tick.C:
+			if !s.stat.changed.Load() {
+				continue
+			}
 			// publish stats
 			var mem runtime.MemStats
 			runtime.ReadMemStats(&mem)
@@ -155,6 +159,7 @@ func (s *Server) Run(ctx context.Context) {
 			p := mq.Pub(0, "$sys/mon/stat", payload)
 			s.router.Route(ctx, p)
 			s.log.Println("sys/mon/stat", payload)
+			s.stat.clear()
 		}
 	}
 }
@@ -195,9 +200,9 @@ func (s *Server) runFeeds(ctx context.Context) error {
 		tmp := *u
 		tmp.Host = ln.Addr().String()
 		if u.Port() != tmp.Port() {
-			s.log.Printf("bind %s (configured as %s)", tmp.String(), u.String())
+			fmt.Printf("bind %s (configured as %s)\n", tmp.String(), u.String())
 		} else {
-			s.log.Println("bind", u.String())
+			fmt.Println("bind", u.String())
 		}
 
 		t, err := time.ParseDuration(b.AcceptTimeout)
@@ -271,9 +276,7 @@ loop:
 // ----------------------------------------
 
 func newServerStats() *serverStats {
-	return &serverStats{
-		c: make(chan struct{}, 1),
-	}
+	return &serverStats{}
 }
 
 type serverStats struct {
@@ -281,29 +284,6 @@ type serverStats struct {
 	ConnActive atomic.Int64
 
 	changed atomic.Bool
-	c       chan struct{}
-}
-
-func (s *serverStats) Run(ctx context.Context) {
-	tick := time.NewTicker(time.Second)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-
-		case <-tick.C:
-			if !s.changed.Load() {
-				continue
-			}
-			select {
-			case s.c <- struct{}{}:
-			default:
-				fmt.Println("s.c full")
-			}
-			s.changed.Store(false)
-		}
-	}
 }
 
 func (s *serverStats) AddConn() {
@@ -317,15 +297,9 @@ func (s *serverStats) RemoveConn() {
 	s.changed.Store(true)
 }
 
-func (s *serverStats) Changed() <-chan struct{} {
-	return s.c
-}
-
-func (s *serverStats) String() string {
-	return fmt.Sprintf("%v %v",
-		s.ConnCount.Load(),
-		s.ConnActive.Load(),
-	)
+// clear the chan
+func (s *serverStats) clear() {
+	s.changed.Store(false)
 }
 
 func memStats() func() string {
