@@ -92,6 +92,12 @@ type Runner interface {
 	Run(context.Context) error
 }
 
+//  ____        _      ____               _
+// |  _ \ _   _| |__  / ___|_ __ ___   __| |
+// | |_) | | | | '_ \| |   | '_ ` _ \ / _` |
+// |  __/| |_| | |_) | |___| | | | | | (_| |
+// |_|    \__,_|_.__/ \____|_| |_| |_|\__,_|
+
 type PubCmd struct {
 	shared opts
 
@@ -179,6 +185,12 @@ func (c *PubCmd) Run(ctx context.Context) error {
 	return ctx.Err()
 }
 
+//  ____        _      ____               _
+// / ___| _   _| |__  / ___|_ __ ___   __| |
+// \___ \| | | | '_ \| |   | '_ ` _ \ / _` |
+//  ___) | |_| | |_) | |___| | | | | | (_| |
+// |____/ \__,_|_.__/ \____|_| |_| |_|\__,_|
+
 type SubCmd struct {
 	shared opts
 
@@ -217,7 +229,6 @@ func (c *SubCmd) Run(ctx context.Context) error {
 			return nil
 		case <-time.After(2 * time.Second):
 		}
-
 	}
 }
 
@@ -275,6 +286,12 @@ func (c *SubCmd) run(ctx context.Context) error {
 	}
 	return ctx.Err()
 }
+
+//  ____              ____               _
+// / ___| _ ____   __/ ___|_ __ ___   __| |
+// \___ \| '__\ \ / / |   | '_ ` _ \ / _` |
+//  ___) | |   \ V /| |___| | | | | | (_| |
+// |____/|_|    \_/  \____|_| |_| |_|\__,_|
 
 type SrvCmd struct {
 	shared opts

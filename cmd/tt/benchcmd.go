@@ -65,6 +65,7 @@ func (c *BenchCmd) Run(ctx context.Context) error {
 						_ = client.Send(ctx, p)
 
 					case v := <-client.Events():
+
 						switch v := v.(type) {
 						case event.ClientUp:
 							p := mq.NewConnect()
