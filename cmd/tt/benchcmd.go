@@ -42,7 +42,7 @@ func (c *BenchCmd) Run(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
 		failed := make(chan error)
 		var connected atomic.Int64
-		for i := 1; i <= 10_000; i++ {
+		for i := 0; i < 10_000; i++ {
 			select {
 			case <-time.After(10 * time.Millisecond):
 			case <-ctx.Done():

@@ -147,11 +147,12 @@ func (s *Server) Run(ctx context.Context) {
 			var mem runtime.MemStats
 			runtime.ReadMemStats(&mem)
 
-			payload := fmt.Sprintf("%s %v %v %v",
+			payload := fmt.Sprintf("%s %v %v %v %v",
 				rev,
 				s.stat.ConnCount.Load(),
 				s.stat.ConnActive.Load(),
 				mem.Alloc,
+				runtime.NumGoroutine(),
 				// total subscriptions
 
 				// total published messages

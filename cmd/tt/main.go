@@ -8,6 +8,8 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"net/url"
 	"os"
 	"os/signal"
@@ -277,6 +279,7 @@ func (c *SubCmd) run(ctx context.Context) error {
 type SrvCmd struct {
 	shared opts
 	tt.Bind
+	profile        bool
 	ConnectTimeout time.Duration
 	LogPrefix      string
 }
@@ -286,9 +289,16 @@ func (c *SrvCmd) ExtraOptions(cli *cmdline.Parser) {
 	c.Bind.AcceptTimeout = cli.Option("-a, --accept-timeout").Duration("500ms").String()
 	c.ConnectTimeout = cli.Option("--connect-timeout").Duration("200ms")
 	c.LogPrefix = cli.Option("--log-prefix", "").String("")
+	c.profile = cli.Flag("--pprof")
 }
 
 func (c *SrvCmd) Run(ctx context.Context) error {
+	if c.profile {
+		go func() {
+			fmt.Println("pprof :9999")
+			log.Println(http.ListenAndServe(":9999", nil))
+		}()
+	}
 	srv := tt.NewServer()
 	srv.SetDebug(c.shared.Debug)
 	srv.SetConnectTimeout(c.ConnectTimeout)

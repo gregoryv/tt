@@ -5,6 +5,7 @@ changes will be documented in this file.
 
 ## [0.13.1-dev]
 
+- Add option --pprof to tt srv, listens on :9999
 - Add command tt bench https://github.com/emqx/mqttbs
 - Add option --auto-reconnect to tt sub
 - Print topic before payload when --quiet is given to tt sub
