@@ -133,11 +133,7 @@ func (s *Server) Run(ctx context.Context) {
 			return
 
 		case conn := <-s.incoming:
-			go func() {
-				s.stat.AddConn()
-				serve(ctx, s, conn)
-				s.stat.RemoveConn()
-			}()
+			go s.Handle(ctx, conn)
 
 		case <-tick.C:
 			if !s.stat.changed.Load() {
@@ -163,6 +159,12 @@ func (s *Server) Run(ctx context.Context) {
 			s.stat.clear()
 		}
 	}
+}
+
+func (s *Server) Handle(ctx context.Context, conn Connection) {
+	s.stat.AddConn()
+	serve(ctx, s, conn)
+	s.stat.RemoveConn()
 }
 
 const StatLine = "Revision ConnCount ConnActive NumGoroutine MemAlloc"

@@ -269,7 +269,7 @@ func testServer(t *testing.T, s *Server) (conn, srvconn net.Conn) {
 	<-s.Events() // running
 
 	conn, srvconn = net.Pipe()
-	go serve(ctx, s, srvconn)
+	go s.Handle(ctx, srvconn)
 	return
 }
 
