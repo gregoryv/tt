@@ -151,8 +151,8 @@ func (s *Server) Run(ctx context.Context) {
 				rev,
 				s.stat.ConnCount.Load(),
 				s.stat.ConnActive.Load(),
-				mem.Alloc,
 				runtime.NumGoroutine(),
+				mem.Alloc,
 				// total subscriptions
 
 				// total published messages
@@ -164,6 +164,8 @@ func (s *Server) Run(ctx context.Context) {
 		}
 	}
 }
+
+const StatLine = "Revision ConnCount ConnActive NumGoroutine MemAlloc"
 
 func (s *Server) setDefaults() {
 	// no logging if logger not set

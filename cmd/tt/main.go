@@ -39,6 +39,7 @@ func main() {
 		_        = commands.New("sub", &SubCmd{shared: shared})
 		_        = commands.New("srv", &SrvCmd{shared: shared})
 		_        = commands.New("bench", &BenchCmd{shared: shared})
+		_        = commands.New("mon", &MonCmd{shared: shared})
 		cmd      = commands.Selected()
 	)
 	u := cli.Usage()
@@ -340,4 +341,108 @@ func (c *SrvCmd) Run(ctx context.Context) error {
 			return ctx.Err()
 		}
 	}
+}
+
+//  __  __              ____               _
+// |  \/  | ___  _ __  / ___|_ __ ___   __| |
+// | |\/| |/ _ \| '_ \| |   | '_ ` _ \ / _` |
+// | |  | | (_) | | | | |___| | | | | | (_| |
+// |_|  |_|\___/|_| |_|\____|_| |_| |_|\__,_|
+
+// MonCmd is similar to sub but fixed to the $sys/mon/stat topic and
+// formating output ready for plotting
+type MonCmd struct {
+	shared opts
+
+	output      io.Writer
+	clientID    string
+	topicFilter string
+	filterQoS   uint8
+	keepAlive   time.Duration
+
+	autoReconnect bool
+
+	server *url.URL
+}
+
+func (c *MonCmd) ExtraOptions(cli *cmdline.Parser) {
+	c.output = os.Stdout
+	c.server = cli.Option("-s, --server").Url("tcp://localhost:1883")
+	c.clientID = cli.Option("-c, --client-id").String("ttmon")
+	c.topicFilter = "$sys/mon/stat"
+	c.filterQoS = cli.Option("-q, --qos", "filter quality of service").Uint8(1)
+	c.keepAlive = cli.Option("-k, --keep-alive", "disable with 0").Duration("10s")
+	c.autoReconnect = cli.Flag("-r, --auto-reconnect")
+}
+
+func (c *MonCmd) Run(ctx context.Context) error {
+	for {
+		err := c.run(ctx)
+		if !c.autoReconnect {
+			return err
+		}
+		if err != nil {
+			log.Print(err)
+		}
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-time.After(2 * time.Second):
+		}
+	}
+}
+
+func (c *MonCmd) run(ctx context.Context) error {
+	client := tt.NewClient()
+	client.SetServer(c.server.String())
+	client.SetDebug(c.shared.Debug)
+	client.SetMaxPacketID(10)
+
+	ctx, cancel := context.WithCancel(ctx)
+	go client.Run(ctx)
+
+	for v := range client.Events() {
+		switch v := v.(type) {
+		case event.ClientUp:
+			p := mq.NewConnect()
+			p.SetClientID(c.clientID)
+			p.SetReceiveMax(1)
+			p.SetKeepAlive(uint16(c.keepAlive.Seconds()))
+			_ = client.Send(ctx, p)
+
+		case *mq.ConnAck:
+			switch v.ReasonCode() {
+			case mq.Success:
+				fmt.Println(
+					"#",
+					"Date",
+					"Time",
+					tt.StatLine,
+				)
+				s := mq.NewSubscribe()
+				s.SetSubscriptionID(1)
+				opts := mq.OptNL
+				if v := c.filterQoS; v < 3 {
+					opts |= mq.FilterOption(v)
+				}
+				f := mq.NewTopicFilter(c.topicFilter, opts)
+				s.AddFilters(f)
+				_ = client.Send(ctx, s)
+			default:
+				cancel()
+				return fmt.Errorf(v.ReasonString())
+			}
+
+		case *mq.Publish:
+			stamp := time.Now().Format(time.DateTime)
+			line := string(v.Payload())
+
+			fmt.Fprintln(c.output, stamp, line)
+
+		case event.ClientStop:
+			cancel()
+			return v.Err
+		}
+	}
+	return ctx.Err()
 }
