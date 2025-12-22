@@ -1,6 +1,4 @@
-[![Build Status](https://app.travis-ci.com/gregoryv/tt.svg?branch=main)](https://app.travis-ci.com/gregoryv/tt)
-[![codecov](https://codecov.io/gh/gregoryv/tt/branch/main/graph/badge.svg)](https://codecov.io/gh/gregoryv/tt)
-[![Maintainability](https://api.codeclimate.com/v1/badges/fdf6273e87ed5324b6a2/maintainability)](https://codeclimate.com/github/gregoryv/tt/maintainability)
+ARCHIVED! Moved to https://sogvin.com/tt
 
 [gregoryv/tt](https://pkg.go.dev/github.com/gregoryv/tt) - package provides components for writing [mqtt-v5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html) clients and servers
 
